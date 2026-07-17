@@ -1,9 +1,11 @@
 import * as Dialog from "@radix-ui/react-dialog"
-import { Menu, Server, WifiOff, X } from "lucide-react"
+import { CircleCheckBig, Menu, Siren, WifiOff, X } from "lucide-react"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Composer } from "./components/Composer"
 import { ConfirmDeleteDialog } from "./components/ConfirmDeleteDialog"
+import { EmergencyDialog } from "./components/EmergencyDialog"
 import { MessageThread } from "./components/MessageThread"
+import { RoleSwitcher } from "./components/RoleSwitcher"
 import { Sidebar } from "./components/Sidebar"
 import { ThemeToggle, type Theme } from "./components/ThemeToggle"
 import {
@@ -14,12 +16,25 @@ import {
   getSessions,
   sendMessage,
 } from "./lib/api"
-import type { ChatSession, ServerStatus, SessionSummary } from "./types"
+import type { AccessRole, ChatSession, ServerStatus, SessionSummary } from "./types"
+
+const THEME_STORAGE_KEY = "bvtim-chat-theme"
 
 function initialTheme(): Theme {
-  const saved = window.localStorage.getItem("ai-go-theme")
-  if (saved === "light" || saved === "dark") return saved
+  const requestedTheme = new URLSearchParams(window.location.search).get("theme")
+  if (requestedTheme === "light" || requestedTheme === "dark") return requestedTheme
+  try {
+    const saved = window.localStorage.getItem(THEME_STORAGE_KEY)
+    if (saved === "light" || saved === "dark") return saved
+  } catch {
+    // Third-party storage can be unavailable when the app runs in an iframe.
+  }
   return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
+}
+
+function initialEmbeddedMode() {
+  const embedParam = new URLSearchParams(window.location.search).get("embed")
+  return embedParam === "1" || embedParam === "true" || window.self !== window.top
 }
 
 function initialSessionId() {
@@ -41,6 +56,7 @@ export function App() {
   const [activeSession, setActiveSession] = useState<ChatSession | null>(null)
   const [sessionQuery, setSessionQuery] = useState("")
   const [composerValue, setComposerValue] = useState("")
+  const [accessRole, setAccessRole] = useState<AccessRole>("GUEST")
   const [serverStatus, setServerStatus] = useState<ServerStatus>("checking")
   const [loadingSessions, setLoadingSessions] = useState(true)
   const [loadingActive, setLoadingActive] = useState(false)
@@ -48,6 +64,8 @@ export function App() {
   const [sending, setSending] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
+  const [emergencyOpen, setEmergencyOpen] = useState(false)
+  const [embedded] = useState(initialEmbeddedMode)
   const [sessionListError, setSessionListError] = useState<string | null>(null)
   const [activeError, setActiveError] = useState<string | null>(null)
   const [messageError, setMessageError] = useState<string | null>(null)
@@ -65,10 +83,45 @@ export function App() {
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme
-    window.localStorage.setItem("ai-go-theme", theme)
+    try {
+      window.localStorage.setItem(THEME_STORAGE_KEY, theme)
+    } catch {
+      // Keep theming functional even when iframe storage is blocked.
+    }
     const themeColor = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]')
-    themeColor?.setAttribute("content", theme === "dark" ? "#0f172a" : "#f8fafc")
+    themeColor?.setAttribute("content", theme === "dark" ? "#07162e" : "#f4f7fc")
   }, [theme])
+
+  useEffect(() => {
+    document.documentElement.dataset.embedded = embedded ? "true" : "false"
+    if (!embedded) return
+
+    const handleParentMessage = (event: MessageEvent<unknown>) => {
+      if (event.source !== window.parent || typeof event.data !== "object" || !event.data) {
+        return
+      }
+      const message = event.data as { type?: string; theme?: string; action?: string }
+      if (
+        message.type === "hanoi-heart-assistant:set-theme" &&
+        (message.theme === "light" || message.theme === "dark")
+      ) {
+        setTheme(message.theme)
+      }
+      if (message.type === "hanoi-heart-assistant:action") {
+        if (message.action === "focus") {
+          document.querySelector<HTMLTextAreaElement>("#message-composer")?.focus()
+        }
+        if (message.action === "open-emergency") setEmergencyOpen(true)
+      }
+    }
+
+    window.addEventListener("message", handleParentMessage)
+    window.parent.postMessage(
+      { type: "hanoi-heart-assistant:ready", version: 1, theme },
+      "*",
+    )
+    return () => window.removeEventListener("message", handleParentMessage)
+  }, [embedded, theme])
 
   useEffect(() => {
     const url = new URL(window.location.href)
@@ -213,7 +266,7 @@ export function App() {
     })
 
     try {
-      const answer = await sendMessage(currentId, message)
+      const answer = await sendMessage(currentId, message, accessRole)
       setActiveSession((current) => {
         if (!current || current.id !== currentId) return current
         const messages = current.messages.map((item, index) =>
@@ -288,7 +341,7 @@ export function App() {
   }
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell${embedded ? " is-embedded" : ""}`}>
       <a className="skip-link" href="#main-content">
         Chuyển tới nội dung chính
       </a>
@@ -324,19 +377,47 @@ export function App() {
             >
               <Menu aria-hidden="true" />
             </button>
+            <img
+              className="header-logo"
+              src="./bvtim_logo.png"
+              alt="Bệnh viện Tim Hà Nội"
+              width="120"
+              height="70"
+            />
             <div className="header-title">
               <h1>{pageTitle}</h1>
-              <span>{selectedId ? `Phiên ${selectedId.slice(0, 8)}` : "Sẵn sàng bắt đầu"}</span>
+              <span>Trợ lý AI · Thông tin hỗ trợ người bệnh</span>
             </div>
           </div>
           <div className="header-actions">
+            <RoleSwitcher
+              value={accessRole}
+              disabled={sending || creating}
+              onChange={setAccessRole}
+            />
+            <button
+              type="button"
+              className="emergency-button"
+              aria-label="Mở hướng dẫn hỗ trợ khẩn cấp"
+              title="Hỗ trợ khẩn cấp"
+              onClick={() => setEmergencyOpen(true)}
+            >
+              <Siren aria-hidden="true" />
+              <span>Hỗ trợ khẩn cấp</span>
+            </button>
             <span className={`server-pill status-${serverStatus}`}>
               {serverStatus === "offline" ? (
                 <WifiOff aria-hidden="true" />
               ) : (
-                <Server aria-hidden="true" />
+                <CircleCheckBig aria-hidden="true" />
               )}
-              <span>{serverStatus === "online" ? "Đã kết nối" : serverStatus === "offline" ? "Ngoại tuyến" : "Đang kiểm tra"}</span>
+              <span>
+                {serverStatus === "online"
+                  ? "Trợ lý sẵn sàng"
+                  : serverStatus === "offline"
+                    ? "Tạm mất kết nối"
+                    : "Đang kết nối"}
+              </span>
             </span>
             <ThemeToggle
               theme={theme}
@@ -353,6 +434,7 @@ export function App() {
             error={activeError}
             onRetry={() => selectedId && void loadActiveSession(selectedId)}
             onSuggestion={setComposerValue}
+            onEmergency={() => setEmergencyOpen(true)}
           />
         </div>
 
@@ -393,6 +475,8 @@ export function App() {
         }}
         onConfirm={() => void handleDelete()}
       />
+
+      <EmergencyDialog open={emergencyOpen} onOpenChange={setEmergencyOpen} />
     </div>
   )
 }

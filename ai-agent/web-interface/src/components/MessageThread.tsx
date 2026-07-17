@@ -1,13 +1,14 @@
 import {
-  Bot,
-  Clock3,
-  Code2,
+  CalendarClock,
+  CalendarPlus,
+  ClipboardList,
+  HeartPulse,
   LoaderCircle,
   RefreshCw,
-  Shield,
-  Sparkles,
+  ShieldCheck,
+  Siren,
   UserRound,
-  Wrench,
+  Volume2,
 } from "lucide-react"
 import { useEffect, useRef } from "react"
 import ReactMarkdown from "react-markdown"
@@ -21,45 +22,69 @@ interface MessageThreadProps {
   error: string | null
   onRetry: () => void
   onSuggestion: (prompt: string) => void
+  onEmergency: () => void
 }
 
 const suggestions = [
   {
-    icon: Code2,
-    title: "Khám phá codebase",
-    description: "Giải thích cấu trúc và luồng chính của dự án này.",
-    prompt: "Hãy giải thích cấu trúc và luồng hoạt động chính của dự án này.",
+    icon: CalendarPlus,
+    title: "Đặt lịch khám",
+    description: "Các kênh đăng ký khám chính thức của bệnh viện.",
+    prompt:
+      "Tôi muốn đặt lịch khám tại Bệnh viện Tim Hà Nội. Xin hướng dẫn các kênh đăng ký chính thức.",
   },
   {
-    icon: Wrench,
-    title: "Thử công cụ MCP",
-    description: "Kiểm tra những công cụ agent có thể sử dụng.",
-    prompt: "Bạn có thể dùng những công cụ MCP nào và chúng giúp được gì?",
+    icon: ClipboardList,
+    title: "Quy trình đi khám",
+    description: "Từng bước tại Khu Tự nguyện 1, Cơ sở 1.",
+    prompt:
+      "Tôi đến khám tại Khu Khám bệnh Tự nguyện 1, Cơ sở 1. Xin hướng dẫn quy trình từ khi đến bệnh viện.",
   },
   {
-    icon: Clock3,
-    title: "Kiểm tra thời gian",
-    description: "Gửi một yêu cầu ngắn để kiểm tra kết nối.",
-    prompt: "Bây giờ là mấy giờ tại Thành phố Hồ Chí Minh?",
+    icon: ShieldCheck,
+    title: "Khám bằng BHYT",
+    description: "Giấy tờ cần chuẩn bị trước khi đến khám.",
+    prompt:
+      "Khám bằng bảo hiểm y tế tại Khu Tự nguyện 1, Cơ sở 1 cần mang những giấy tờ gì?",
+  },
+  {
+    icon: CalendarClock,
+    title: "Hướng dẫn tái khám",
+    description: "Chuẩn bị giấy hẹn và thủ tục cho lần khám sau.",
+    prompt:
+      "Tôi có giấy hẹn tái khám tại Bệnh viện Tim Hà Nội. Xin hướng dẫn những gì cần chuẩn bị.",
   },
 ]
 
 function roleDetails(role: MessageRole) {
-  switch (role) {
-    case "Assistant":
-      return { label: "AI GO", Icon: Bot }
-    case "System":
-      return { label: "Hệ thống", Icon: Shield }
-    case "Tool":
-      return { label: "Công cụ", Icon: Wrench }
-    default:
-      return { label: "Bạn", Icon: UserRound }
+  if (role === "Assistant") {
+    return { label: "Trợ lý Tim Hà Nội", Icon: HeartPulse }
   }
+  return { label: "Anh/Chị", Icon: UserRound }
+}
+
+function toSpeechText(markdown: string) {
+  return markdown
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, "")
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
+    .replace(/[`*_>#|~-]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+}
+
+function speakResponse(content: string) {
+  if (!("speechSynthesis" in window)) return
+  window.speechSynthesis.cancel()
+  const utterance = new SpeechSynthesisUtterance(toSpeechText(content))
+  utterance.lang = "vi-VN"
+  utterance.rate = 0.95
+  window.speechSynthesis.speak(utterance)
 }
 
 function MessageItem({ message }: { message: ChatMessage }) {
   const { label, Icon } = roleDetails(message.role)
   const roleClass = message.role.toLowerCase()
+  const canSpeak = message.role === "Assistant" && "speechSynthesis" in window
 
   return (
     <article className={`message message-${roleClass}`}>
@@ -70,6 +95,17 @@ function MessageItem({ message }: { message: ChatMessage }) {
         <div className="message-meta">
           <strong>{label}</strong>
           {message.delivery === "failed" ? <span>Gửi thất bại</span> : null}
+          {canSpeak ? (
+            <button
+              type="button"
+              className="speak-button"
+              aria-label="Đọc phản hồi thành tiếng"
+              title="Đọc phản hồi"
+              onClick={() => speakResponse(message.content)}
+            >
+              <Volume2 aria-hidden="true" />
+            </button>
+          ) : null}
         </div>
         <div className="message-content">
           <ReactMarkdown
@@ -82,47 +118,11 @@ function MessageItem({ message }: { message: ChatMessage }) {
               ),
             }}
           >
-            {message.content || "Không có nội dung."}
+            {message.content || "Chưa có nội dung phản hồi."}
           </ReactMarkdown>
         </div>
       </div>
     </article>
-  )
-}
-
-function isAgentActivity(message: ChatMessage) {
-  return (
-    message.role === "System" ||
-    message.role === "Tool" ||
-    (message.role === "Assistant" && message.content.startsWith("Tool Call:"))
-  )
-}
-
-function AgentActivity({ messages }: { messages: ChatMessage[] }) {
-  if (messages.length === 0) return null
-
-  return (
-    <details className="activity-panel">
-      <summary>
-        <Wrench aria-hidden="true" />
-        Hoạt động của agent
-        <span>{messages.length}</span>
-      </summary>
-      <div className="activity-list">
-        {messages.map((message, index) => (
-          <div className="activity-item" key={`${message.role}-${index}`}>
-            <strong>
-              {message.role === "System"
-                ? "Chỉ dẫn hệ thống"
-                : message.role === "Tool"
-                  ? "Kết quả công cụ"
-                  : "Lệnh gọi công cụ"}
-            </strong>
-            <pre>{message.content}</pre>
-          </div>
-        ))}
-      </div>
-    </details>
   )
 }
 
@@ -133,10 +133,12 @@ export function MessageThread({
   error,
   onRetry,
   onSuggestion,
+  onEmergency,
 }: MessageThreadProps) {
   const bottomRef = useRef<HTMLDivElement>(null)
-  const visibleMessages = messages.filter((message) => !isAgentActivity(message))
-  const activityMessages = messages.filter(isAgentActivity)
+  const visibleMessages = messages.filter(
+    (message) => message.role === "User" || message.role === "Assistant",
+  )
 
   useEffect(() => {
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches
@@ -172,15 +174,50 @@ export function MessageThread({
   if (visibleMessages.length === 0 && !sending) {
     return (
       <section className="welcome" aria-labelledby="welcome-title">
-        <div className="welcome-mark" aria-hidden="true">
-          <Sparkles />
+        <div className="welcome-brand">
+          <img
+            src="./bvtim_logo.png"
+            alt="Bệnh viện Tim Hà Nội"
+            width="180"
+            height="104"
+          />
         </div>
-        <p className="eyebrow">AI GO AGENT</p>
-        <h2 id="welcome-title">Hôm nay mình có thể giúp gì cho bạn?</h2>
-        <p className="welcome-copy">
-          Trò chuyện trực tiếp với backend của dự án. Mỗi cuộc trò chuyện được lưu thành
-          một phiên riêng trên máy chủ.
+        <p className="eyebrow">
+          <ShieldCheck aria-hidden="true" />
+          THÔNG TIN TỪ NGUỒN CHÍNH THỨC
         </p>
+        <h2 id="welcome-title">Xin chào, tôi là Trợ lý AI của Bệnh viện Tim Hà Nội</h2>
+        <p className="welcome-copy">
+          Tôi hỗ trợ Anh/Chị tìm hiểu về đặt lịch, quy trình khám, bảo hiểm y tế,
+          tái khám và dịch vụ bệnh viện.
+        </p>
+
+        <div className="welcome-trust-note">
+          <HeartPulse aria-hidden="true" />
+          <p>
+            <strong>Vì một trái tim khỏe.</strong>
+            Trợ lý cung cấp thông tin hành chính, không thay thế chẩn đoán hoặc tư vấn
+            trực tiếp của bác sĩ.
+          </p>
+        </div>
+
+        <div className="emergency-card">
+          <span className="emergency-card-icon" aria-hidden="true">
+            <Siren />
+          </span>
+          <span>
+            <strong>Đau ngực dữ dội, khó thở hoặc ngất?</strong>
+            <small>Không chờ phản hồi của chatbot. Hãy xem hướng dẫn cấp cứu ngay.</small>
+          </span>
+          <button type="button" onClick={onEmergency}>
+            Xem hướng dẫn
+          </button>
+        </div>
+
+        <div className="suggestion-heading">
+          <h3>Anh/Chị muốn hỏi về nội dung nào?</h3>
+          <p>Chọn một gợi ý hoặc nhập câu hỏi riêng bên dưới.</p>
+        </div>
         <div className="suggestion-grid" aria-label="Gợi ý bắt đầu">
           {suggestions.map(({ icon: Icon, title, description, prompt }) => (
             <button
@@ -206,21 +243,23 @@ export function MessageThread({
   return (
     <div className="thread" aria-live="polite" aria-busy={sending}>
       {visibleMessages.map((message, index) => (
-        <MessageItem key={`${message.role}-${index}-${message.content.slice(0, 24)}`} message={message} />
+        <MessageItem
+          key={`${message.role}-${index}-${message.content.slice(0, 24)}`}
+          message={message}
+        />
       ))}
-      <AgentActivity messages={activityMessages} />
       {sending ? (
         <div className="message message-assistant message-thinking">
           <div className="message-avatar" aria-hidden="true">
-            <Bot />
+            <HeartPulse />
           </div>
           <div className="message-body">
             <div className="message-meta">
-              <strong>AI GO</strong>
+              <strong>Trợ lý Tim Hà Nội</strong>
             </div>
             <div className="thinking-indicator">
               <LoaderCircle className="spin" aria-hidden="true" />
-              <span>Đang suy nghĩ…</span>
+              <span>Đang tìm thông tin phù hợp…</span>
             </div>
           </div>
         </div>

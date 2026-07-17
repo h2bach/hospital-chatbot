@@ -1,5 +1,9 @@
-import { describe, expect, it } from "vitest"
-import { normalizeSession, normalizeSessionList } from "./api"
+import { afterEach, describe, expect, it, vi } from "vitest"
+import { normalizeSession, normalizeSessionList, sendMessage } from "./api"
+
+afterEach(() => {
+  vi.restoreAllMocks()
+})
 
 describe("API response normalizers", () => {
   it("normalizes the current uppercase Go session response", () => {
@@ -58,6 +62,48 @@ describe("API response normalizers", () => {
         ],
       }),
     ).toEqual([{ id: "one", ownerId: "", title: "Một" }])
+  })
+})
+
+describe("sendMessage", () => {
+  it("sends the selected access role in the Role header", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue({
+      ok: true,
+      status: 200,
+      text: async () => JSON.stringify({ response: "Đã nhận yêu cầu." }),
+    } as Response)
+
+    await expect(
+      sendMessage("session-1", "Tôi muốn đặt lịch khám", "PATIENT"),
+    ).resolves.toBe("Đã nhận yêu cầu.")
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/c/session-1",
+      expect.objectContaining({
+        method: "POST",
+        headers: expect.objectContaining({
+          "Content-Type": "application/json",
+          Role: "PATIENT",
+        }),
+      }),
+    )
+  })
+
+  it("defaults to GUEST when a role is not supplied", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue({
+      ok: true,
+      status: 200,
+      text: async () => JSON.stringify({ response: "Đã nhận yêu cầu." }),
+    } as Response)
+
+    await sendMessage("session-2", "Giờ làm việc của bệnh viện?")
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/c/session-2",
+      expect.objectContaining({
+        headers: expect.objectContaining({ Role: "GUEST" }),
+      }),
+    )
   })
 })
 

@@ -18,17 +18,18 @@ func resolveStaticDir() string {
 func addRoutes(server *Server) {
 	mux := http.NewServeMux()
 
-	fs := http.FileServer(http.Dir(resolveStaticDir()))
-	mux.Handle("GET /{$}", fs)
-	mux.Handle("GET /assets/", fs)
-
 	mux.Handle("/mcp", mcp.NewMCPServer())
 
-	mux.HandleFunc("GET 	/c", 			server.GetAllSessions)
-	mux.HandleFunc("GET 	/c/{id}", 		server.GetSession)
-	mux.HandleFunc("POST 	/c", 			server.PostNewSession)
-	mux.HandleFunc("POST 	/c/{id}", 		server.PostMessage)
-	mux.HandleFunc("DELETE 	/c/{id}", 		server.DeleteSession)
+	mux.HandleFunc("GET /c", server.GetAllSessions)
+	mux.HandleFunc("GET /c/{id}", server.GetSession)
+	mux.HandleFunc("POST /c", server.PostNewSession)
+	mux.HandleFunc("POST /c/{id}", server.PostMessage)
+	mux.HandleFunc("DELETE /c/{id}", server.DeleteSession)
+
+	// Keep the API and MCP routes above more specific than this static fallback.
+	// Serving the complete directory also exposes Vite public assets at the root.
+	fs := http.FileServer(http.Dir(resolveStaticDir()))
+	mux.Handle("/", fs)
 
 	server.httpServer.Handler = mux
 }
