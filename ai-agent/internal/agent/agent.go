@@ -8,31 +8,34 @@ import (
 )
 
 type Agent struct {
-	LLM 		LLMClient
-	MCPClient 	*mcp.MCPClient
+	LLM       LLMClient
+	MCPClient *mcp.MCPClient
 }
 
 func NewAgent(llm LLMClient, mcpClient *mcp.MCPClient) *Agent {
 	return &Agent{
-		LLM: llm,
+		LLM:       llm,
 		MCPClient: mcpClient,
 	}
 }
 
 func (a *Agent) Call(ctx context.Context, input string, agentContext *domain.Context) (string, error) {
 	tools, _ := a.MCPClient.Tools(ctx)
-	agentContext.Tools = tools
+	if agentContext.Role == "" {
+		agentContext.Role = domain.GuestAccessRole
+	}
+	agentContext.Tools = toolsForRole(tools, normalizeAccessRole(string(agentContext.Role)))
 	// System prompt
 	if len(agentContext.Messages) == 0 {
 		agentContext.Messages = append(agentContext.Messages, domain.Message{
-			Role: domain.SystemRole,	
+			Role:    domain.SystemRole,
 			Content: INITIAL_SYSTEM_PROMPT,
 		})
-		
+
 	}
 	// User initial input
 	agentContext.Messages = append(agentContext.Messages, domain.Message{
-		Role: domain.UserRole,
+		Role:    domain.UserRole,
 		Content: input,
 	})
 
@@ -44,9 +47,12 @@ func (a *Agent) Call(ctx context.Context, input string, agentContext *domain.Con
 		}
 
 		if IsToolCall(chatOutput) {
+			if err := ensureToolAllowed(agentContext.Role, chatOutput.ToolName); err != nil {
+				return "", err
+			}
 			toolOutput, err := a.MCPClient.CallTool(ctx, chatOutput.ToolName, chatOutput.Args)
 			agentContext.Messages = append(agentContext.Messages, domain.Message{
-				Role: domain.AgentRole,
+				Role:    domain.AgentRole,
 				Content: fmt.Sprintf("Tool Call: %s\nArgs: %s", chatOutput.ToolName, chatOutput.Args),
 			})
 			toolMessage := domain.Message{
@@ -63,11 +69,10 @@ func (a *Agent) Call(ctx context.Context, input string, agentContext *domain.Con
 
 		if IsText(chatOutput) {
 			agentContext.Messages = append(agentContext.Messages, domain.Message{
-				Role: domain.AgentRole,
+				Role:    domain.AgentRole,
 				Content: chatOutput.Text,
 			})
 			return chatOutput.Text, nil
 		}
 	}
 }
-
