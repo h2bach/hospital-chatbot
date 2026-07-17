@@ -2,61 +2,48 @@ package api
 
 import (
 	"context"
+	"errors"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
-	"sync"
 	"time"
+
+	"mock-info-service/internal/store"
 )
 
 type Server struct {
-	addr 				string
-	httpServer 			http.Server
+	addr       string
+	httpServer http.Server
+	store      *store.JSONStore
 }
 
-func NewServer(
-	addr 			string,
-) *Server {
-	server := Server{
-		addr: addr,
-	}
-
+func NewServer(addr string, dataStore *store.JSONStore) *Server {
+	server := &Server{addr: addr, store: dataStore}
 	server.httpServer.Addr = addr
-	addRoutes(&server)
-	return &server
+	server.addRoutes()
+	return server
 }
 
-func (server *Server) Run(ctx context.Context) {
-	ctx, osCancel := signal.NotifyContext(ctx, os.Interrupt)
-	defer osCancel()
+func (server *Server) Handler() http.Handler { return server.httpServer.Handler }
 
-	log.Printf("Server is starting at http://localhost%s\n", server.addr)
-	go func() {
-		err := server.httpServer.ListenAndServe()
-		if err != nil && err != http.ErrServerClosed {
-			log.Fatalf("HTTP ListenAndServe: %s\n", err)
+func (server *Server) Run(ctx context.Context) error {
+	ctx, cancelSignal := signal.NotifyContext(ctx, os.Interrupt)
+	defer cancelSignal()
+
+	log.Printf("Mock Info REST API listening at http://localhost%s", server.addr)
+	errCh := make(chan error, 1)
+	go func() { errCh <- server.httpServer.ListenAndServe() }()
+
+	select {
+	case err := <-errCh:
+		if !errors.Is(err, http.ErrServerClosed) {
+			return err
 		}
-	}()
-
-	var wg sync.WaitGroup
-	wg.Add(1)
-	go func(){
-		defer wg.Done()
-		<-ctx.Done()
-		shutdownCtx := context.Background()
-		shutdownCtx, cancel := context.WithTimeout(shutdownCtx, time.Second * 10)
+		return nil
+	case <-ctx.Done():
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
-		
-		go server.Shutdown()
-		err := server.httpServer.Shutdown(shutdownCtx)
-		if err != nil {
-			log.Fatalf("HTTP Shutdown: %s\n", err)
-		}
-	}()
-	wg.Wait()
-}
-
-func (server *Server) Shutdown() {
-
+		return server.httpServer.Shutdown(shutdownCtx)
+	}
 }
