@@ -6,7 +6,6 @@ import {
   LoaderCircle,
   RefreshCw,
   ShieldCheck,
-  Siren,
   UserRound,
   Volume2,
 } from "lucide-react"
@@ -22,7 +21,6 @@ interface MessageThreadProps {
   error: string | null
   onRetry: () => void
   onSuggestion: (prompt: string) => void
-  onEmergency: () => void
 }
 
 const suggestions = [
@@ -133,11 +131,12 @@ export function MessageThread({
   error,
   onRetry,
   onSuggestion,
-  onEmergency,
 }: MessageThreadProps) {
   const bottomRef = useRef<HTMLDivElement>(null)
   const visibleMessages = messages.filter(
-    (message) => message.role === "User" || message.role === "Assistant",
+    (message) =>
+      message.role === "User" ||
+      (message.role === "Assistant" && !message.content.startsWith("Tool Call:")),
   )
 
   useEffect(() => {
@@ -197,28 +196,6 @@ export function MessageThread({
           Tôi hỗ trợ Anh/Chị tìm hiểu về đặt lịch, quy trình khám, bảo hiểm y tế,
           tái khám và dịch vụ bệnh viện.
         </p>
-
-        <div className="welcome-trust-note">
-          <HeartPulse aria-hidden="true" />
-          <p>
-            <strong>Vì một trái tim khỏe.</strong>
-            Trợ lý cung cấp thông tin hành chính, không thay thế chẩn đoán hoặc tư vấn
-            trực tiếp của bác sĩ.
-          </p>
-        </div>
-
-        <div className="emergency-card">
-          <span className="emergency-card-icon" aria-hidden="true">
-            <Siren />
-          </span>
-          <span>
-            <strong>Đau ngực dữ dội, khó thở hoặc ngất?</strong>
-            <small>Không chờ phản hồi của chatbot. Hãy xem hướng dẫn cấp cứu ngay.</small>
-          </span>
-          <button type="button" onClick={onEmergency}>
-            Xem hướng dẫn
-          </button>
-        </div>
 
         <div className="suggestion-heading">
           <h3>Anh/Chị muốn hỏi về nội dung nào?</h3>

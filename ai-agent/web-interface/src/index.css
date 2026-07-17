@@ -1584,6 +1584,9 @@ button:disabled {
 
 .composer textarea::placeholder {
   color: var(--subtle-foreground);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
 }
 
 .composer-actions {
@@ -2099,11 +2102,16 @@ button:disabled {
   .composer-footer {
     flex-direction: column;
     gap: 3px;
+    align-items: center;
+  }
+
+  .composer-help {
+    display: none;
   }
 
   .composer-privacy {
-    justify-content: flex-start;
-    text-align: left;
+    justify-content: center;
+    text-align: center;
   }
 
   .composer-error {
