@@ -1,8 +1,27 @@
 # Powershell script to run HeartCare AI Project locally
 
-$ApiKey = "REMOVED_GOOGLE_API_KEY"
+# Load environment variables from .env file
+if (Test-Path ".env") {
+    Get-Content .env | ForEach-Object {
+        $line = $_.Trim()
+        if ($line -and -not $line.StartsWith("#") -and $line.Contains("=")) {
+            $key, $value = $line.Split("=", 2)
+            $key = $key.Trim()
+            $value = $value.Trim().Trim('"').Trim("'")
+            Set-Item "env:\$key" $value
+        }
+    }
+}
+
+$ApiKey = $env:GEMINI_API_KEY
+if (-not $ApiKey -or $ApiKey -eq "your_actual_gemini_api_key_here") {
+    Write-Host "[Error] GEMINI_API_KEY is not set. Please add your actual Gemini API Key to the '.env' file in the workspace root." -ForegroundColor Red
+    Exit 1
+}
+
 $MockPort = 8081
 $AgentPort = 8080
+
 
 Write-Host "=========================================" -ForegroundColor Green
 Write-Host "HeartCare AI Hospital Chatbot Local runner" -ForegroundColor Green
@@ -36,13 +55,23 @@ if (-not (Test-Path (Join-Path $StaticDir "index.html"))) {
 
 # 3. Terminate any process on ports 8080 or 8081 if active
 Write-Host "[Info] Checking for active processes on ports $MockPort or $AgentPort..." -ForegroundColor Cyan
-Get-Process -Id (Get-NetTCPConnection -LocalPort $MockPort -ErrorAction SilentlyContinue).OwningProcess -ErrorAction SilentlyContinue | ForEach-Object {
-    Write-Host "Stopping process on port $MockPort..." -ForegroundColor Yellow
-    Stop-Process -Id $_.Id -Force
+$MockProc = Get-NetTCPConnection -LocalPort $MockPort -ErrorAction SilentlyContinue
+if ($MockProc) {
+    $MockProc.OwningProcess | ForEach-Object {
+        if ($_) {
+            Write-Host "Stopping process on port $MockPort (PID $_)..." -ForegroundColor Yellow
+            Stop-Process -Id $_ -Force -ErrorAction SilentlyContinue
+        }
+    }
 }
-Get-Process -Id (Get-NetTCPConnection -LocalPort $AgentPort -ErrorAction SilentlyContinue).OwningProcess -ErrorAction SilentlyContinue | ForEach-Object {
-    Write-Host "Stopping process on port $AgentPort..." -ForegroundColor Yellow
-    Stop-Process -Id $_.Id -Force
+$AgentProc = Get-NetTCPConnection -LocalPort $AgentPort -ErrorAction SilentlyContinue
+if ($AgentProc) {
+    $AgentProc.OwningProcess | ForEach-Object {
+        if ($_) {
+            Write-Host "Stopping process on port $AgentPort (PID $_)..." -ForegroundColor Yellow
+            Stop-Process -Id $_ -Force -ErrorAction SilentlyContinue
+        }
+    }
 }
 
 # 4. Start Mock Info Service
@@ -53,19 +82,25 @@ $MockJob = Start-Job -ScriptBlock {
     go run ./cmd --port 8081 --data ../mock-data/output
 } -ArgumentList (Join-Path (Get-Location) "mock-info-service")
 
-# Wait 3 seconds for mock service to start
-Start-Sleep -Seconds 3
-
-# Verify Mock service is healthy
-try {
-    $response = Invoke-RestMethod -Uri "http://localhost:8081/health" -Method Get -TimeoutSec 3
-    if ($response.status -eq "ok") {
-        Write-Host "[Success] Mock Info Service is running at http://localhost:8081" -ForegroundColor Green
-    } else {
-        Write-Host "[Warning] Mock Service started but health check returned: $response" -ForegroundColor Yellow
+# Wait for mock service to start (checking health with retries)
+Write-Host "Waiting for Mock Info Service to start..." -ForegroundColor Yellow
+$MaxRetries = 10
+$HealthCheckOk = $false
+for ($i = 1; $i -le $MaxRetries; $i++) {
+    try {
+        $response = Invoke-RestMethod -Uri "http://localhost:8081/health" -Method Get -TimeoutSec 2
+        if ($response.status -eq "ok") {
+            Write-Host "[Success] Mock Info Service is running at http://localhost:8081" -ForegroundColor Green
+            $HealthCheckOk = $true
+            break
+        }
+    } catch {
+        Start-Sleep -Seconds 2
     }
-} catch {
-    Write-Host "[Error] Failed to connect to Mock Info Service at http://localhost:8081" -ForegroundColor Red
+}
+
+if (-not $HealthCheckOk) {
+    Write-Host "[Error] Failed to connect to Mock Info Service at http://localhost:8081 after several attempts." -ForegroundColor Red
 }
 
 # 5. Start AI Agent Server in the foreground
