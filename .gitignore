@@ -43,3 +43,13 @@ htmlcov/
 
 #AI
 opencode.json
+
+# Data storage (vector stores, BM25 index, SQLite databases)
+data/chroma/
+data/bm25.pkl
+data/chunks.db
+data/*.db
+data/*.pkl
+
+# Test files
+test_*.py

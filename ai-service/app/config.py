@@ -51,7 +51,22 @@ class Settings(BaseSettings):
     vector_store_type: Literal["pinecone", "weaviate", "qdrant", "chroma"] = "chroma"
     vector_store_url: str = "http://localhost:8001"
     vector_store_api_key: str = ""
-    
+
+    # Embedding configuration
+    embedding_api_key: str = ""
+    embedding_base_url: str = "https://api.shopaikey.com/v1"
+    embedding_model: str = "text-embedding-3-small"
+
+    # Chroma local persistent storage
+    chroma_persist_dir: str = "data/chroma"
+    chroma_collection_name: str = "documents"
+
+    # BM25 pickle index path
+    bm25_index_path: str = "data/bm25.pkl"
+
+    # SQLite metadata store path
+    chunk_db_path: str = "data/chunks.db"
+
     # Ingestion settings for embedding 
     chunk_size: int = 1000
     chunk_overlap: int = 200
