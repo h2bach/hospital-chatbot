@@ -142,7 +142,13 @@ export function MessageThread({
 
   useEffect(() => {
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches
-    bottomRef.current?.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth" })
+    const container = bottomRef.current?.closest(".conversation-scroll")
+    if (container) {
+      container.scrollTo({
+        top: container.scrollHeight,
+        behavior: reduceMotion ? "auto" : "smooth",
+      })
+    }
   }, [messages, sending])
 
   if (loading) {
