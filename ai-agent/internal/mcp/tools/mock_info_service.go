@@ -47,6 +47,24 @@ type SearchInput struct {
 	Query      string `json:"q" jsonschema:"case-insensitive full-text query"`
 }
 
+type KnowledgeSearchInput struct {
+	Query string `json:"q" jsonschema:"question or terms to search in hospital knowledge"`
+}
+
+type FacilityInput struct {
+	FacilityID string `json:"facility_id,omitempty" jsonschema:"optional facility identifier"`
+}
+
+type DoctorScheduleInput struct {
+	DoctorID   string `json:"doctor_id" jsonschema:"doctor identifier"`
+	Date       string `json:"date,omitempty" jsonschema:"schedule date in YYYY-MM-DD format"`
+	FacilityID string `json:"facility_id,omitempty" jsonschema:"optional facility identifier"`
+}
+
+type ServiceInput struct {
+	ServiceID string `json:"service_id" jsonschema:"medical service identifier"`
+}
+
 type AvailableSlotsInput struct {
 	Date       string `json:"date,omitempty" jsonschema:"schedule date in YYYY-MM-DD format"`
 	DoctorID   string `json:"doctor_id,omitempty" jsonschema:"doctor identifier"`
@@ -86,6 +104,17 @@ var (
 	CreateAppointmentTool = mcp_sdk.Tool{Name: "createAppointment", Description: "create a confirmed appointment through mock-info-service"}
 	CancelAppointmentTool = mcp_sdk.Tool{Name: "cancelAppointment", Description: "cancel an appointment and release its slot"}
 	VerifyPatientTool     = mcp_sdk.Tool{Name: "verifyPatient", Description: "verify a patient using patient code and date of birth"}
+	KnowledgeSearchTool   = mcp_sdk.Tool{Name: "searchHospitalKnowledge", Description: "search approved hospital FAQs and knowledge documents"}
+	HospitalInfoTool      = mcp_sdk.Tool{Name: "getHospitalInfo", Description: "get hospital facility information"}
+	HospitalHoursTool     = mcp_sdk.Tool{Name: "getHospitalHours", Description: "get hospital operating hours"}
+	HospitalEmergencyTool = mcp_sdk.Tool{Name: "getEmergencyInfo", Description: "get official hospital emergency instructions"}
+	DoctorsTool           = mcp_sdk.Tool{Name: "listDoctors", Description: "list hospital doctors"}
+	DoctorSchedulesTool   = mcp_sdk.Tool{Name: "getDoctorSchedules", Description: "get schedules for a doctor"}
+	DepartmentsTool       = mcp_sdk.Tool{Name: "listDepartments", Description: "list hospital departments"}
+	ServicesTool          = mcp_sdk.Tool{Name: "listMedicalServices", Description: "list medical services"}
+	ServiceTool           = mcp_sdk.Tool{Name: "getMedicalService", Description: "get details for a medical service"}
+	ServicePricesTool     = mcp_sdk.Tool{Name: "getServicePrices", Description: "get prices for a medical service"}
+	BookingLinksTool      = mcp_sdk.Tool{Name: "getBookingLinks", Description: "get official appointment booking channels"}
 )
 
 func MockInfoHealthHandler(ctx context.Context, _ *mcp_sdk.CallToolRequest, _ EmptyInput) (*mcp_sdk.CallToolResult, APIOutput, error) {
@@ -129,6 +158,65 @@ func DeleteRecordHandler(ctx context.Context, _ *mcp_sdk.CallToolRequest, input 
 func SearchInfoHandler(ctx context.Context, _ *mcp_sdk.CallToolRequest, input SearchInput) (*mcp_sdk.CallToolResult, APIOutput, error) {
 	query := url.Values{"collection": {input.Collection}, "q": {input.Query}}
 	return callMockInfo(ctx, http.MethodGet, "/api/v1/search", query, nil)
+}
+
+func KnowledgeSearchHandler(ctx context.Context, _ *mcp_sdk.CallToolRequest, input KnowledgeSearchInput) (*mcp_sdk.CallToolResult, APIOutput, error) {
+	return callMockInfo(ctx, http.MethodGet, "/api/v1/knowledge/search", url.Values{"q": {input.Query}}, nil)
+}
+
+func HospitalInfoHandler(ctx context.Context, _ *mcp_sdk.CallToolRequest, _ EmptyInput) (*mcp_sdk.CallToolResult, APIOutput, error) {
+	return callMockInfo(ctx, http.MethodGet, "/api/v1/hospital", nil, nil)
+}
+
+func HospitalHoursHandler(ctx context.Context, _ *mcp_sdk.CallToolRequest, input FacilityInput) (*mcp_sdk.CallToolResult, APIOutput, error) {
+	query := url.Values{}
+	if input.FacilityID != "" {
+		query.Set("facility_id", input.FacilityID)
+	}
+	return callMockInfo(ctx, http.MethodGet, "/api/v1/hospital/hours", query, nil)
+}
+
+func HospitalEmergencyHandler(ctx context.Context, _ *mcp_sdk.CallToolRequest, _ EmptyInput) (*mcp_sdk.CallToolResult, APIOutput, error) {
+	return callMockInfo(ctx, http.MethodGet, "/api/v1/hospital/emergency", nil, nil)
+}
+
+func DoctorsHandler(ctx context.Context, _ *mcp_sdk.CallToolRequest, _ EmptyInput) (*mcp_sdk.CallToolResult, APIOutput, error) {
+	return callMockInfo(ctx, http.MethodGet, "/api/v1/doctors", nil, nil)
+}
+
+func DoctorSchedulesHandler(ctx context.Context, _ *mcp_sdk.CallToolRequest, input DoctorScheduleInput) (*mcp_sdk.CallToolResult, APIOutput, error) {
+	query := url.Values{}
+	if input.Date != "" {
+		query.Set("date", input.Date)
+	}
+	if input.FacilityID != "" {
+		query.Set("facility_id", input.FacilityID)
+	}
+	return callMockInfo(ctx, http.MethodGet, "/api/v1/doctors/"+url.PathEscape(input.DoctorID)+"/schedules", query, nil)
+}
+
+func DepartmentsHandler(ctx context.Context, _ *mcp_sdk.CallToolRequest, _ EmptyInput) (*mcp_sdk.CallToolResult, APIOutput, error) {
+	return callMockInfo(ctx, http.MethodGet, "/api/v1/departments", nil, nil)
+}
+
+func ServicesHandler(ctx context.Context, _ *mcp_sdk.CallToolRequest, _ EmptyInput) (*mcp_sdk.CallToolResult, APIOutput, error) {
+	return callMockInfo(ctx, http.MethodGet, "/api/v1/services", nil, nil)
+}
+
+func ServiceHandler(ctx context.Context, _ *mcp_sdk.CallToolRequest, input ServiceInput) (*mcp_sdk.CallToolResult, APIOutput, error) {
+	return callMockInfo(ctx, http.MethodGet, "/api/v1/services/"+url.PathEscape(input.ServiceID), nil, nil)
+}
+
+func ServicePricesHandler(ctx context.Context, _ *mcp_sdk.CallToolRequest, input ServiceInput) (*mcp_sdk.CallToolResult, APIOutput, error) {
+	return callMockInfo(ctx, http.MethodGet, "/api/v1/services/"+url.PathEscape(input.ServiceID)+"/prices", nil, nil)
+}
+
+func BookingLinksHandler(ctx context.Context, _ *mcp_sdk.CallToolRequest, input FacilityInput) (*mcp_sdk.CallToolResult, APIOutput, error) {
+	query := url.Values{}
+	if input.FacilityID != "" {
+		query.Set("facility_id", input.FacilityID)
+	}
+	return callMockInfo(ctx, http.MethodGet, "/api/v1/booking-links", query, nil)
 }
 
 func AvailableSlotsHandler(ctx context.Context, _ *mcp_sdk.CallToolRequest, input AvailableSlotsInput) (*mcp_sdk.CallToolResult, APIOutput, error) {
