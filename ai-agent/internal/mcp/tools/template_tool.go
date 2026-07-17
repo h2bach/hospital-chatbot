@@ -7,26 +7,26 @@ import (
 	mcp_sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
-var ApiTool = mcp_sdk.Tool{
-	Name: "templateApiTool",
+var TemplateTool = mcp_sdk.Tool{
+	Name: "templateTool",
 	Description: "a template api tool",
 }
 
-type ApiToolInput struct {
+type TemplateToolInput struct {
 	Param1 string `json:"param1" jsonschema:"mock param 1"`
 	Param2 string `json:"param2" jsonschema:"mock param 2"`
 }
 
-type ApiToolOutput struct {
+type TemplateToolOutput struct {
 	Output string `json:"output" jsonschema:"a mock output"`
 }
 
-func ApiToolHandler(ctx context.Context, request *mcp_sdk.CallToolRequest, input ApiToolInput) (
+func TemplateToolHandler(ctx context.Context, request *mcp_sdk.CallToolRequest, input TemplateToolInput) (
 	*mcp_sdk.CallToolResult,
-	ApiToolOutput,
+	TemplateToolOutput,
 	error,
 ) {
-	return nil, ApiToolOutput{
+	return nil, TemplateToolOutput{
 		fmt.Sprintf("param1: %s\nparam2:%s", input.Param1, input.Param2),
 	}, nil
 }
