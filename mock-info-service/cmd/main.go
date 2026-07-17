@@ -1,36 +1,21 @@
 package main
 
 import (
-	"mock-info-service/internal/api"
 	"context"
 	"flag"
-	"fmt"
 	"log"
-	"os"
+
+	"mock-info-service/internal/api"
+	"mock-info-service/internal/store"
 )
 
-var (
-	port = flag.String("p", "8080", "The port to connect to host server")
-)
-
-// This binary hosts MCP Server at route '/mcp'
 func main() {
+	port := flag.String("port", "8080", "HTTP port")
+	data := flag.String("data", "../mock-data/output", "Directory containing JSON datasets")
 	flag.Parse()
-	if flag.NArg() > 0 {
-		fmt.Println("Error: Too many arguments")
-		fmt.Printf("Type: '%s -h' for help.\n", os.Args[0])
-		os.Exit(1)
-	} 
-	if flag.NFlag() < 1 { 
-		fmt.Print("Host server at port: ")
-		fmt.Scan(port)
-	}
 
-	ctx := context.Background()
-	server := api.NewServer(
-		ctx,
-		":" + *port,
-	)
-	server.Run(ctx)
+	dataStore, err := store.Load(*data)
+	if err != nil { log.Fatalf("load mock data: %v", err) }
+	server := api.NewServer(":"+*port, dataStore)
+	if err := server.Run(context.Background()); err != nil { log.Fatalf("server: %v", err) }
 }
-
