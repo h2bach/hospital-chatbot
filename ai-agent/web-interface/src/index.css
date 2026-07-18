@@ -1642,6 +1642,48 @@ button:disabled {
   font-size: 11px;
 }
 
+.voice-status-recording,
+.voice-status-transcribing {
+  min-height: 30px;
+  margin-top: 7px;
+  padding: 7px 12px;
+  border: 1px solid var(--emergency-border);
+  border-radius: 10px;
+  background: var(--emergency-soft);
+  color: var(--foreground);
+}
+
+.voice-status-recording strong {
+  color: var(--emergency);
+}
+
+.voice-status-recording small {
+  margin-left: auto;
+  color: var(--subtle-foreground);
+}
+
+.recording-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--emergency);
+  box-shadow: 0 0 0 5px color-mix(in srgb, var(--emergency) 14%, transparent);
+  animation: recording-pulse 1.2s ease-in-out infinite;
+}
+
+.recording-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid color-mix(in srgb, var(--primary) 25%, transparent);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes recording-pulse {
+  50% { opacity: 0.45; transform: scale(0.8); }
+}
+
 .composer-privacy {
   display: flex;
   align-items: center;

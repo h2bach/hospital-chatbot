@@ -2,9 +2,9 @@ import {
   ArrowUp,
   LoaderCircle,
   Mic,
-  MicOff,
   RefreshCw,
   ShieldCheck,
+  Square,
 } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 import { transcribeAudio } from "../lib/api"
@@ -69,7 +69,10 @@ export function Composer({
   const chunksRef = useRef<Blob[]>([])
   const [speechSupported] = useState(() => typeof MediaRecorder !== "undefined" && Boolean(navigator.mediaDevices?.getUserMedia))
   const [listening, setListening] = useState(false)
+  const [transcribing, setTranscribing] = useState(false)
+  const [recordingSeconds, setRecordingSeconds] = useState(0)
   const [voiceError, setVoiceError] = useState<string | null>(null)
+  const recordingStartedAtRef = useRef<number | null>(null)
 
   useEffect(() => {
     const textarea = textareaRef.current
@@ -83,6 +86,16 @@ export function Composer({
   useEffect(() => {
     if (sending && recorderRef.current) recorderRef.current.stop()
   }, [sending])
+
+  useEffect(() => {
+    if (!listening) return
+    const timer = window.setInterval(() => {
+      if (recordingStartedAtRef.current !== null) {
+        setRecordingSeconds(Math.floor((Date.now() - recordingStartedAtRef.current) / 1000))
+      }
+    }, 250)
+    return () => window.clearInterval(timer)
+  }, [listening])
 
   useEffect(
     () => () => {
@@ -123,20 +136,27 @@ export function Composer({
       recorder.onstop = async () => {
         stream.getTracks().forEach((track) => track.stop())
         recorderRef.current = null
+        recordingStartedAtRef.current = null
         setListening(false)
+        setTranscribing(true)
         try {
           const wav = await convertToWav(new Blob(chunksRef.current, { type: mimeType }))
           const transcript = await transcribeAudio(wav)
           if (transcript) onChange([value.trim(), transcript].filter(Boolean).join(" "))
         } catch (error) {
           setVoiceError(error instanceof Error ? error.message : "Chưa nhận dạng được giọng nói.")
+        } finally {
+          setTranscribing(false)
         }
       }
       recorderRef.current = recorder
+      recordingStartedAtRef.current = Date.now()
+      setRecordingSeconds(0)
       setListening(true)
       recorder.start()
     } catch {
       setListening(false)
+      setTranscribing(false)
       setVoiceError("Không thể truy cập microphone. Anh/Chị vui lòng cấp quyền rồi thử lại.")
     }
   }
@@ -155,7 +175,7 @@ export function Composer({
           </button>
         </div>
       ) : null}
-      <div className={`composer${listening ? " is-listening" : ""}`}>
+      <div className={`composer${listening ? " is-listening" : ""}${transcribing ? " is-transcribing" : ""}`}>
         <label htmlFor="message-composer" className="sr-only">
           Câu hỏi gửi tới Trợ lý AI Bệnh viện Tim Hà Nội
         </label>
@@ -181,13 +201,13 @@ export function Composer({
             <button
               type="button"
               className="voice-button"
-              aria-label={listening ? "Dừng nhập bằng giọng nói" : "Nhập bằng giọng nói"}
+              aria-label={listening ? "Dừng ghi âm" : "Nhập bằng giọng nói"}
               aria-pressed={listening}
-              title={listening ? "Dừng nghe" : "Nhập bằng giọng nói"}
-              disabled={sending}
+              title={listening ? "Dừng ghi âm" : "Nhập bằng giọng nói"}
+              disabled={sending || transcribing}
               onClick={toggleVoiceInput}
             >
-              {listening ? <MicOff aria-hidden="true" /> : <Mic aria-hidden="true" />}
+              {listening ? <Square aria-hidden="true" /> : <Mic aria-hidden="true" />}
             </button>
           ) : null}
           <button
@@ -206,10 +226,17 @@ export function Composer({
         </div>
       </div>
       {listening ? (
-        <p className="voice-status" role="status">
-          <span aria-hidden="true" />
-          Đang nghe tiếng Việt…
-        </p>
+        <div className="voice-status voice-status-recording" role="status">
+          <span className="recording-dot" aria-hidden="true" />
+          <strong>Đang ghi âm</strong>
+          <span>{String(Math.floor(recordingSeconds / 60)).padStart(2, "0")}:{String(recordingSeconds % 60).padStart(2, "0")}</span>
+          <small>Nhấn nút vuông để dừng</small>
+        </div>
+      ) : transcribing ? (
+        <div className="voice-status voice-status-transcribing" role="status">
+          <span className="recording-spinner" aria-hidden="true" />
+          <span>Đang chuyển giọng nói thành văn bản…</span>
+        </div>
       ) : voiceError ? (
         <p className="voice-error" role="status">
           {voiceError}
