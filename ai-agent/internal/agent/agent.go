@@ -8,13 +8,13 @@ import (
 )
 
 type Agent struct {
-	LLM 		LLMClient
-	MCPClient 	*mcp.MCPClient
+	LLM       LLMClient
+	MCPClient *mcp.MCPClient
 }
 
 func NewAgent(llm LLMClient, mcpClient *mcp.MCPClient) *Agent {
 	return &Agent{
-		LLM: llm,
+		LLM:       llm,
 		MCPClient: mcpClient,
 	}
 }
@@ -22,17 +22,13 @@ func NewAgent(llm LLMClient, mcpClient *mcp.MCPClient) *Agent {
 func (a *Agent) Call(ctx context.Context, input string, agentContext *domain.Context) (string, error) {
 	tools, _ := a.MCPClient.Tools(ctx)
 	agentContext.Tools = tools
-	// System prompt
-	if len(agentContext.Messages) == 0 {
-		agentContext.Messages = append(agentContext.Messages, domain.Message{
-			Role: domain.SystemRole,	
-			Content: INITIAL_SYSTEM_PROMPT,
-		})
-		
-	}
+	// Keep exactly one system prompt, derived from the role currently attached to
+	// this context. This also updates an existing session when its role changes.
+	syncSystemPrompt(agentContext)
+
 	// User initial input
 	agentContext.Messages = append(agentContext.Messages, domain.Message{
-		Role: domain.UserRole,
+		Role:    domain.UserRole,
 		Content: input,
 	})
 
@@ -46,7 +42,7 @@ func (a *Agent) Call(ctx context.Context, input string, agentContext *domain.Con
 		if IsToolCall(chatOutput) {
 			toolOutput, err := a.MCPClient.CallTool(ctx, chatOutput.ToolName, chatOutput.Args)
 			agentContext.Messages = append(agentContext.Messages, domain.Message{
-				Role: domain.AgentRole,
+				Role:    domain.AgentRole,
 				Content: fmt.Sprintf("Tool Call: %s\nArgs: %s", chatOutput.ToolName, chatOutput.Args),
 			})
 			toolMessage := domain.Message{
@@ -63,7 +59,7 @@ func (a *Agent) Call(ctx context.Context, input string, agentContext *domain.Con
 
 		if IsText(chatOutput) {
 			agentContext.Messages = append(agentContext.Messages, domain.Message{
-				Role: domain.AgentRole,
+				Role:    domain.AgentRole,
 				Content: chatOutput.Text,
 			})
 			return chatOutput.Text, nil
@@ -71,3 +67,46 @@ func (a *Agent) Call(ctx context.Context, input string, agentContext *domain.Con
 	}
 }
 
+// syncSystemPrompt makes the role-specific prompt authoritative for every LLM
+// call. Sessions are persisted between requests, so only adding the prompt
+// when the context is empty would leave a stale prompt after a role switch.
+func syncSystemPrompt(agentContext *domain.Context) {
+	systemPrompt := GetSystemPromptForRole(agentContext.UserRole)
+	messages := make([]domain.Message, 0, len(agentContext.Messages)+1)
+	foundSystem := false
+
+	for _, message := range agentContext.Messages {
+		if message.Role == domain.SystemRole {
+			if foundSystem {
+				// A context should have one system prompt. Drop stale duplicates
+				// that could otherwise override or confuse the active prompt.
+				continue
+			}
+			message.Content = systemPrompt
+			foundSystem = true
+		}
+		messages = append(messages, message)
+	}
+
+	if !foundSystem {
+		messages = append([]domain.Message{{
+			Role:    domain.SystemRole,
+			Content: systemPrompt,
+		}}, messages...)
+	} else if messages[0].Role != domain.SystemRole {
+		// Keep the system instruction first for providers that use message order
+		// when constructing the conversation.
+		for i, message := range messages {
+			if message.Role == domain.SystemRole {
+				reordered := make([]domain.Message, 0, len(messages))
+				reordered = append(reordered, message)
+				reordered = append(reordered, messages[:i]...)
+				reordered = append(reordered, messages[i+1:]...)
+				messages = reordered
+				break
+			}
+		}
+	}
+
+	agentContext.Messages = messages
+}

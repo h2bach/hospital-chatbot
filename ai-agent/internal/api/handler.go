@@ -76,6 +76,18 @@ func (svr *Server) PostMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Extract user role from request headers or query parameters
+	role := r.Header.Get("X-User-Role")
+	if role == "" {
+		role = r.Header.Get("X-Role")
+	}
+	if role == "" {
+		role = r.URL.Query().Get("role")
+	}
+	if role != "" {
+		session.Context.UserRole = role
+	}
+
 	agentResponse, err := svr.agent.Call(r.Context(), req.Message, &session.Context)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -105,6 +117,21 @@ func (svr *Server) PostNewSession(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
+	}
+
+	// Extract user role from request headers or query parameters
+	role := r.Header.Get("X-User-Role")
+	if role == "" {
+		role = r.Header.Get("X-Role")
+	}
+	if role == "" {
+		role = r.URL.Query().Get("role")
+	}
+	if role != "" {
+		if session, err := svr.sessionStore.GetByID(sessionID); err == nil {
+			session.Context.UserRole = role
+			_ = svr.sessionStore.Save(session)
+		}
 	}
 
 	resp := dto.NewPostNewSessionResponse(sessionID)

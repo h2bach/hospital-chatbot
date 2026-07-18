@@ -21,6 +21,7 @@ type Message struct {
 type Context struct {
 	Messages []Message
 	Tools []mcp_sdk.Tool
+	UserRole string `json:"user_role,omitempty"`
 }
 
 type Session struct {

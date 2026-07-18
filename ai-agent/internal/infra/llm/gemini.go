@@ -53,7 +53,7 @@ func (client *GeminiClient) Chat(ctx context.Context, agentContext domain.Contex
 
 	chatResult, err := client.genAIClient.Models.GenerateContent(
 		ctx,
-		"gemini-3.1-flash-lite",
+		"gemini-3.5-flash",
 		contents,
 		&genai.GenerateContentConfig{
 			Tools: toolListAdapter(agentContext.Tools),
