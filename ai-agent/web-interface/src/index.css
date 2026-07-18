@@ -2384,25 +2384,33 @@ button:disabled {
 }
 
 @media (max-width: 480px) {
-  /* Topbar optimized for iPhone SE 375px & small viewports */
+  /* Topbar ultra-compact for small viewports */
   .workspace-header {
-    min-height: 48px;
-    padding: 6px 10px;
-    gap: 6px;
+    min-height: 42px;
+    padding: 4px 8px;
+    gap: 4px;
   }
 
   .header-leading,
   .header-actions {
-    gap: 5px;
+    gap: 4px;
   }
 
   .mobile-menu-button,
   .icon-button,
   .emergency-button {
-    width: 35px;
-    min-width: 35px;
-    height: 35px;
+    width: 32px;
+    min-width: 32px;
+    height: 32px;
     padding: 0;
+    border-radius: 8px;
+  }
+
+  .mobile-menu-button svg,
+  .icon-button svg,
+  .emergency-button svg {
+    width: 15px;
+    height: 15px;
   }
 
   .emergency-button span,
@@ -2412,167 +2420,178 @@ button:disabled {
     display: none;
   }
 
-  /* Chat Thread & Compact Bubbles */
+  /* Chat Thread & Ultra-Compact Bubbles */
   .thread {
-    padding: 14px 10px 24px;
+    padding: 10px 8px 18px;
   }
 
   .message {
-    gap: 8px;
+    gap: 6px;
   }
 
   .message-avatar {
-    width: 32px;
-    height: 32px;
-    border-radius: 10px;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
   }
 
   .message-avatar svg {
-    width: 16px;
-    height: 16px;
+    width: 14px;
+    height: 14px;
   }
 
   .message-body {
-    padding: 10px 12px;
-    border-radius: 6px 14px 14px 14px;
-    font-size: 13.5px;
-    line-height: 1.55;
+    padding: 8px 10px;
+    border-radius: 5px 12px 12px 12px;
+    font-size: 13px;
+    line-height: 1.5;
   }
 
   .message-user .message-body {
-    border-radius: 14px 6px 14px 14px;
+    border-radius: 12px 5px 12px 12px;
     max-width: 82%;
   }
 
   .message-assistant .message-body {
     width: auto;
-    margin-right: 14px;
-    max-width: calc(100% - 50px);
+    margin-right: 10px;
+    max-width: calc(100% - 42px);
   }
 
-  /* Welcome Screen & Suggestions for 667px Height */
+  /* Welcome Screen & Suggestions */
   .welcome {
-    padding: 16px 10px 24px;
+    padding: 12px 6px 18px;
   }
 
   .welcome-brand {
-    width: 120px;
-    min-height: 68px;
-    padding: 6px 10px;
-    border-radius: 14px;
+    width: 95px;
+    min-height: 54px;
+    padding: 4px 6px;
+    border-radius: 10px;
   }
 
   .welcome h2 {
-    font-size: 21px;
-    line-height: 1.22;
-    margin-top: 8px;
-  }
-
-  .welcome-copy {
-    font-size: 13.5px;
+    font-size: 18px;
+    line-height: 1.2;
     margin-top: 6px;
   }
 
+  .welcome-copy {
+    font-size: 12.5px;
+    margin-top: 4px;
+  }
+
   .welcome-trust-note {
-    margin-top: 10px;
-    padding: 9px 11px;
-    gap: 8px;
-    font-size: 12px;
+    margin-top: 8px;
+    padding: 7px 9px;
+    gap: 6px;
+    font-size: 11px;
+    border-radius: 10px;
   }
 
   .welcome-trust-note > svg {
-    width: 18px;
-    height: 18px;
-  }
-
-  .suggestion-heading {
-    margin-top: 14px;
-  }
-
-  .suggestion-heading h3 {
-    font-size: 14px;
-  }
-
-  .suggestion-grid {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 7px;
-    margin-top: 8px;
-  }
-
-  .suggestion-card {
-    min-height: auto;
-    padding: 9px 11px;
-    gap: 9px;
-    border-radius: 12px;
-  }
-
-  .suggestion-icon {
-    width: 32px;
-    height: 32px;
-    border-radius: 9px;
-  }
-
-  .suggestion-icon svg {
     width: 16px;
     height: 16px;
   }
 
-  .suggestion-card strong {
+  .suggestion-heading {
+    margin-top: 10px;
+  }
+
+  .suggestion-heading h3 {
     font-size: 13px;
   }
 
-  .suggestion-card p {
-    font-size: 11.5px;
+  .suggestion-heading p {
+    font-size: 11px;
   }
 
-  /* Input Composer for iPhone SE */
+  .suggestion-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 6px;
+    margin-top: 6px;
+  }
+
+  .suggestion-card {
+    min-height: auto;
+    padding: 7px 9px;
+    gap: 7px;
+    border-radius: 10px;
+  }
+
+  .suggestion-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+  }
+
+  .suggestion-icon svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .suggestion-card strong {
+    font-size: 12px;
+  }
+
+  .suggestion-card p {
+    font-size: 11px;
+  }
+
+  /* Input Composer */
   .composer-wrap {
-    padding: 8px 10px max(8px, env(safe-area-inset-bottom));
+    padding: 6px 8px max(6px, env(safe-area-inset-bottom));
   }
 
   .composer {
-    min-height: 46px;
-    padding: 4px 5px;
-    border-radius: 14px;
+    min-height: 40px;
+    padding: 3px 4px;
+    border-radius: 12px;
   }
 
   .composer textarea {
-    font-size: 14.5px;
-    padding-left: 5px;
+    font-size: 13.5px;
+    padding-left: 4px;
   }
 
   .voice-button,
   .send-button {
-    width: 36px;
-    height: 36px;
-    border-radius: 10px;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+  }
+
+  .voice-button svg,
+  .send-button svg {
+    width: 15px;
+    height: 15px;
   }
 
   .composer-privacy {
-    font-size: 10px;
+    font-size: 9.5px;
   }
 }
 
 @media (max-width: 360px) {
   .workspace-header {
-    padding: 5px 6px;
+    padding: 3px 5px;
   }
 
   .mobile-menu-button,
   .icon-button,
   .emergency-button {
-    width: 33px;
-    min-width: 33px;
-    height: 33px;
+    width: 30px;
+    min-width: 30px;
+    height: 30px;
   }
 
   .thread {
-    padding: 10px 6px 20px;
+    padding: 8px 4px 16px;
   }
 
   .message-assistant .message-body {
-    margin-right: 10px;
-    max-width: calc(100% - 44px);
+    margin-right: 8px;
+    max-width: calc(100% - 38px);
   }
 
   .message-user .message-body {
@@ -2580,7 +2599,7 @@ button:disabled {
   }
 
   .composer-wrap {
-    padding: 6px 6px max(6px, env(safe-area-inset-bottom));
+    padding: 5px 5px max(5px, env(safe-area-inset-bottom));
   }
 }
 
