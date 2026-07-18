@@ -268,6 +268,21 @@ export function App() {
 
   async function handleCreateSession() {
     if (creating) return null
+
+    // Reuse currently active session if it has no messages yet
+    if (activeSession && activeSession.messages.length === 0) {
+      setMobileSidebarOpen(false)
+      return activeSession.id
+    }
+
+    // Reuse any existing session without a title / messages
+    const emptySession = sessions.find((session) => !session.title.trim())
+    if (emptySession) {
+      setSelectedId(emptySession.id)
+      setMobileSidebarOpen(false)
+      return emptySession.id
+    }
+
     setCreating(true)
     setActionError(null)
     try {
