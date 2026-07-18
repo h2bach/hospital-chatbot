@@ -1644,6 +1644,9 @@ button:disabled {
 
 .voice-status-recording,
 .voice-status-transcribing {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
   min-height: 30px;
   margin-top: 7px;
   padding: 7px 12px;
@@ -1709,12 +1712,31 @@ button:disabled {
   font-weight: 650;
 }
 
-.voice-status > span {
+.voice-status > .recording-dot {
+	flex: 0 0 auto;
   width: 8px;
   height: 8px;
   border-radius: 50%;
   background: var(--emergency);
   animation: pulse 1.25s ease-in-out infinite;
+}
+
+.voice-status-recording > span:not(.recording-dot),
+.voice-status-recording > small {
+  width: auto;
+  height: auto;
+}
+
+.voice-status-transcribing > span {
+  width: auto;
+  height: auto;
+}
+
+@media (max-width: 480px) {
+  .voice-status-recording small {
+    flex-basis: 100%;
+    margin-left: 23px;
+  }
 }
 
 .composer-error {
