@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { normalizeSession, normalizeSessionList, sendMessage } from "./api"
+import { normalizeSession, normalizeSessionList, sendMessage, sendMessageStream } from "./api"
 
 afterEach(() => {
   vi.restoreAllMocks()
@@ -75,7 +75,7 @@ describe("sendMessage", () => {
 
     await expect(
       sendMessage("session-1", "Lịch bác sĩ tuần này", "GUEST"),
-    ).resolves.toBe("Đã nhận yêu cầu.")
+    ).resolves.toEqual({ answer: "Đã nhận yêu cầu.", suggestions: [] })
 
     expect(fetchMock).toHaveBeenCalledWith(
       "/c/session-1",
@@ -105,5 +105,62 @@ describe("sendMessage", () => {
       }),
     )
   })
+
+  it("normalizes at most five verified approximate choices", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue({
+      ok: true,
+      status: 200,
+      text: async () => JSON.stringify({
+        response: "Có phải ý của bạn là...",
+        suggestions: [
+          { id: "E1", label: "SPECT/CT Tetrofosmin", value: "Mã 19.0069.1829", similarity: 0.95 },
+          { id: "E2", label: "Ứng viên yếu", value: "Không chọn", similarity: 0.79 },
+        ],
+      }),
+    } as Response)
+
+    await expect(sendMessage("session-3", "Terofomin")).resolves.toEqual({
+      answer: "Có phải ý của bạn là...",
+      suggestions: [{
+        id: "E1",
+        label: "SPECT/CT Tetrofosmin",
+        value: "Mã 19.0069.1829",
+        similarity: 0.95,
+      }],
+    })
+  })
 })
 
+describe("sendMessageStream", () => {
+  it("parses ordered status, verified deltas, suggestions and completion", async () => {
+    const encoded = new TextEncoder().encode([
+      'event: status\ndata: {"phase":"planning","label":"Đang phân tích"}\n\n',
+      'event: delta\ndata: {"text":"Câu trả "}\n\n',
+      'event: delta\ndata: {"text":"lời đã duyệt."}\n\n',
+      'event: suggestions\ndata: {"items":[{"id":"E1","label":"SPECT/CT","value":"19.0069.1829","similarity":0.95}]}\n\n',
+      'event: complete\ndata: {"response":"Câu trả lời đã duyệt.","suggestions":[{"id":"E1","label":"SPECT/CT","value":"19.0069.1829","similarity":0.95}]}\n\n',
+    ].join(""))
+    vi.spyOn(globalThis, "fetch").mockResolvedValue({
+      ok: true,
+      status: 200,
+      body: new ReadableStream({
+        start(controller) {
+          controller.enqueue(encoded)
+          controller.close()
+        },
+      }),
+    } as Response)
+    const statuses: string[] = []
+    const deltas: string[] = []
+
+    await expect(sendMessageStream("session-4", "Câu hỏi", {
+      onStatus: ({ label }) => statuses.push(label),
+      onDelta: (text) => deltas.push(text),
+    })).resolves.toEqual({
+      answer: "Câu trả lời đã duyệt.",
+      suggestions: [{ id: "E1", label: "SPECT/CT", value: "19.0069.1829", similarity: 0.95 }],
+    })
+    expect(statuses).toEqual(["Đang phân tích"])
+    expect(deltas.join("")).toBe("Câu trả lời đã duyệt.")
+  })
+})

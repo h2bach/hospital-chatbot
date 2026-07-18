@@ -18,9 +18,11 @@ interface MessageThreadProps {
   messages: ChatMessage[]
   loading: boolean
   sending: boolean
+  processingStatus: string
   error: string | null
   onRetry: () => void
   onSuggestion: (prompt: string) => void
+  onChoice: (value: string) => void
 }
 
 const suggestions = [
@@ -79,7 +81,15 @@ function speakResponse(content: string) {
   window.speechSynthesis.speak(utterance)
 }
 
-function MessageItem({ message }: { message: ChatMessage }) {
+function MessageItem({
+  message,
+  onChoice,
+  disabled,
+}: {
+  message: ChatMessage
+  onChoice: (value: string) => void
+  disabled: boolean
+}) {
   const { label, Icon } = roleDetails(message.role)
   const roleClass = message.role.toLowerCase()
   const canSpeak = message.role === "Assistant" && "speechSynthesis" in window
@@ -119,6 +129,25 @@ function MessageItem({ message }: { message: ChatMessage }) {
             {message.content || "Chưa có nội dung phản hồi."}
           </ReactMarkdown>
         </div>
+        {message.role === "Assistant" && message.suggestions?.length ? (
+          <div className="clarification-options" aria-label="Các kết quả gần đúng từ kho dữ liệu">
+            {message.suggestions.slice(0, 5).map((suggestion, index) => (
+              <button
+                type="button"
+                className="clarification-option"
+                key={suggestion.id || `${suggestion.label}-${index}`}
+                disabled={disabled}
+                onClick={() => onChoice(suggestion.value)}
+              >
+                <span className="clarification-rank">{index + 1}</span>
+                <span className="clarification-label">{suggestion.label}</span>
+                <span className="clarification-score">
+                  {Math.round(suggestion.similarity * 100)}%
+                </span>
+              </button>
+            ))}
+          </div>
+        ) : null}
       </div>
     </article>
   )
@@ -128,9 +157,11 @@ export function MessageThread({
   messages,
   loading,
   sending,
+  processingStatus,
   error,
   onRetry,
   onSuggestion,
+  onChoice,
 }: MessageThreadProps) {
   const bottomRef = useRef<HTMLDivElement>(null)
   const visibleMessages = messages.filter(
@@ -229,9 +260,11 @@ export function MessageThread({
         <MessageItem
           key={`${message.role}-${index}-${message.content.slice(0, 24)}`}
           message={message}
+          onChoice={onChoice}
+          disabled={sending}
         />
       ))}
-      {sending ? (
+      {sending && visibleMessages.at(-1)?.role !== "Assistant" ? (
         <div className="message message-assistant message-thinking">
           <div className="message-avatar" aria-hidden="true">
             <HeartPulse />
@@ -242,7 +275,7 @@ export function MessageThread({
             </div>
             <div className="thinking-indicator">
               <LoaderCircle className="spin" aria-hidden="true" />
-              <span>Đang tìm thông tin phù hợp…</span>
+              <span>{processingStatus}</span>
             </div>
           </div>
         </div>

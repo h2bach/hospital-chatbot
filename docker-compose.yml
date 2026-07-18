@@ -1,12 +1,26 @@
 services:
+  rag-demo:
+    build:
+      context: .
+      dockerfile: rag-core/Dockerfile.demo
+    expose:
+      - "6689"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:6689/health', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   hospital-info-service:
     build:
       context: ./hospital-info-service
     command: ["--port", "8080", "--data", "/app/data"]
     volumes:
       - ./hospital-data:/app/data:ro
-    ports:
-      - "8081:8080"
+    expose:
+      - "8080"
+    restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:8080/health"]
       interval: 5s
@@ -19,11 +33,23 @@ services:
     env_file:
       - .env
     environment:
-      PORT: "8080"
+      PORT: "6689"
       AGENT_STATIC_DIR: /app/static
+      LLM_PROVIDERS: fpt
+      RAG_SERVICE_URL: http://rag-demo:6689
+      MCP_SERVICE_URL: http://127.0.0.1:6689/mcp
       HOSPITAL_INFO_SERVICE_URL: http://hospital-info-service:8080
+      ORCHESTRATOR_MODE: unified
     depends_on:
+      rag-demo:
+        condition: service_healthy
       hospital-info-service:
         condition: service_healthy
     ports:
-      - "8080:8080"
+      - "6689:6689"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:6689/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10

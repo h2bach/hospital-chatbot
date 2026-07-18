@@ -35,6 +35,7 @@ func roleToolNames(role domain.AccessRole) map[string]bool {
 		"listHospitalRooms", "searchHanoiHeartDoctors", "getHanoiHeartDoctor",
 		"listCurrentDoctorSchedule", "getDoctorAvailability", "getSchedulingRules",
 		"getObservedAssignmentPatterns", "getScheduleDataDictionary", "getScheduleSourceRegistry",
+		"searchHospitalKnowledge", "expandHospitalKnowledgeContext", "getHospitalKnowledgeCatalog",
 	} {
 		public[name] = true
 	}

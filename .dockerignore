@@ -1,1 +1,12 @@
+.git/
+.env
+.env.*
+!.env.example
+**/.venv/
+**/__pycache__/
+**/.pytest_cache/
+**/node_modules/
+**/*.pyc
+rag-core/artifacts/
+rag_deploy_reports/
 ai-agent/web-interface/

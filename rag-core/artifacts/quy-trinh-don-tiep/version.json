@@ -1,0 +1,15 @@
+{
+  "version_id": "ver_69d391bfca4dc3a5dac6",
+  "document_id": "doc_qt_25_01",
+  "version_number": 7,
+  "status": "published",
+  "issued_date": "2024-12-05",
+  "effective_from": "2024-12-05",
+  "effective_to": null,
+  "supersedes_version_id": null,
+  "parser_version": "parser-0.1.0",
+  "chunker_version": "chunker-0.1.0",
+  "embedding_model": "BAAI/bge-m3",
+  "content_hash": "sha256:b9623b38904d0905bcaac7d7476223a550feaaccae1d9ef4a347f9d5870dccfb",
+  "ingested_at": "2026-07-18T05:51:17.885682+00:00"
+}

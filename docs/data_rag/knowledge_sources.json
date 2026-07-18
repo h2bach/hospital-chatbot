@@ -1,0 +1,38 @@
+[
+  {
+    "source_id": "src_qt_25_01",
+    "document_id": "doc_qt_25_01",
+    "title": "Quy trình đón tiếp bệnh nhân và khám chữa bệnh ngoại trú tại Khu Tự nguyện 1 Cơ sở 1",
+    "content_type": "procedure",
+    "version": "QT.25.01-2024-12-05",
+    "effective_at": "2024-12-05",
+    "approved_by": "Bệnh viện Tim Hà Nội",
+    "reviewed_at": "2026-07-18",
+    "review_due_at": "2027-07-18",
+    "status": "published"
+  },
+  {
+    "source_id": "src_gia_dvbv_tim_hn",
+    "document_id": "doc_gia_dvbv_tim_hn",
+    "title": "Bảng giá dịch vụ kỹ thuật Bệnh viện Tim Hà Nội",
+    "content_type": "price",
+    "version": "NQ45-2024",
+    "effective_at": "2024",
+    "approved_by": "Nguồn công khai Bệnh viện Tim Hà Nội",
+    "reviewed_at": "2026-07-18",
+    "review_due_at": "2027-01-18",
+    "status": "published"
+  },
+  {
+    "source_id": "src_bhyt_benh_vien_tim_hn_2026_07_18",
+    "document_id": "doc_bhyt_benh_vien_tim_hn",
+    "title": "Dữ liệu RAG về BHYT, quyền lợi và chi phí tại Bệnh viện Tim Hà Nội",
+    "content_type": "policy_price_reference",
+    "version": "bhyt_benh_vien_tim_ha_noi_rag_2026_07_18",
+    "effective_at": "2026-07-18",
+    "approved_by": "Nguồn pháp lý chính thức được đối chiếu trong từng knowledge chunk",
+    "reviewed_at": "2026-07-18",
+    "review_due_at": "2026-08-15",
+    "status": "published"
+  }
+]
