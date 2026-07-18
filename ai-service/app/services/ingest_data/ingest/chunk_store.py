@@ -133,7 +133,7 @@ class ChunkStore:
 
     Usage::
 
-        store = ChunkStore(db_path="data/chunks.db")
+        store = ChunkStore(db_path="type1_data/chunks.db")
         store.save_document(doc_record)
         store.save_chunks(chunk_records)
 
@@ -262,6 +262,21 @@ class ChunkStore:
                 (document_id,),
             ).fetchall()
         return [self._row_to_chunk(r) for r in rows]
+
+    def get_document(self, document_id: str) -> Optional[DocumentRecord]:
+        """Fetch a single document by its id. Returns None if not found."""
+        with self._connect() as conn:
+            row = conn.execute(
+                "SELECT * FROM documents WHERE document_id = ?", (document_id,)
+            ).fetchone()
+        if row:
+            return DocumentRecord(
+                document_id=row["document_id"],
+                source=row["source"],
+                title=row["title"],
+                created_at=row["created_at"],
+            )
+        return None
 
     def delete_document(self, document_id: str) -> None:
         """Remove a document and all its chunks."""

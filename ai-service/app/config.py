@@ -94,14 +94,14 @@ class Settings(BaseSettings):
     vector_store_api_key: str = ""
 
     # Chroma (local persistent, default backend)
-    chroma_persist_dir: str = "data/chroma"
+    chroma_persist_dir: str = "type1_data/chroma"
     chroma_collection_name: str = "documents"
 
     # BM25 keyword index
-    bm25_index_path: str = "data/bm25.pkl"
+    bm25_index_path: str = "type1_data/bm25.pkl"
 
     # SQLite chunk metadata store
-    chunk_db_path: str = "data/chunks.db"
+    chunk_db_path: str = "type1_data/chunks.db"
 
     # Embedding
     embedding_api_key: str = ""

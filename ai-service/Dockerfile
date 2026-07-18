@@ -36,8 +36,8 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 COPY . .
 
 # Create data directory for persistent storage
-RUN mkdir -p data/chroma data && \
-    chmod -R 755 data
+RUN mkdir -p type1_data/chroma type1_data && \
+    chmod -R 755 type1_data
 
 # Expose port
 EXPOSE 8000

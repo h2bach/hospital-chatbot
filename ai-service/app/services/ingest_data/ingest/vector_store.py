@@ -40,7 +40,7 @@ class ChromaVectorStore(BaseVectorStore):
 
         from chromadb.utils.embedding_functions import OpenAIEmbeddingFunction
         store = ChromaVectorStore(
-            persist_directory="data/chroma",
+            persist_directory="type1_data/chroma",
             collection_name="documents",
             embedding_function=OpenAIEmbeddingFunction(api_key="..."),
         )

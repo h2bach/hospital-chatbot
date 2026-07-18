@@ -126,6 +126,7 @@ async def _retrieve_node(state: Type1State, settings: Settings) -> dict:
                 "heading_path": chunk.heading_path,
                 "page_start": chunk.page_start,
                 "page_end": chunk.page_end,
+                "text": chunk.text,  # Include text for content preview in API response
             })
 
         latency = time.perf_counter() - start

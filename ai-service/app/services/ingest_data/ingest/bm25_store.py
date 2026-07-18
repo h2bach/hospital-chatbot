@@ -58,7 +58,7 @@ class RankBM25Store(BaseBM25Store):
 
     Usage::
 
-        store = RankBM25Store(index_path="data/bm25.pkl")
+        store = RankBM25Store(index_path="type1_data/bm25.pkl")
         store.load()               # load existing index (no-op on first run)
         store.add(chunks)
         store.save()

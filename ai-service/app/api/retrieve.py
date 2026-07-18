@@ -45,6 +45,8 @@ async def retrieve(
         4. Merge aggregates all branch results
         5. Planner decides to finish or replan
         6. Synthesizer produces the final answer
+        
+    Returns comprehensive citation metadata for transparency and trust.
     """
     result = await agent.invoke(
         message=request.query,
@@ -55,9 +57,12 @@ async def retrieve(
     return RetrieveResponse(
         query=request.query,
         answer=result["answer"],
+        citations=result.get("citations", []),
+        source_documents=result.get("source_documents", []),
         trace_id=result["trace_id"],
         iterations=result["iterations"],
         result_count=result["result_count"],
         error_count=result["error_count"],
+        confidence=result.get("confidence", "medium"),
         latency_ms=result["latency_ms"],
     )

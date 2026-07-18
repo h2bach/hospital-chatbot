@@ -71,7 +71,7 @@ EMBEDDING_MODEL=text-embedding-3-small
 
 # === Vector Store ===
 VECTOR_STORE_TYPE=chroma
-CHROMA_PERSIST_DIR=data/chroma
+CHROMA_PERSIST_DIR=type1_data/chroma
 CHROMA_COLLECTION_NAME=documents
 
 # === Server ===
@@ -170,7 +170,7 @@ pytest tests/
 - Chạy `POST /ingest` trước khi dùng `POST /retrieve`
 
 **Lỗi kết nối Chroma**
-- Xóa thư mục `data/chroma/` và restart service
+- Xóa thư mục `type1_data/chroma/` và restart service
 - Chroma sẽ tự tạo lại database mới
 
 ---
@@ -253,12 +253,67 @@ Chạy pipeline RAG đầy đủ: phân tích query → tìm kiếm vector store
 
 ```json
 {
-  "query": "Chính sách làm việc từ xa của công ty là gì?",
-  "answer": "Theo chính sách hiện tại, nhân viên được phép làm việc từ xa tối đa 3 ngày/tuần với điều kiện đã hoàn thành thử việc và có thiết bị làm việc đầy đủ.",
+  "query": "Quy trình đăng ký khám bệnh ngoại trú như thế nào?",
+  "answer": "Quy trình đăng ký khám bệnh ngoại trú tại bệnh viện bao gồm các bước sau:\n\n1. **Đăng ký tiếp nhận**: Bệnh nhân mang theo CMND/CCCD và thẻ BHYT (nếu có) đến quầy đăng ký tầng 1 [1].\n\n2. **Khám sơ bộ**: Sau khi đăng ký, bệnh nhân được khám sơ bộ và phân loại theo mức độ cấp thiết [2].\n\n3. **Thanh toán**: Sau khi khám xong, bệnh nhân thanh toán viện phí tại quầy thu ngân [3].\n\n## Nguồn tham khảo\n\n[1] Quy trình đăng ký tiếp nhận bệnh nhân, trang 5-7\n[2] Hướng dẫn khám bệnh ngoại trú, trang 8\n[3] Chính sách thanh toán, trang 12",
+  "citations": [
+    {
+      "citation_number": 1,
+      "chunk_id": "doc_abc123_chunk_0001",
+      "document_id": "doc_abc123",
+      "document_title": "Quy trình khám bệnh ngoại trú",
+      "section": "Đăng ký tiếp nhận",
+      "heading_path": ["Quy trình khám bệnh", "Đăng ký", "Bước 1: Tiếp nhận"],
+      "page_start": 5,
+      "page_end": 7,
+      "relevance_score": null,
+      "content_preview": "Để đăng ký khám bệnh, bệnh nhân cần mang theo CMND/CCCD và thẻ BHYT (nếu có). Quầy đăng ký nằm ở tầng 1, khu vực A. Thời gian làm việc từ 7h00 đến 16h30..."
+    },
+    {
+      "citation_number": 2,
+      "chunk_id": "doc_abc123_chunk_0005",
+      "document_id": "doc_abc123",
+      "document_title": "Quy trình khám bệnh ngoại trú",
+      "section": "Khám sơ bộ",
+      "heading_path": ["Quy trình khám bệnh", "Khám bệnh", "Bước 2: Khám sơ bộ"],
+      "page_start": 8,
+      "page_end": 8,
+      "relevance_score": null,
+      "content_preview": "Sau khi đăng ký, bệnh nhân được khám sơ bộ bởi y tá để phân loại theo mức độ cấp thiết. Bệnh nhân cấp cứu sẽ được ưu tiên..."
+    },
+    {
+      "citation_number": 3,
+      "chunk_id": "doc_def456_chunk_0012",
+      "document_id": "doc_def456",
+      "document_title": "Chính sách thanh toán viện phí",
+      "section": "Thanh toán ngoại trú",
+      "heading_path": ["Thanh toán", "Ngoại trú", "Quy trình thanh toán"],
+      "page_start": 12,
+      "page_end": 12,
+      "relevance_score": null,
+      "content_preview": "Bệnh nhân thanh toán viện phí tại quầy thu ngân sau khi hoàn thành khám bệnh. Có thể thanh toán bằng tiền mặt hoặc thẻ..."
+    }
+  ],
+  "source_documents": [
+    {
+      "document_id": "doc_abc123",
+      "title": "Quy trình khám bệnh ngoại trú",
+      "source_path": "/data/type1/quy_trinh_kham_benh.md",
+      "citation_count": 2,
+      "sections_referenced": ["Đăng ký tiếp nhận", "Khám sơ bộ"]
+    },
+    {
+      "document_id": "doc_def456",
+      "title": "Chính sách thanh toán viện phí",
+      "source_path": "/data/type1/chinh_sach_thanh_toan.md",
+      "citation_count": 1,
+      "sections_referenced": ["Thanh toán ngoại trú"]
+    }
+  ],
   "trace_id": "550e8400-e29b-41d4-a716-446655440000",
-  "iterations": 2,
+  "iterations": 1,
   "result_count": 3,
   "error_count": 0,
+  "confidence": "high",
   "latency_ms": 1245.6,
   "timestamp": "2026-07-18T00:00:00.000000Z"
 }
@@ -269,13 +324,39 @@ Chạy pipeline RAG đầy đủ: phân tích query → tìm kiếm vector store
 | Field | Type | Mô tả |
 |-------|------|-------|
 | `query` | string | Query gốc từ request |
-| `answer` | string | Câu trả lời đã được tổng hợp từ pipeline RAG |
+| `answer` | string | Câu trả lời đã được tổng hợp từ pipeline RAG, có citation markers [N] |
+| `citations` | array | Danh sách chi tiết các nguồn trích dẫn được sử dụng trong câu trả lời |
+| `citations[].citation_number` | integer | Số thứ tự trích dẫn (tương ứng với [N] trong answer) |
+| `citations[].chunk_id` | string | ID của chunk trong database |
+| `citations[].document_id` | string | ID của document chứa chunk này |
+| `citations[].document_title` | string | Tiêu đề document (human-readable) |
+| `citations[].section` | string\|null | Phần/chương cấp cao nhất |
+| `citations[].heading_path` | array | Đường dẫn heading đầy đủ (hierarchy) |
+| `citations[].page_start` | integer\|null | Trang bắt đầu trong document gốc |
+| `citations[].page_end` | integer\|null | Trang kết thúc trong document gốc |
+| `citations[].relevance_score` | float\|null | Điểm relevance (0.0-1.0, cao hơn = relevant hơn) |
+| `citations[].content_preview` | string\|null | 200 ký tự đầu của chunk (để preview) |
+| `source_documents` | array | Thông tin tổng hợp về các document được sử dụng |
+| `source_documents[].document_id` | string | ID của document |
+| `source_documents[].title` | string | Tiêu đề document |
+| `source_documents[].source_path` | string\|null | Đường dẫn file gốc |
+| `source_documents[].citation_count` | integer | Số lần document này được trích dẫn |
+| `source_documents[].sections_referenced` | array | Danh sách sections được sử dụng từ document này |
 | `trace_id` | string | UUID để tracking request trong logs |
 | `iterations` | integer | Số vòng lặp planner đã chạy |
-| `result_count` | integer | Số lượng branch results được thu thập |
-| `error_count` | integer | Số lượng branch thất bại |
+| `result_count` | integer | Số lượng chunks được retrieve |
+| `error_count` | integer | Số lượng retrieval branches thất bại |
+| `confidence` | string | Độ tin cậy câu trả lời: `"high"`, `"medium"`, `"low"` |
 | `latency_ms` | float | Thời gian xử lý (milliseconds) |
 | `timestamp` | datetime | Thời điểm response |
+
+**Confidence Levels:**
+
+| Level | Điều kiện | Ý nghĩa |
+|-------|-----------|---------|
+| `high` | ≥5 citations từ successful searches | Câu trả lời có nhiều nguồn xác thực |
+| `medium` | 2-4 citations từ successful searches | Câu trả lời có đủ nguồn để tham khảo |
+| `low` | <2 citations hoặc nhiều searches thất bại | Câu trả lời thiếu nguồn, cần xác minh |
 
 **Error Responses:**
 
@@ -304,15 +385,25 @@ Chạy pipeline RAG đầy đủ: phân tích query → tìm kiếm vector store
 **Use case:**
 - User gửi câu hỏi từ chatbot/search interface
 - Backend forward query sang AI service
-- AI service trả về câu trả lời hoàn chỉnh
-- Backend hiển thị câu trả lời cho user
+- AI service trả về câu trả lời với đầy đủ citation metadata
+- Backend hiển thị câu trả lời và nguồn tham khảo cho user
+- User có thể click vào citation để xem chi tiết tài liệu gốc
+- User có thể verify độ chính xác dựa trên confidence level
+
+**Lợi ích của Citation Metadata:**
+1. **Transparency**: User biết câu trả lời dựa trên nguồn nào
+2. **Trust**: Có thể verify thông tin qua page numbers và sections
+3. **Traceability**: Truy vết lại tài liệu gốc nếu cần
+4. **Confidence**: Biết độ tin cậy của câu trả lời
 
 **Luồng xử lý bên trong:**
 1. Planner phân tích query → tạo tasks
 2. Router dispatch tasks song song đến type1/type2/type3 subgraphs
 3. Mỗi subgraph chạy hybrid search (BM25 + Vector + RRF fusion)
-4. Merge node tổng hợp kết quả
-5. Synthesizer tạo câu trả lời cuối cùng
+4. Merge node tổng hợp kết quả với metadata đầy đủ
+5. Synthesizer tạo câu trả lời với citation markers [N]
+6. Metadata extractor xử lý citations và source_documents
+7. Response trả về với đầy đủ traceability info
 
 ---
 

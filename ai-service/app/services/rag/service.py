@@ -30,6 +30,8 @@ from app.services.rag.graph.main_graph import (
     compile_rag_graph,
 )
 from app.services.rag.graph.main_state import MainState
+from app.services.rag.metadata_extractor import extract_citation_metadata
+from app.services.ingest_data.ingest.chunk_store import ChunkStore
 
 logger = logging.getLogger(__name__)
 
@@ -55,6 +57,8 @@ class RAGService(AgentService):
         # Build and compile graph using separated logic
         graph_builder = build_rag_graph(settings)
         self.graph = compile_rag_graph(graph_builder)
+        # Initialize chunk store for metadata extraction
+        self.chunk_store = ChunkStore(db_path=settings.chunk_db_path)
         logger.info("RAGService initialized with main graph")
 
     # ── AgentService Interface ───────────────────────────────────────
@@ -101,22 +105,34 @@ class RAGService(AgentService):
             
             latency_ms = (time.perf_counter() - start) * 1000
 
+            # Extract detailed citation metadata from branch_results
+            branch_results = result.get("branch_results", [])
+            citations, source_documents, confidence = extract_citation_metadata(
+                branch_results=[br.model_dump() if hasattr(br, 'model_dump') else br for br in branch_results],
+                chunk_store=self.chunk_store,
+            )
+
             logger.info(
                 "Agent invoke completed",
                 extra={
                     "trace_id": trace_id,
                     "latency_ms": f"{latency_ms:.1f}",
                     "iterations": result.get("iteration", 0),
-                    "result_count": len(result.get("branch_results", [])),
+                    "result_count": len(branch_results),
+                    "citation_count": len(citations),
+                    "confidence": confidence,
                 },
             )
 
             return {
                 "answer": result.get("final_answer", ""),
+                "citations": citations,
+                "source_documents": source_documents,
                 "trace_id": trace_id,
                 "iterations": result.get("iteration", 0),
-                "result_count": len(result.get("branch_results", [])),
+                "result_count": len(branch_results),
                 "error_count": len(result.get("errors", [])),
+                "confidence": confidence,
                 "latency_ms": round(latency_ms, 1),
             }
 

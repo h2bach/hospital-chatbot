@@ -46,12 +46,10 @@ htmlcov/
 opencode.json
 
 # Data storage (vector stores, BM25 index, SQLite databases)
-data/chroma/
-data/bm25.pkl
-data/chunks.db
-data/*.db
-data/*.pkl
+type1_data/chroma/
+type1_data/bm25.pkl
+type1_data/chunks.db
+type1_data/*.db
+type1_data/*.pkl
 
-# Test files
-test_*.py
 architecture.md
