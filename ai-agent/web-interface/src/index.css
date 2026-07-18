@@ -2385,7 +2385,7 @@ button:disabled {
 
 @media (max-width: 480px) {
   .thread {
-    padding: 16px 12px 32px;
+    padding: 16px 14px 32px;
   }
 
   .message {
@@ -2393,12 +2393,16 @@ button:disabled {
   }
 
   .message-body {
-    max-width: calc(100% - 52px);
+    max-width: calc(100% - 64px);
   }
 
   .message-assistant .message-body {
     width: auto;
-    max-width: calc(100% - 52px);
+    max-width: calc(100% - 64px);
+  }
+
+  .message-user .message-body {
+    max-width: 85%;
   }
 
   .header-logo {
@@ -2429,6 +2433,24 @@ button:disabled {
   .send-button {
     width: 42px;
     height: 42px;
+  }
+}
+
+@media (max-width: 380px) {
+  .thread {
+    padding: 14px 10px 28px;
+  }
+
+  .message-assistant .message-body {
+    max-width: calc(100% - 56px);
+  }
+
+  .message-user .message-body {
+    max-width: 86%;
+  }
+
+  .composer-wrap {
+    padding: 8px 10px max(10px, env(safe-area-inset-bottom));
   }
 }
 
