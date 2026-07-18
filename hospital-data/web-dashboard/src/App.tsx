@@ -56,6 +56,7 @@ type EditorState = { record: JsonObject; index: number; isNew: boolean }
 type ToastState = { kind: "success" | "error" | "info"; message: string }
 
 const emptyReferences: ReferenceData = { doctors: [], facilities: [], rooms: [], patterns: [] }
+const chatbotUrl = import.meta.env.VITE_CHATBOT_URL || `${window.location.protocol}//${window.location.hostname}:6689`
 
 const fieldLabels: Record<string, string> = {
   assignment_id: "Mã phân công",
@@ -813,7 +814,7 @@ export function App() {
             <div className="breadcrumb"><Database size={16} /><span>Hospital data</span><ChevronRight size={14} /><strong>{currentSummary?.title || "Đang tải"}</strong></div>
             <div className="topbar-actions">
               <span className={`sync-pill ${syncStatus}`}><span className="status-dot" />{syncStatus === "live" ? "Live" : "Offline"}</span>
-              <a className="chat-link" href="http://localhost:8080" target="_blank" rel="noreferrer">Mở chatbot <ArrowUpRight size={16} /></a>
+              <a className="chat-link" href={chatbotUrl} target="_blank" rel="noreferrer">Mở chatbot <ArrowUpRight size={16} /></a>
             </div>
           </header>
 

@@ -1,0 +1,2 @@
+# Vite bundles can contain whitespace inside generated template literals.
+ai-agent/static/assets/*.js -whitespace

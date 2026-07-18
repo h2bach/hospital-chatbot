@@ -15,7 +15,11 @@ describe("API response normalizers", () => {
         Context: {
           Messages: [
             { Role: "User", Content: "Mấy giờ ở Hà Nội?" },
-            { Role: "Assistant", Content: "Bây giờ là 20:00." },
+            {
+              Role: "Assistant",
+              Content: "Bây giờ là 20:00.",
+              Suggestions: [{ ID: "E1", Label: "Mục đúng", Value: "Chọn mục đúng", Similarity: 0.91 }],
+            },
           ],
           Tools: [{ Name: "checkTime" }],
         },
@@ -27,6 +31,8 @@ describe("API response normalizers", () => {
     expect(session.messages[1]).toEqual({
       role: "Assistant",
       content: "Bây giờ là 20:00.",
+      images: [],
+      suggestions: [{ id: "E1", label: "Mục đúng", value: "Chọn mục đúng", similarity: 0.91 }],
     })
     expect(session.tools).toHaveLength(1)
   })
@@ -66,16 +72,22 @@ describe("API response normalizers", () => {
 })
 
 describe("sendMessage", () => {
-  it("sends the selected access role in the Role header", async () => {
+  it("sends images with the device-isolation header and returns suggestions", async () => {
     const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue({
       ok: true,
       status: 200,
-      text: async () => JSON.stringify({ response: "Đã nhận yêu cầu." }),
+      text: async () => JSON.stringify({
+        response: "Đã nhận yêu cầu.",
+        suggestions: [{ id: "E1", label: "Kết quả", value: "Chọn kết quả", similarity: 0.9 }],
+      }),
     } as Response)
 
     await expect(
-      sendMessage("session-1", "Lịch bác sĩ tuần này", "GUEST"),
-    ).resolves.toBe("Đã nhận yêu cầu.")
+      sendMessage("session-1", "Đọc ảnh này", [{ mimeType: "image/png", data: "cG5n" }]),
+    ).resolves.toEqual({
+      answer: "Đã nhận yêu cầu.",
+      suggestions: [{ id: "E1", label: "Kết quả", value: "Chọn kết quả", similarity: 0.9 }],
+    })
 
     expect(fetchMock).toHaveBeenCalledWith(
       "/c/session-1",
@@ -83,13 +95,14 @@ describe("sendMessage", () => {
         method: "POST",
         headers: expect.objectContaining({
           "Content-Type": "application/json",
-          Role: "GUEST",
+          "X-Device-ID": expect.any(String),
         }),
+        body: JSON.stringify({ message: "Đọc ảnh này", images: [{ mime_type: "image/png", data: "cG5n" }] }),
       }),
     )
   })
 
-  it("defaults to GUEST when a role is not supplied", async () => {
+  it("sends a text-only request without access-role headers", async () => {
     const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue({
       ok: true,
       status: 200,
@@ -101,9 +114,9 @@ describe("sendMessage", () => {
     expect(fetchMock).toHaveBeenCalledWith(
       "/c/session-2",
       expect.objectContaining({
-        headers: expect.objectContaining({ Role: "GUEST" }),
+        headers: expect.not.objectContaining({ Role: expect.anything() }),
+        body: JSON.stringify({ message: "Giờ làm việc của bệnh viện?", images: [] }),
       }),
     )
   })
 })
-

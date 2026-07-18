@@ -50,7 +50,7 @@ func main() {
 		fmt.Println("----------------------------------------------")
 	}
 
-	a := agent.NewAgent(model, mcpClient)
+	a := agent.NewAgent(model, mcpClient, nil)
 
 	agentContext := domain.Context{}
 	scanner := bufio.NewScanner(os.Stdin)

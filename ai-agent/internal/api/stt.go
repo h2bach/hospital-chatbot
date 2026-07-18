@@ -2,8 +2,8 @@ package api
 
 import (
 	"agent/internal/api/dto"
-	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"strings"
 )
@@ -37,7 +37,8 @@ func (svr *Server) TranscribeAudio(w http.ResponseWriter, r *http.Request) {
 	}
 	text, err := svr.speechToText.Transcribe(r.Context(), header.Filename, contentType, audio)
 	if err != nil {
-		writeJSON(w, dto.NewErrorResponse(fmt.Sprintf("Không thể nhận dạng giọng nói: %v", err)), http.StatusBadGateway)
+		log.Printf("speech transcription failed: %v", err)
+		writeJSON(w, dto.NewErrorResponse("Chưa thể nhận dạng giọng nói. Anh/Chị vui lòng thử lại với đoạn ghi âm rõ hơn."), http.StatusBadGateway)
 		return
 	}
 	writeJSON(w, map[string]string{"text": text}, http.StatusOK)

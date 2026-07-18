@@ -1,0 +1,6 @@
+.git/
+.env
+web-interface/node_modules/
+web-interface/dist/
+web-interface/*.tsbuildinfo
+static/assets/

@@ -5,9 +5,9 @@ import (
 )
 
 type SessionMetadata struct {
-	ID string `json:"id"`
+	ID      string `json:"id"`
 	OwnerID string `json:"owner_id"`
-	Title string `json:"title"`
+	Title   string `json:"title"`
 }
 
 type GetAllSessionsResponse struct {
@@ -19,9 +19,10 @@ func NewGetAllSessionsResponse(sessions []domain.Session) *GetAllSessionsRespons
 		Sessions: make([]SessionMetadata, 0),
 	}
 	for _, session := range sessions {
-		metadata := SessionMetadata {
-			ID: session.ID,
-			Title: session.Title,
+		metadata := SessionMetadata{
+			ID:      session.ID,
+			OwnerID: session.OwnerID,
+			Title:   session.Title,
 		}
 		response.Sessions = append(response.Sessions, metadata)
 	}

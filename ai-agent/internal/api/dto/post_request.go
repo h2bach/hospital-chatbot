@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	maxImageBytes = 10 << 20
+	maxImageBytes = 4 << 20
 	maxImages     = 2
 )
 

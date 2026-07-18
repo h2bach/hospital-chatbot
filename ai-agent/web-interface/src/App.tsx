@@ -13,7 +13,7 @@ import {
   deleteSession,
   getSession,
   getSessions,
-  sendMessage,
+  sendMessageStream,
 } from "./lib/api"
 import type { ChatImage, ChatSession, ServerStatus, SessionSummary } from "./types"
 
@@ -94,6 +94,7 @@ export function App() {
   const [loadingActive, setLoadingActive] = useState(false)
   const [creating, setCreating] = useState(false)
   const [sendingSessionId, setSendingSessionId] = useState<string | null>(null)
+  const [processingStatus, setProcessingStatus] = useState("Đang tìm thông tin phù hợp…")
   const [deleting, setDeleting] = useState(false)
 
   const isSending = sendingSessionId !== null
@@ -348,17 +349,55 @@ export function App() {
     })
 
     try {
-      const answer = await sendMessage(currentId, message, images)
+      let streamedText = ""
+      const result = await sendMessageStream(currentId, message, images, {
+        onStatus: ({ label }) => {
+          if (label) setProcessingStatus(label)
+        },
+        onDelta: (text) => {
+          streamedText += text
+          setActiveSession((current) => {
+            if (!current || current.id !== currentId) return current
+            const delivered = current.messages.map((item, index) =>
+              index === current.messages.length - 1 && item.role === "User" && item.delivery === "sending"
+                ? { role: item.role, content: item.content, images: item.images }
+                : item,
+            )
+            const last = delivered.at(-1)
+            if (last?.role === "Assistant" && last.delivery === "sending") {
+              return {
+                ...current,
+                messages: delivered.map((item, index) =>
+                  index === delivered.length - 1 ? { ...item, content: streamedText } : item,
+                ),
+              }
+            }
+            return {
+              ...current,
+              messages: [...delivered, { role: "Assistant", content: streamedText, delivery: "sending" }],
+            }
+          })
+        },
+      })
       setActiveSession((current) => {
         if (!current || current.id !== currentId) return current
+        const last = current.messages.at(-1)
+        if (last?.role === "Assistant" && last.delivery === "sending") {
+          return {
+            ...current,
+            messages: current.messages.map((item, index) => index === current.messages.length - 1
+              ? { role: "Assistant", content: result.answer, suggestions: result.suggestions }
+              : item),
+          }
+        }
         const messages = current.messages.map((item, index) =>
           index === current.messages.length - 1 && item.delivery === "sending"
-            ? { role: item.role, content: item.content }
+            ? { role: item.role, content: item.content, images: item.images }
             : item,
         )
         return {
           ...current,
-          messages: [...messages, { role: "Assistant", content: answer }],
+          messages: [...messages, { role: "Assistant", content: result.answer, suggestions: result.suggestions }],
         }
       })
       setServerStatus("online")
@@ -391,6 +430,7 @@ export function App() {
       if (error instanceof ApiError && error.status === 0) setServerStatus("offline")
     } finally {
       setSendingSessionId(null)
+      setProcessingStatus("Đang tìm thông tin phù hợp…")
     }
   }
 
@@ -516,10 +556,12 @@ export function App() {
             messages={activeSession?.messages ?? []}
             loading={loadingActive}
             sending={isSendingCurrentSession}
+            processingStatus={processingStatus}
             error={activeError}
             onRetry={() => selectedId && void loadActiveSession(selectedId)}
             onRetryMessage={(msg, imgs) => void handleSend(msg, imgs)}
             onSuggestion={setComposerValue}
+            onChoice={(value) => void handleSend(value)}
           />
         </div>
 

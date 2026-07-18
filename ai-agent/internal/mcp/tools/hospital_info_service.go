@@ -11,15 +11,20 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	mcp_sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
 const defaultHospitalInfoServiceURL = "http://localhost:8081"
 
+const maxHospitalInfoResponseBytes = 4 << 20
+
+var hospitalInfoHTTPClient = &http.Client{Timeout: 10 * time.Second}
+
 type APIOutput struct {
-	Status int `json:"status" jsonschema:"HTTP status returned by hospital-info-service"`
-	Body   any `json:"body" jsonschema:"JSON response returned by hospital-info-service"`
+	Status int            `json:"status" jsonschema:"HTTP status returned by hospital-info-service"`
+	Body   map[string]any `json:"body" jsonschema:"JSON object returned by hospital-info-service"`
 }
 
 type EmptyInput struct{}
@@ -89,10 +94,10 @@ var (
 	HospitalInfoHealthTool = mcp_sdk.Tool{Name: "hospitalInfoHealth", Description: "Kiểm tra API dữ liệu công khai Bệnh viện Tim Hà Nội và trạng thái lịch tuần."}
 	HospitalMetaTool       = mcp_sdk.Tool{Name: "getHospitalDatasetMeta", Description: "Lấy nguồn, phạm vi, giới hạn và số lượng dữ liệu đã số hóa."}
 	SearchDirectoryTool    = mcp_sdk.Tool{Name: "searchHospitalDirectory", Description: "Tìm đồng thời bác sĩ, phòng, đơn vị, quy tắc và mẫu phân công; hỗ trợ tìm tiếng Việt không dấu."}
-	FacilitiesTool         = mcp_sdk.Tool{Name: "listHospitalFacilities", Description: "Liệt kê các cơ sở Bệnh viện Tim Hà Nội hiện có trong dữ liệu và các khu khám quan sát được."}
+	FacilitiesTool         = mcp_sdk.Tool{Name: "listHospitalFacilities", Description: "Liệt kê hai cơ sở Bệnh viện Tim Hà Nội và các khu khám quan sát được."}
 	OrganizationTool       = mcp_sdk.Tool{Name: "getHospitalOrganization", Description: "Tra cứu sơ đồ bộ máy, khối, trung tâm, khoa, phòng và đơn nguyên."}
 	RoomsTool              = mcp_sdk.Tool{Name: "listHospitalRooms", Description: "Tra cứu phòng/service-room, khu khám, chuyên khoa, giờ mở cửa và mẫu cuối tuần."}
-	DoctorsTool            = mcp_sdk.Tool{Name: "searchHanoiHeartDoctors", Description: "Tra cứu danh sách bác sĩ hiện có theo tên, cơ sở quan sát, khu và chức danh."}
+	DoctorsTool            = mcp_sdk.Tool{Name: "searchHanoiHeartDoctors", Description: "Tra cứu 60 bác sĩ thật theo tên, cơ sở quan sát, khu và chức danh."}
 	DoctorTool             = mcp_sdk.Tool{Name: "getHanoiHeartDoctor", Description: "Lấy thông tin công khai và mẫu phân công quan sát của một bác sĩ."}
 	CurrentScheduleTool    = mcp_sdk.Tool{Name: "listCurrentDoctorSchedule", Description: "Tra cứu phân công trong lịch tuần hiện hành đã được công bố; không lưu lịch sử."}
 	DoctorAvailabilityTool = mcp_sdk.Tool{Name: "getDoctorAvailability", Description: "Tra cứu cửa sổ bác sĩ được phân công làm việc từ lịch tuần hiện hành; không phải slot đặt lịch."}
@@ -231,16 +236,19 @@ func callHospitalInfo(ctx context.Context, path string, query url.Values) (*mcp_
 	if err != nil {
 		return nil, APIOutput{}, fmt.Errorf("create hospital-info request: %w", err)
 	}
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := hospitalInfoHTTPClient.Do(req)
 	if err != nil {
 		return nil, APIOutput{}, fmt.Errorf("call hospital-info-service: %w", err)
 	}
 	defer resp.Body.Close()
-	body, err := io.ReadAll(resp.Body)
+	body, err := io.ReadAll(io.LimitReader(resp.Body, maxHospitalInfoResponseBytes+1))
 	if err != nil {
 		return nil, APIOutput{}, fmt.Errorf("read hospital-info response: %w", err)
 	}
-	var result any
+	if len(body) > maxHospitalInfoResponseBytes {
+		return nil, APIOutput{}, fmt.Errorf("hospital-info response exceeds %d bytes", maxHospitalInfoResponseBytes)
+	}
+	result := map[string]any{}
 	if len(bytes.TrimSpace(body)) > 0 {
 		if err := json.Unmarshal(body, &result); err != nil {
 			return nil, APIOutput{}, fmt.Errorf("decode hospital-info response: %w", err)

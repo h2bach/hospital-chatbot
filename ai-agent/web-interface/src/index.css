@@ -1436,6 +1436,64 @@ button:disabled {
   background: var(--surface-soft);
 }
 
+.clarification-options {
+  display: grid;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.clarification-option {
+  display: grid;
+  width: 100%;
+  min-height: 42px;
+  padding: 7px 9px;
+  grid-template-columns: 24px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid color-mix(in srgb, var(--primary) 24%, var(--border));
+  border-radius: 10px;
+  background: var(--primary-soft);
+  color: var(--foreground);
+  text-align: left;
+}
+
+.clarification-option:hover:not(:disabled) {
+  border-color: var(--primary);
+  background: color-mix(in srgb, var(--primary-soft) 70%, var(--surface));
+  transform: translateY(-1px);
+}
+
+.clarification-option:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.clarification-rank {
+  display: inline-flex;
+  width: 24px;
+  height: 24px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 7px;
+  background: var(--primary);
+  color: var(--on-primary);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.clarification-label {
+  overflow-wrap: anywhere;
+  font-size: 12px;
+  font-weight: 680;
+  line-height: 1.35;
+}
+
+.clarification-score {
+  color: var(--primary);
+  font-size: 11px;
+  font-weight: 750;
+}
+
 .thinking-indicator {
   display: flex;
   align-items: center;

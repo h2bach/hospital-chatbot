@@ -4,6 +4,7 @@ import (
 	"agent/internal/api"
 	"agent/internal/infra/llm"
 	"agent/internal/infra/store"
+	"agent/internal/rag"
 	"context"
 	"flag"
 	"fmt"
@@ -12,7 +13,7 @@ import (
 )
 
 var (
-	port = flag.String("p", "8080", "The port to connect to host server")
+	port = flag.String("p", "6689", "The port to connect to host server")
 )
 
 // This binary hosts MCP Server at route '/mcp'
@@ -37,12 +38,17 @@ func main() {
 	if err != nil {
 		log.Printf("Speech-to-text disabled: %s", err)
 	}
+	retriever, err := rag.NewClientFromEnvironment()
+	if err != nil {
+		log.Fatalf("Failed to initialize RAG client: %s", err)
+	}
 
 	server := api.NewServer(
 		ctx,
 		":"+*port,
 		store.NewMemorySessionStore(),
 		model,
+		retriever,
 		transcriber,
 	)
 	server.Run(ctx)

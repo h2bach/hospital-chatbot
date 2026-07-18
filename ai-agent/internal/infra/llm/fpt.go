@@ -7,17 +7,26 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math"
 	"mime/multipart"
 	"net/http"
+	"net/url"
 	"os"
 	"strings"
 	"sync/atomic"
+	"time"
 
 	"agent/internal/agent"
 	"agent/internal/domain"
 )
 
-const defaultFPTBaseURL = "https://mkp-api.fptcloud.com"
+const (
+	defaultFPTBaseURL     = "https://mkp-api.fptcloud.com"
+	defaultFPTTemperature = float32(0.3)
+	defaultFPTHTTPTimeout = 60 * time.Second
+	maxFPTResponseBytes   = 4 << 20
+	maxFPTErrorTextBytes  = 1024
+)
 
 type FPTClient struct {
 	BaseURL  string
@@ -47,11 +56,11 @@ func NewFPTSpeechToTextFromEnvironment() (*FPTSpeechToText, error) {
 	if len(keys) == 0 {
 		return nil, fmt.Errorf("FPT_STT_MODEL is configured but no FPT API key is configured")
 	}
-	baseURL := strings.TrimRight(strings.TrimSpace(os.Getenv("FPT_BASE_URL")), "/")
-	if baseURL == "" {
-		baseURL = defaultFPTBaseURL
+	baseURL, err := normalizeFPTBaseURL(os.Getenv("FPT_BASE_URL"))
+	if err != nil {
+		return nil, err
 	}
-	return &FPTSpeechToText{BaseURL: baseURL, Model: model, keys: keys, http: &http.Client{}}, nil
+	return &FPTSpeechToText{BaseURL: baseURL, Model: model, keys: keys, http: &http.Client{Timeout: defaultFPTHTTPTimeout}}, nil
 }
 
 func (client *FPTSpeechToText) Transcribe(ctx context.Context, filename, contentType string, audio []byte) (string, error) {
@@ -96,7 +105,7 @@ func (client *FPTSpeechToText) transcribeWithKey(ctx context.Context, key, filen
 		return "", fmt.Errorf("call FPT STT: %w", err)
 	}
 	defer resp.Body.Close()
-	responseBody, err := io.ReadAll(resp.Body)
+	responseBody, err := readLimitedResponse(resp.Body)
 	if err != nil {
 		return "", fmt.Errorf("read FPT STT response: %w", err)
 	}
@@ -135,28 +144,43 @@ func NewFPTClientWithVLM(apiKeys, model, vlmModel, baseURL string) (*FPTClient, 
 	if len(keys) == 0 {
 		return nil, fmt.Errorf("no FPT API keys configured")
 	}
-	if strings.TrimSpace(model) == "" {
+	model = strings.TrimSpace(model)
+	if model == "" {
 		return nil, fmt.Errorf("no FPT model configured")
 	}
-	baseURL = strings.TrimRight(strings.TrimSpace(baseURL), "/")
-	if baseURL == "" {
-		baseURL = defaultFPTBaseURL
+	baseURL, err := normalizeFPTBaseURL(baseURL)
+	if err != nil {
+		return nil, err
 	}
 	return &FPTClient{
 		BaseURL:  baseURL,
 		Model:    model,
 		VLMModel: strings.TrimSpace(vlmModel),
 		keys:     keys,
-		http:     &http.Client{},
+		http:     &http.Client{Timeout: defaultFPTHTTPTimeout},
 	}, nil
+}
+
+func normalizeFPTBaseURL(raw string) (string, error) {
+	baseURL := strings.TrimRight(strings.TrimSpace(raw), "/")
+	if baseURL == "" {
+		baseURL = defaultFPTBaseURL
+	}
+	parsed, err := url.Parse(baseURL)
+	if err != nil || (parsed.Scheme != "http" && parsed.Scheme != "https") || parsed.Host == "" {
+		return "", fmt.Errorf("invalid FPT base URL %q", baseURL)
+	}
+	if parsed.RawQuery != "" || parsed.Fragment != "" {
+		return "", fmt.Errorf("invalid FPT base URL %q: query and fragment are not allowed", baseURL)
+	}
+	return baseURL, nil
 }
 
 type fptChatRequest struct {
 	Model       string           `json:"model"`
 	Messages    []fptMessage     `json:"messages"`
-	Temperature float32          `json:"temperature,omitempty"`
+	Temperature float32          `json:"temperature"`
 	Tools       []fptToolWrapper `json:"tools,omitempty"`
-	ToolChoice  string           `json:"tool_choice,omitempty"`
 }
 
 type fptMessage struct {
@@ -190,11 +214,30 @@ type fptToolCallFn struct {
 
 type fptChatResponse struct {
 	Choices []struct {
-		Message fptMessage `json:"message"`
+		Message      fptMessage `json:"message"`
+		FinishReason string     `json:"finish_reason"`
 	} `json:"choices"`
 }
 
+type fptErrorResponse struct {
+	Error struct {
+		Message string `json:"message"`
+		Type    string `json:"type"`
+		Code    any    `json:"code"`
+	} `json:"error"`
+}
+
 func (client *FPTClient) Chat(ctx context.Context, agentContext domain.Context) (*agent.LLMOutput, error) {
+	if client == nil || client.http == nil {
+		return nil, fmt.Errorf("FPT client is not initialized")
+	}
+	temperature := defaultFPTTemperature
+	if agentContext.Deterministic {
+		temperature = 0
+	}
+	if math.IsNaN(float64(temperature)) || math.IsInf(float64(temperature), 0) || temperature < 0 || temperature > 2 {
+		return nil, fmt.Errorf("invalid FPT temperature %.3f", temperature)
+	}
 	messages := make([]fptMessage, 0, len(agentContext.Messages))
 	requestModel := client.Model
 	pendingToolCallID := ""
@@ -275,14 +318,8 @@ func (client *FPTClient) Chat(ctx context.Context, agentContext domain.Context) 
 	requestBody := fptChatRequest{
 		Model:       requestModel,
 		Messages:    messages,
-		Temperature: 0.3,
+		Temperature: temperature,
 		Tools:       tools,
-	}
-	if len(tools) > 0 {
-		// FPT's hosted vLLM endpoint rejects the default auto mode unless its
-		// server is started with an auto-tool parser. Explicitly disable tool
-		// selection so ordinary text/VLM requests remain usable.
-		requestBody.ToolChoice = "none"
 	}
 	body, err := json.Marshal(requestBody)
 	if err != nil {
@@ -292,6 +329,9 @@ func (client *FPTClient) Chat(ctx context.Context, agentContext domain.Context) 
 	start := client.nextKey.Add(1) - 1
 	var lastErr error
 	for offset := range client.keys {
+		if err := ctx.Err(); err != nil {
+			return nil, fmt.Errorf("FPT inference canceled: %w", err)
+		}
 		index := (start + uint64(offset)) % uint64(len(client.keys))
 		result, err := client.request(ctx, client.keys[index], body)
 		if err == nil {
@@ -337,12 +377,12 @@ func (client *FPTClient) request(ctx context.Context, key string, body []byte) (
 		return nil, fmt.Errorf("call FPT inference: %w", err)
 	}
 	defer resp.Body.Close()
-	responseBody, err := io.ReadAll(resp.Body)
+	responseBody, err := readLimitedResponse(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("read FPT response: %w", err)
 	}
 	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
-		return nil, fmt.Errorf("FPT inference returned HTTP %d: %s", resp.StatusCode, strings.TrimSpace(string(responseBody)))
+		return nil, fptHTTPStatusError(resp.StatusCode, resp.Header.Get("X-Request-Id"), responseBody)
 	}
 
 	var response fptChatResponse
@@ -352,13 +392,32 @@ func (client *FPTClient) request(ctx context.Context, key string, body []byte) (
 	if len(response.Choices) == 0 {
 		return nil, fmt.Errorf("FPT returned no choices")
 	}
-	message := response.Choices[0].Message
+	if len(response.Choices) > 1 {
+		return nil, fmt.Errorf("FPT returned %d choices; exactly one is required", len(response.Choices))
+	}
+	choice := response.Choices[0]
+	switch strings.ToLower(strings.TrimSpace(choice.FinishReason)) {
+	case "length":
+		return nil, fmt.Errorf("FPT response was truncated because the token limit was reached")
+	case "content_filter":
+		return nil, fmt.Errorf("FPT response was blocked by the provider content filter")
+	}
+	message := choice.Message
 	if len(message.ToolCalls) > 0 {
+		if len(message.ToolCalls) > 1 {
+			return nil, fmt.Errorf("FPT returned %d tool calls; this adapter accepts one per model turn", len(message.ToolCalls))
+		}
 		call := message.ToolCalls[0]
+		if strings.TrimSpace(call.Function.Name) == "" {
+			return nil, fmt.Errorf("FPT returned a tool call without a function name")
+		}
 		args := map[string]any{}
 		if call.Function.Arguments != "" {
 			if err := json.Unmarshal([]byte(call.Function.Arguments), &args); err != nil {
 				return nil, fmt.Errorf("decode FPT tool arguments: %w", err)
+			}
+			if args == nil {
+				return nil, fmt.Errorf("decode FPT tool arguments: expected a JSON object")
 			}
 		}
 		return &agent.LLMOutput{ToolName: call.Function.Name, Args: args}, nil
@@ -368,6 +427,43 @@ func (client *FPTClient) request(ctx context.Context, key string, body []byte) (
 		return nil, fmt.Errorf("FPT returned an empty answer")
 	}
 	return &agent.LLMOutput{Text: text}, nil
+}
+
+func readLimitedResponse(reader io.Reader) ([]byte, error) {
+	body, err := io.ReadAll(io.LimitReader(reader, maxFPTResponseBytes+1))
+	if err != nil {
+		return nil, err
+	}
+	if len(body) > maxFPTResponseBytes {
+		return nil, fmt.Errorf("response body exceeds %d bytes", maxFPTResponseBytes)
+	}
+	return body, nil
+}
+
+func fptHTTPStatusError(status int, requestID string, body []byte) error {
+	detail := ""
+	var providerError fptErrorResponse
+	if json.Unmarshal(body, &providerError) == nil {
+		detail = strings.TrimSpace(providerError.Error.Message)
+	}
+	if detail == "" {
+		detail = strings.TrimSpace(string(body))
+	}
+	detail = strings.Join(strings.Fields(detail), " ")
+	if len(detail) > maxFPTErrorTextBytes {
+		detail = detail[:maxFPTErrorTextBytes] + "..."
+	}
+	requestID = strings.TrimSpace(requestID)
+	if requestID != "" && detail != "" {
+		return fmt.Errorf("FPT inference returned HTTP %d (request %s): %s", status, requestID, detail)
+	}
+	if requestID != "" {
+		return fmt.Errorf("FPT inference returned HTTP %d (request %s)", status, requestID)
+	}
+	if detail != "" {
+		return fmt.Errorf("FPT inference returned HTTP %d: %s", status, detail)
+	}
+	return fmt.Errorf("FPT inference returned HTTP %d", status)
 }
 
 var _ agent.LLMClient = (*FPTClient)(nil)

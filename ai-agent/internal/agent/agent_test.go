@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"context"
 	"strings"
 	"testing"
 
@@ -24,6 +25,34 @@ func TestSyncSystemPrompt(t *testing.T) {
 	}
 	if context.Messages[1].Content != "previous question" {
 		t.Fatalf("sync should preserve conversation history, got %q", context.Messages[1].Content)
+	}
+}
+
+func TestImageInputUsesVLMThenUnifiedPlannerAndDoesNotPersistExtractionPrompt(t *testing.T) {
+	t.Setenv("ORCHESTRATOR_MODE", "unified")
+	llm := &queuedLLM{outputs: []*LLMOutput{
+		{Text: "Ảnh có biển chỉ dẫn quầy tiếp đón."},
+		{Text: `{"intent":"social","answer_mode":"social","tasks":[],"reason_code":"IMAGE_GREETING"}`},
+		{Text: "Xin chào Anh/Chị. Tôi có thể hỗ trợ tra cứu thông tin bệnh viện."},
+		{Text: `{"verdict":"pass","mode":"conversation","unsupported_claims":[],"claims":[],"reason_code":"SAFE"}`},
+	}}
+	workflow := NewAgent(llm, &fakeMCPClient{}, nil)
+	agentContext := &domain.Context{}
+	image := domain.Image{MIMEType: "image/png", Data: []byte("png")}
+
+	result, err := workflow.CallDetailedWithImages(context.Background(), "Xin chào", []domain.Image{image}, agentContext)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Text == "" || len(llm.calls) != 4 || len(llm.calls[0].Messages[1].Images) != 1 {
+		t.Fatalf("unexpected image workflow result=%#v calls=%d", result, len(llm.calls))
+	}
+	if len(agentContext.Messages) < 2 {
+		t.Fatalf("public conversation was not persisted: %#v", agentContext.Messages)
+	}
+	user := agentContext.Messages[len(agentContext.Messages)-2]
+	if user.Content != "Xin chào" || len(user.Images) != 1 || strings.Contains(user.Content, "NỘI_DUNG_ẢNH") {
+		t.Fatalf("internal image extraction leaked into session: %#v", user)
 	}
 }
 

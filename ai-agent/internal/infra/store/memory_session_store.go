@@ -45,7 +45,7 @@ func (m *MemorySessionStore) GetAllForOwner(ownerID string) []domain.Session {
 
 	result := make([]domain.Session, 0, len(m.sessions))
 	for _, session := range m.sessions {
-		if ownerID == "" || session.OwnerID == "" || session.OwnerID == ownerID {
+		if session.OwnerID == ownerID {
 			result = append(result, session)
 		}
 	}
