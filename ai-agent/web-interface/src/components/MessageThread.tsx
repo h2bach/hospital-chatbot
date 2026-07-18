@@ -232,7 +232,10 @@ export function MessageThread({
           <ShieldCheck aria-hidden="true" />
           HỖ TRỢ THÔNG TIN BỆNH VIỆN
         </p>
-        <h2 id="welcome-title">Xin chào, tôi là Trợ lý AI của Bệnh viện Tim Hà Nội</h2>
+        <h2 id="welcome-title">
+          <span>Xin chào, tôi là Trợ lý AI của</span>
+          <span>Bệnh viện Tim Hà Nội</span>
+        </h2>
         <p className="welcome-copy">
           Hỗ trợ tìm hiểu về đặt lịch, quy trình khám, bảo hiểm y tế,
           tái khám và dịch vụ bệnh viện.

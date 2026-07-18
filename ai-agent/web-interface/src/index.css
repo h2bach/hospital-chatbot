@@ -935,13 +935,18 @@ button:disabled {
 }
 
 .welcome h2 {
-  max-width: 760px;
-  margin: 10px 0 0;
+  max-width: min(580px, calc(100% - 40px));
+  margin: 10px auto 0;
+  padding: 0 16px;
   color: var(--foreground);
-  font-size: clamp(28px, 3.2vw, 38px);
+  font-size: clamp(24px, 3.2vw, 36px);
   font-weight: 790;
   letter-spacing: -0.025em;
-  line-height: 1.17;
+  line-height: 1.25;
+}
+
+.welcome h2 span {
+  display: block;
 }
 
 .welcome-copy {
@@ -2472,8 +2477,10 @@ button:disabled {
 
   .welcome h2 {
     font-size: 18px;
-    line-height: 1.2;
+    line-height: 1.25;
     margin-top: 6px;
+    padding: 0 14px;
+    max-width: calc(100% - 28px);
   }
 
   .welcome-copy {
