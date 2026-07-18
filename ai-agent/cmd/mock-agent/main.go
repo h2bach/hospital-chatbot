@@ -5,6 +5,7 @@ import (
 	"agent/internal/domain"
 	"agent/internal/infra/llm"
 	"agent/internal/mcp"
+	"agent/internal/rag"
 	"bufio"
 	"context"
 	"flag"
@@ -14,7 +15,7 @@ import (
 )
 
 var (
-	port  = flag.String("p", "8080", "The port to connect to local MCP server")
+	port  = flag.String("p", "6689", "The port to connect to local MCP server")
 	route = flag.String("r", "/", "The route that host the MCP server")
 )
 
@@ -50,7 +51,11 @@ func main() {
 		fmt.Println("----------------------------------------------")
 	}
 
-	a := agent.NewAgent(model, mcpClient)
+	retriever, err := rag.NewClientFromEnvironment()
+	if err != nil {
+		log.Fatalf("Failed to initialize RAG client: %s", err)
+	}
+	a := agent.NewAgent(model, mcpClient, retriever)
 
 	agentContext := domain.Context{}
 	scanner := bufio.NewScanner(os.Stdin)

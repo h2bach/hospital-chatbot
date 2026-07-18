@@ -1,6 +1,7 @@
 /build/
 /.env
 /.envrc
+/.venv-rag-gpu/
 **/node_modules/
 **/dist/
 **/*.tsbuildinfo

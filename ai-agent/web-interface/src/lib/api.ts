@@ -3,11 +3,17 @@ import type {
   ChatMessage,
   ChatSession,
   MessageRole,
+  ChatSuggestion,
+  SendMessageResult,
+  StreamHandlers,
   SessionSummary,
 } from "../types"
 
 const API_BASE = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, "")
-const REQUEST_TIMEOUT_MS = 45_000
+// The enforced workflow can make several sequential FPT calls (plan,
+// synthesis, evaluation and one guarded revision), so keep the browser from
+// aborting a valid request before the backend's provider timeouts apply.
+const REQUEST_TIMEOUT_MS = 150_000
 
 type JsonRecord = Record<string, unknown>
 
@@ -51,10 +57,30 @@ function normalizeRole(value: unknown): MessageRole {
 function normalizeMessage(value: unknown): ChatMessage | null {
   if (!isRecord(value)) return null
   const content = asString(pick(value, "Content", "content"))
+  const suggestions = normalizeSuggestions(pick(value, "Suggestions", "suggestions"))
   return {
     role: normalizeRole(pick(value, "Role", "role")),
     content,
+    ...(suggestions.length ? { suggestions } : {}),
   }
+}
+
+function normalizeSuggestions(value: unknown): ChatSuggestion[] {
+  if (!Array.isArray(value)) return []
+  return value.flatMap((item) => {
+    if (!isRecord(item)) return []
+    const label = asString(pick(item, "label", "Label"))
+    const selectionValue = asString(pick(item, "value", "Value"))
+    const rawSimilarity = pick(item, "similarity", "Similarity")
+    const similarity = typeof rawSimilarity === "number" ? rawSimilarity : 0
+    if (!label || !selectionValue || similarity < 0.8) return []
+    return [{
+      id: asString(pick(item, "id", "ID")),
+      label,
+      value: selectionValue,
+      similarity,
+    }]
+  }).slice(0, 5)
 }
 
 export function normalizeSession(payload: unknown): ChatSession {
@@ -171,7 +197,7 @@ export async function sendMessage(
   id: string,
   message: string,
   role: AccessRole = "GUEST",
-): Promise<string> {
+): Promise<SendMessageResult> {
   const response = asRecord(
     await requestJson<unknown>(`/c/${encodeURIComponent(id)}`, {
       method: "POST",
@@ -186,7 +212,102 @@ export async function sendMessage(
   if (!answer) {
     throw new ApiError("Trợ lý chưa trả về nội dung. Anh/Chị vui lòng gửi lại câu hỏi.")
   }
-  return answer
+  return {
+    answer,
+    suggestions: normalizeSuggestions(pick(response, "suggestions", "Suggestions")),
+  }
+}
+
+export async function sendMessageStream(
+  id: string,
+  message: string,
+  handlers: StreamHandlers = {},
+  role: AccessRole = "GUEST",
+): Promise<SendMessageResult> {
+  const controller = new AbortController()
+  const timeout = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
+  try {
+    const response = await fetch(`${API_BASE}/c/${encodeURIComponent(id)}/stream`, {
+      method: "POST",
+      headers: {
+        Accept: "text/event-stream",
+        "Content-Type": "application/json",
+        Role: role,
+      },
+      credentials: "same-origin",
+      signal: controller.signal,
+      body: JSON.stringify({ message }),
+    })
+    if (!response.ok || !response.body) {
+      throw new ApiError(`Máy chủ trả về lỗi ${response.status}.`, response.status)
+    }
+
+    const reader = response.body.getReader()
+    const decoder = new TextDecoder()
+    let buffer = ""
+    let accumulated = ""
+    let suggestions: ChatSuggestion[] = []
+    let completed: SendMessageResult | null = null
+
+    const processEvent = (block: string) => {
+      let event = "message"
+      const dataLines: string[] = []
+      for (const line of block.split(/\r?\n/)) {
+        if (line.startsWith("event:")) event = line.slice(6).trim()
+        if (line.startsWith("data:")) dataLines.push(line.slice(5).trimStart())
+      }
+      if (!dataLines.length) return
+      let payload: unknown
+      try {
+        payload = JSON.parse(dataLines.join("\n"))
+      } catch {
+        return
+      }
+      const record = asRecord(payload)
+      if (event === "status") {
+        const label = asString(pick(record, "label", "Label"))
+        handlers.onStatus?.({ phase: asString(pick(record, "phase", "Phase")), label })
+      } else if (event === "delta") {
+        const text = asString(pick(record, "text", "Text"))
+        accumulated += text
+        handlers.onDelta?.(text)
+      } else if (event === "suggestions") {
+        suggestions = normalizeSuggestions(pick(record, "items", "Items"))
+        handlers.onSuggestions?.(suggestions)
+      } else if (event === "complete") {
+        const answer = asString(pick(record, "response", "Response")) || accumulated
+        const finalSuggestions = normalizeSuggestions(pick(record, "suggestions", "Suggestions"))
+        if (finalSuggestions.length) suggestions = finalSuggestions
+        completed = { answer, suggestions }
+      } else if (event === "error") {
+        throw new ApiError(asString(pick(record, "message", "Message")) || "Trợ lý chưa thể hoàn tất câu trả lời.")
+      }
+    }
+
+    while (true) {
+      const { value, done } = await reader.read()
+      buffer += decoder.decode(value, { stream: !done })
+      let separator = buffer.indexOf("\n\n")
+      while (separator >= 0) {
+        processEvent(buffer.slice(0, separator))
+        buffer = buffer.slice(separator + 2)
+        separator = buffer.indexOf("\n\n")
+      }
+      if (done) break
+    }
+    if (buffer.trim()) processEvent(buffer)
+    if (completed) return completed
+    if (accumulated) return { answer: accumulated, suggestions }
+    throw new ApiError("Trợ lý chưa trả về nội dung hoàn chỉnh.")
+  } catch (error) {
+    if (error instanceof ApiError) throw error
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw new ApiError("Dịch vụ phản hồi chậm hơn dự kiến. Anh/Chị vui lòng thử lại sau ít phút.")
+    }
+    throw new ApiError("Không thể kết nối tới dịch vụ hỗ trợ. Anh/Chị vui lòng thử lại.")
+  } finally {
+    window.clearTimeout(timeout)
+  }
 }
 
 export async function deleteSession(id: string): Promise<void> {

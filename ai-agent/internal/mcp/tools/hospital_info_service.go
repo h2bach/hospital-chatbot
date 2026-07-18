@@ -11,15 +11,20 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	mcp_sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
 const defaultHospitalInfoServiceURL = "http://localhost:8081"
 
+const maxHospitalInfoResponseBytes = 4 << 20
+
+var hospitalInfoHTTPClient = &http.Client{Timeout: 10 * time.Second}
+
 type APIOutput struct {
-	Status int `json:"status" jsonschema:"HTTP status returned by hospital-info-service"`
-	Body   any `json:"body" jsonschema:"JSON response returned by hospital-info-service"`
+	Status int            `json:"status" jsonschema:"HTTP status returned by hospital-info-service"`
+	Body   map[string]any `json:"body" jsonschema:"JSON object returned by hospital-info-service"`
 }
 
 type EmptyInput struct{}
@@ -231,16 +236,19 @@ func callHospitalInfo(ctx context.Context, path string, query url.Values) (*mcp_
 	if err != nil {
 		return nil, APIOutput{}, fmt.Errorf("create hospital-info request: %w", err)
 	}
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := hospitalInfoHTTPClient.Do(req)
 	if err != nil {
 		return nil, APIOutput{}, fmt.Errorf("call hospital-info-service: %w", err)
 	}
 	defer resp.Body.Close()
-	body, err := io.ReadAll(resp.Body)
+	body, err := io.ReadAll(io.LimitReader(resp.Body, maxHospitalInfoResponseBytes+1))
 	if err != nil {
 		return nil, APIOutput{}, fmt.Errorf("read hospital-info response: %w", err)
 	}
-	var result any
+	if len(body) > maxHospitalInfoResponseBytes {
+		return nil, APIOutput{}, fmt.Errorf("hospital-info response exceeds %d bytes", maxHospitalInfoResponseBytes)
+	}
+	result := map[string]any{}
 	if len(bytes.TrimSpace(body)) > 0 {
 		if err := json.Unmarshal(body, &result); err != nil {
 			return nil, APIOutput{}, fmt.Errorf("decode hospital-info response: %w", err)

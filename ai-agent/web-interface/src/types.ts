@@ -4,10 +4,34 @@ export type AccessRole = "GUEST"
 
 export type DeliveryState = "sending" | "failed"
 
+export interface ChatSuggestion {
+  id: string
+  label: string
+  value: string
+  similarity: number
+}
+
 export interface ChatMessage {
   role: MessageRole
   content: string
   delivery?: DeliveryState
+  suggestions?: ChatSuggestion[]
+}
+
+export interface SendMessageResult {
+  answer: string
+  suggestions: ChatSuggestion[]
+}
+
+export interface StreamStatus {
+  phase: string
+  label: string
+}
+
+export interface StreamHandlers {
+  onStatus?: (status: StreamStatus) => void
+  onDelta?: (text: string) => void
+  onSuggestions?: (suggestions: ChatSuggestion[]) => void
 }
 
 export interface ChatSession {
@@ -25,4 +49,3 @@ export interface SessionSummary {
 }
 
 export type ServerStatus = "checking" | "online" | "offline"
-

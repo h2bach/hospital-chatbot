@@ -1414,6 +1414,59 @@ button:disabled {
   background: var(--surface-soft);
 }
 
+.clarification-options {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.clarification-option {
+  display: grid;
+  width: 100%;
+  min-height: 48px;
+  padding: 9px 11px;
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 9px;
+  border: 1px solid color-mix(in srgb, var(--primary) 24%, var(--border));
+  border-radius: 12px;
+  background: var(--primary-soft);
+  color: var(--foreground);
+  text-align: left;
+}
+
+.clarification-option:hover:not(:disabled) {
+  border-color: var(--primary);
+  background: color-mix(in srgb, var(--primary-soft) 70%, var(--surface));
+  transform: translateY(-1px);
+}
+
+.clarification-rank {
+  display: inline-flex;
+  width: 26px;
+  height: 26px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: var(--primary);
+  color: var(--on-primary);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.clarification-label {
+  overflow-wrap: anywhere;
+  font-size: 13px;
+  font-weight: 680;
+  line-height: 1.4;
+}
+
+.clarification-score {
+  color: var(--primary);
+  font-size: 12px;
+  font-weight: 750;
+}
+
 .thinking-indicator {
   display: flex;
   align-items: center;

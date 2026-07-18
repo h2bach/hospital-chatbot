@@ -9,45 +9,33 @@ import (
 	"agent/internal/agent"
 )
 
-// NewFromEnvironment builds the configured provider set. LLM_PROVIDERS takes
-// precedence and accepts values such as "gemini,fpt". LLM_PROVIDER remains a
-// compatible alias for a single provider.
+// NewFromEnvironment builds the production inference client. FPT is the
+// mandatory control-plane provider: a deployment must not silently switch to
+// another model when FPT planning or evaluation is unavailable.
+//
+// LLM_PROVIDER and LLM_PROVIDERS are retained only to detect stale or unsafe
+// configuration. When present, they must select FPT exclusively.
 func NewFromEnvironment(ctx context.Context) (agent.LLMClient, error) {
-	providerList := os.Getenv("LLM_PROVIDERS")
-	if providerList == "" {
-		providerList = os.Getenv("LLM_PROVIDER")
-	}
-	if strings.TrimSpace(providerList) == "" {
-		providerList = "fpt"
-	}
+	_ = ctx // Kept in the public signature for callers and future initialization.
 
-	providers := configuredProviders(providerList)
-	clients := make([]agent.LLMClient, 0, len(providers))
-	for _, provider := range providers {
-		switch provider {
-		case "gemini":
-			keys := os.Getenv("GEMINI_API_KEYS")
-			if keys == "" {
-				keys = os.Getenv("GEMINI_API_KEY")
-			}
-			client, err := NewGeminiClientWithModel(ctx, keys, os.Getenv("GEMINI_MODEL"))
-			if err != nil {
-				return nil, fmt.Errorf("configure Gemini: %w", err)
-			}
-			clients = append(clients, client)
-		case "fpt":
-			keys := os.Getenv("FPT_API_KEYS")
-			if keys == "" {
-				keys = os.Getenv("FPT_API_KEY")
-			}
-			client, err := NewFPTClient(keys, os.Getenv("FPT_MODEL"), os.Getenv("FPT_BASE_URL"))
-			if err != nil {
-				return nil, fmt.Errorf("configure FPT: %w", err)
-			}
-			clients = append(clients, client)
-		default:
-			return nil, fmt.Errorf("unsupported LLM provider %q", provider)
+	providerList := strings.TrimSpace(os.Getenv("LLM_PROVIDERS"))
+	if providerList == "" {
+		providerList = strings.TrimSpace(os.Getenv("LLM_PROVIDER"))
+	}
+	if providerList != "" {
+		providers := configuredProviders(providerList)
+		if len(providers) != 1 || providers[0] != "fpt" {
+			return nil, fmt.Errorf("FPT is mandatory; LLM_PROVIDER(S) must select only %q", "fpt")
 		}
 	}
-	return NewRouter(clients...)
+
+	keys := strings.TrimSpace(os.Getenv("FPT_API_KEYS"))
+	if keys == "" {
+		keys = os.Getenv("FPT_API_KEY")
+	}
+	client, err := NewFPTClient(keys, os.Getenv("FPT_MODEL"), os.Getenv("FPT_BASE_URL"))
+	if err != nil {
+		return nil, fmt.Errorf("configure mandatory FPT provider: %w", err)
+	}
+	return client, nil
 }

@@ -2,10 +2,11 @@ package mcp
 
 import (
 	"agent/internal/mcp/tools"
+	"agent/internal/rag"
 	mcp_sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
-func bindTools(server *mcp_sdk.Server) {
+func bindTools(server *mcp_sdk.Server, knowledge rag.KnowledgeProvider) {
 	mcp_sdk.AddTool(server, &tools.CheckTimeTool, tools.CheckTimeHandler)
 	mcp_sdk.AddTool(server, &tools.HospitalInfoHealthTool, tools.HospitalInfoHealthHandler)
 	mcp_sdk.AddTool(server, &tools.HospitalMetaTool, tools.HospitalMetaHandler)
@@ -21,4 +22,7 @@ func bindTools(server *mcp_sdk.Server) {
 	mcp_sdk.AddTool(server, &tools.AssignmentPatternsTool, tools.AssignmentPatternsHandler)
 	mcp_sdk.AddTool(server, &tools.DataDictionaryTool, tools.DataDictionaryHandler)
 	mcp_sdk.AddTool(server, &tools.SourceRegistryTool, tools.SourceRegistryHandler)
+	mcp_sdk.AddTool(server, &tools.SearchHospitalKnowledgeTool, tools.SearchHospitalKnowledgeHandler(knowledge))
+	mcp_sdk.AddTool(server, &tools.ExpandHospitalKnowledgeContextTool, tools.ExpandHospitalKnowledgeContextHandler(knowledge))
+	mcp_sdk.AddTool(server, &tools.GetHospitalKnowledgeCatalogTool, tools.GetHospitalKnowledgeCatalogHandler(knowledge))
 }
