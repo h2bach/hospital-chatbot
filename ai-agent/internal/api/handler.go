@@ -10,7 +10,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"strings"
 )
 
 func readJSON(w http.ResponseWriter, r *http.Request, v any) bool {
@@ -105,11 +104,8 @@ func (svr *Server) PostMessage(w http.ResponseWriter, r *http.Request) {
 	agentResponse, err := svr.agent.CallWithImages(r.Context(), req.Message, images, &session.Context)
 	if err != nil {
 		log.Printf("agent request failed session=%s role=%s: %v", sessionID, session.Context.Role, err)
-		message := "Trợ lý chưa thể xử lý yêu cầu này. Vui lòng thử lại."
-		if len(images) > 0 && strings.Contains(err.Error(), "FPT_VLM_MODEL") {
-			message = "Chưa cấu hình FPT VLM. Hãy đặt FPT_VLM_MODEL bằng tên một model hỗ trợ hình ảnh trong FPT AI Marketplace."
-		}
-		writeJSON(w, dto.NewErrorResponse(message), http.StatusInternalServerError)
+		userFacingError := StandardizeModelError(err)
+		writeJSON(w, dto.NewErrorResponse(userFacingError), http.StatusInternalServerError)
 		return
 	}
 	err = svr.sessionStore.Save(session)
