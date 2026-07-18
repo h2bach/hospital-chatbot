@@ -1184,7 +1184,8 @@ button:disabled {
 }
 
 .message-assistant .message-body {
-  width: min(760px, calc(100% - 51px));
+  width: auto;
+  max-width: min(760px, calc(100% - 56px));
 }
 
 .message-user .message-body {
@@ -2288,12 +2289,13 @@ button:disabled {
   }
 
   .message-body {
-    max-width: calc(100% - 44px);
+    max-width: calc(100% - 54px);
     padding: 13px 14px;
   }
 
   .message-assistant .message-body {
-    width: calc(100% - 44px);
+    width: auto;
+    max-width: calc(100% - 54px);
   }
 
   .message-content {
@@ -2354,6 +2356,23 @@ button:disabled {
 }
 
 @media (max-width: 480px) {
+  .thread {
+    padding: 16px 12px 32px;
+  }
+
+  .message {
+    gap: 8px;
+  }
+
+  .message-body {
+    max-width: calc(100% - 52px);
+  }
+
+  .message-assistant .message-body {
+    width: auto;
+    max-width: calc(100% - 52px);
+  }
+
   .header-logo {
     display: none;
   }
