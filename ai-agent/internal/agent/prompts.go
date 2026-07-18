@@ -304,7 +304,7 @@ liệu đã xác minh trước khi đưa vào production — đặc biệt là s
 
 VÀ NHỚ RẰNG KHÔNG ĐƯỢC SỬ DỤNG EMOJI ĐỂ TRẢ LỜI !!
 `
-	TITLE_PROMPT = `Name this conversation in 3-8 words, only use text, no ** or anything to format markdown`
+	TITLE_PROMPT = `Name this conversation in 3-6 words, only use text, no ** or anything to format markdown`
 )
 
 func cleanPrompt(rawPrompt string) string {
