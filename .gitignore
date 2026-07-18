@@ -1,3 +1,6 @@
 /build/
 /.env
 /.envrc
+**/node_modules/
+**/dist/
+**/*.tsbuildinfo

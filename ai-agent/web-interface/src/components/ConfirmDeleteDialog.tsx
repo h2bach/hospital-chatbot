@@ -34,7 +34,8 @@ export function ConfirmDeleteDialog({
           </div>
           <Dialog.Title>Xóa cuộc trò chuyện?</Dialog.Title>
           <Dialog.Description id="delete-description">
-            “{title}” sẽ bị xóa khỏi bộ nhớ máy chủ. Hành động này không thể hoàn tác.
+            “{title}” và toàn bộ nội dung liên quan sẽ bị xóa. Hành động này không thể
+            hoàn tác.
           </Dialog.Description>
           {error ? (
             <div className="inline-alert" role="alert">
@@ -58,7 +59,7 @@ export function ConfirmDeleteDialog({
               ) : (
                 <Trash2 aria-hidden="true" />
               )}
-              {deleting ? "Đang xóa…" : "Xóa vĩnh viễn"}
+              {deleting ? "Đang xóa…" : "Xóa cuộc trò chuyện"}
             </button>
           </div>
           <Dialog.Close asChild>

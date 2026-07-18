@@ -21,7 +21,6 @@ func NewAgent(llm LLMClient, mcpClient *mcp.MCPClient) *Agent {
 
 func (a *Agent) Call(ctx context.Context, input string, agentContext *domain.Context) (string, error) {
 	tools, _ := a.MCPClient.Tools(ctx)
-	agentContext.Tools = tools
 	// Keep exactly one system prompt, derived from the role currently attached to
 	// this context. This also updates an existing session when its role changes.
 	syncSystemPrompt(agentContext)
@@ -40,6 +39,9 @@ func (a *Agent) Call(ctx context.Context, input string, agentContext *domain.Con
 		}
 
 		if IsToolCall(chatOutput) {
+			if err := ensureToolAllowed(agentContext.Role, chatOutput.ToolName); err != nil {
+				return "", err
+			}
 			toolOutput, err := a.MCPClient.CallTool(ctx, chatOutput.ToolName, chatOutput.Args)
 			agentContext.Messages = append(agentContext.Messages, domain.Message{
 				Role:    domain.AgentRole,

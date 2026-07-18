@@ -1,4 +1,5 @@
 import type {
+  AccessRole,
   ChatMessage,
   ChatSession,
   MessageRole,
@@ -132,11 +133,11 @@ async function requestJson<T>(path: string, init: RequestInit = {}): Promise<T> 
     if (error instanceof ApiError) throw error
     if (error instanceof DOMException && error.name === "AbortError") {
       throw new ApiError(
-        "Yêu cầu mất quá nhiều thời gian. Hãy kiểm tra máy chủ rồi thử lại.",
+        "Dịch vụ phản hồi chậm hơn dự kiến. Anh/Chị vui lòng thử lại sau ít phút.",
       )
     }
     throw new ApiError(
-      "Không thể kết nối tới máy chủ. Hãy chắc chắn backend của dự án đang chạy rồi thử lại.",
+      "Không thể kết nối tới dịch vụ hỗ trợ. Anh/Chị vui lòng thử lại hoặc gọi tổng đài 1900 1082.",
     )
   } finally {
     window.clearTimeout(timeout)
@@ -155,7 +156,7 @@ export async function createSession(): Promise<string> {
   )
   const sessionId = asString(pick(response, "session_id", "sessionId"))
   if (!sessionId) {
-    throw new ApiError("Máy chủ không trả về mã cuộc trò chuyện.")
+    throw new ApiError("Chưa thể bắt đầu cuộc trò chuyện mới. Anh/Chị vui lòng thử lại.")
   }
   return sessionId
 }
@@ -166,19 +167,24 @@ export async function getSession(id: string): Promise<ChatSession> {
   )
 }
 
-export async function sendMessage(id: string, message: string): Promise<string> {
+export async function sendMessage(
+  id: string,
+  message: string,
+  role: AccessRole = "GUEST",
+): Promise<string> {
   const response = asRecord(
     await requestJson<unknown>(`/c/${encodeURIComponent(id)}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        Role: role,
       },
       body: JSON.stringify({ message }),
     }),
   )
   const answer = asString(pick(response, "response", "Response"))
   if (!answer) {
-    throw new ApiError("Agent không trả về nội dung phản hồi.")
+    throw new ApiError("Trợ lý chưa trả về nội dung. Anh/Chị vui lòng gửi lại câu hỏi.")
   }
   return answer
 }

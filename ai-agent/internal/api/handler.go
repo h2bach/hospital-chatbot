@@ -68,13 +68,16 @@ func (svr *Server) PostMessage(w http.ResponseWriter, r *http.Request) {
 	if !readJSON(w, r, &req) {
 		return
 	}
-	
+
 	session, err := svr.sessionStore.GetByID(sessionID)
 	if err != nil {
 		errorResponse := dto.NewErrorResponse(err.Error())
 		writeJSON(w, errorResponse, http.StatusBadRequest)
 		return
 	}
+	// Role is supplied by the authenticated gateway/client. Unknown or missing
+	// values are intentionally restricted to GUEST by the agent.
+	session.Context.Role = agent.NormalizeRole(r.Header.Get("Role"))
 
 	// Extract user role from request headers or query parameters
 	role := r.Header.Get("X-User-Role")

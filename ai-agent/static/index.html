@@ -5,21 +5,37 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="Không gian trò chuyện với AI GO Agent trên máy của bạn."
+      content="Trợ lý AI Bệnh viện Tim Hà Nội hỗ trợ thông tin đặt lịch, quy trình khám, bảo hiểm y tế và dịch vụ bệnh viện."
     />
-    <meta name="theme-color" content="#0f172a" />
+    <meta name="theme-color" content="#f4f7fc" />
+    <link rel="icon" type="image/png" href="./bvtim_logo.png" />
     <script>
       try {
-        const savedTheme = localStorage.getItem("ai-go-theme")
+        const params = new URLSearchParams(window.location.search)
+        const requestedTheme = params.get("theme")
+        const savedTheme = localStorage.getItem("bvtim-chat-theme")
         const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches
-        document.documentElement.dataset.theme = savedTheme || (prefersDark ? "dark" : "light")
+        document.documentElement.dataset.theme =
+          requestedTheme === "light" || requestedTheme === "dark"
+            ? requestedTheme
+            : savedTheme === "light" || savedTheme === "dark"
+              ? savedTheme
+              : prefersDark
+                ? "dark"
+                : "light"
+        document.documentElement.dataset.embedded =
+          params.get("embed") === "1" ||
+          params.get("embed") === "true" ||
+          window.self !== window.top
+            ? "true"
+            : "false"
       } catch {
-        document.documentElement.dataset.theme = "dark"
+        document.documentElement.dataset.theme = "light"
       }
     </script>
-    <title>AI GO Workspace</title>
-    <script type="module" crossorigin src="./assets/index-CqBaBiQ-.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-CbqM0QFn.css">
+    <title>Trợ lý AI | Bệnh viện Tim Hà Nội</title>
+    <script type="module" crossorigin src="./assets/index-C1zJDXIG.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-BNWS48PT.css">
   </head>
   <body>
     <div id="root"></div>

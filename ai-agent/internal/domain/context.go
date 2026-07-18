@@ -7,14 +7,14 @@ import (
 type Role string
 
 const (
-	UserRole Role = "User"
+	UserRole   Role = "User"
 	SystemRole Role = "System"
-	AgentRole Role = "Assistant"
-	ToolRole Role = "Tool"
+	AgentRole  Role = "Assistant"
+	ToolRole   Role = "Tool"
 )
 
 type Message struct {
-	Role Role
+	Role    Role
 	Content string
 }
 
@@ -24,9 +24,18 @@ type Context struct {
 	UserRole string `json:"user_role,omitempty"`
 }
 
+type AccessRole string
+
+const (
+	GuestAccessRole   AccessRole = "GUEST"
+	PatientAccessRole AccessRole = "PATIENT"
+	DoctorAccessRole  AccessRole = "DOCTOR"
+	AdminAccessRole   AccessRole = "ADMIN"
+)
+
 type Session struct {
-	ID string
-	Title string
+	ID      string
+	Title   string
 	OwnerID string
 	Context Context
 }
