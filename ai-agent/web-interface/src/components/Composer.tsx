@@ -345,7 +345,7 @@ export function Composer({
           value={value}
           disabled={sending}
           placeholder="Nhập câu hỏi về đặt lịch, BHYT, quy trình khám…"
-          aria-describedby="composer-help composer-privacy"
+          aria-describedby="composer-privacy"
           onChange={(event) => onChange(event.target.value)}
           onPaste={handlePaste}
           onBlur={() => window.scrollTo(0, 0)}
@@ -440,9 +440,6 @@ export function Composer({
         </div>
       ) : null}
       <div className="composer-footer">
-        <p id="composer-help" className="composer-help">
-          Enter để gửi · Shift + Enter để xuống dòng
-        </p>
         <p id="composer-privacy" className="composer-privacy">
           <ShieldCheck aria-hidden="true" />
           Không gửi CCCD, số thẻ BHYT hoặc hồ sơ bệnh án nếu không cần thiết.
