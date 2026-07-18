@@ -21,6 +21,7 @@ if (-not $ApiKeys -or $ApiKeys -eq "your_actual_gemini_api_key_here") {
 
 $InfoPort = 8081
 $AgentPort = 8080
+$DashboardPort = 8082
 $StaticDir = Join-Path (Get-Location) "ai-agent\static"
 
 if (-not (Test-Path -LiteralPath "hospital-data\current_schedule.json")) {
@@ -36,7 +37,29 @@ if (-not (Test-Path -LiteralPath (Join-Path $StaticDir "index.html"))) {
     Pop-Location
 }
 
-foreach ($Port in @($InfoPort, $AgentPort)) {
+if (-not (Test-Path -LiteralPath "hospital-data\web-dashboard\node_modules")) {
+    Write-Host "[Info] Đang cài dependency cho dashboard dữ liệu..." -ForegroundColor Yellow
+    Push-Location "hospital-data\web-dashboard"
+    npm ci
+    if ($LASTEXITCODE -ne 0) {
+        Pop-Location
+        Write-Host "[Error] Không cài được dependency cho dashboard dữ liệu." -ForegroundColor Red
+        Exit 1
+    }
+    Pop-Location
+}
+
+Write-Host "[Info] Đang build dashboard dữ liệu thành file tĩnh..." -ForegroundColor Yellow
+Push-Location "hospital-data\web-dashboard"
+npm run build
+if ($LASTEXITCODE -ne 0) {
+    Pop-Location
+    Write-Host "[Error] Không build được dashboard dữ liệu." -ForegroundColor Red
+    Exit 1
+}
+Pop-Location
+
+foreach ($Port in @($InfoPort, $AgentPort, $DashboardPort)) {
     $Connections = Get-NetTCPConnection -LocalPort $Port -ErrorAction SilentlyContinue
     foreach ($ProcessId in ($Connections.OwningProcess | Sort-Object -Unique)) {
         if ($ProcessId) { Stop-Process -Id $ProcessId -Force -ErrorAction SilentlyContinue }
@@ -53,7 +76,7 @@ $InfoJob = Start-Job -ScriptBlock {
 $Ready = $false
 for ($Attempt = 1; $Attempt -le 15; $Attempt++) {
     try {
-        $Health = Invoke-RestMethod -Uri "http://localhost:$InfoPort/health" -TimeoutSec 2
+        $Health = Invoke-RestMethod -Uri "http://127.0.0.1:$InfoPort/health" -TimeoutSec 2
         if ($Health.status -eq "ok" -or $Health.status -eq "degraded") {
             $Ready = $true
             break
@@ -70,17 +93,48 @@ if (-not $Ready) {
 }
 
 Write-Host "[Success] API dữ liệu: http://localhost:$InfoPort" -ForegroundColor Green
+Write-Host "[Info] Khởi động dashboard dữ liệu ở cổng $DashboardPort..." -ForegroundColor Cyan
+$DashboardJob = Start-Job -ScriptBlock {
+    param($Path, $ApiTarget, $Port)
+    Set-Location -LiteralPath $Path
+    $env:VITE_ADMIN_API_TARGET = $ApiTarget
+    npm run preview -- --host 127.0.0.1 --port $Port --strictPort
+} -ArgumentList (Join-Path (Get-Location) "hospital-data\web-dashboard"), "http://127.0.0.1:$InfoPort", $DashboardPort
+
+$DashboardReady = $false
+for ($Attempt = 1; $Attempt -le 20; $Attempt++) {
+    try {
+        $Response = Invoke-WebRequest -Uri "http://127.0.0.1:$DashboardPort" -TimeoutSec 2 -UseBasicParsing
+        if ($Response.StatusCode -eq 200) {
+            $DashboardReady = $true
+            break
+        }
+    } catch {
+        Start-Sleep -Milliseconds 500
+    }
+}
+if (-not $DashboardReady) {
+    Receive-Job -Job $DashboardJob
+    Stop-Job -Job $DashboardJob -ErrorAction SilentlyContinue
+    Stop-Job -Job $InfoJob -ErrorAction SilentlyContinue
+    Write-Host "[Error] Dashboard dữ liệu không khởi động được." -ForegroundColor Red
+    Exit 1
+}
+
+Write-Host "[Success] Dashboard dữ liệu: http://localhost:$DashboardPort" -ForegroundColor Green
 Write-Host "[Info] Khởi động chatbot: http://localhost:$AgentPort" -ForegroundColor Green
 $env:GEMINI_API_KEYS = $ApiKeys
 $env:PORT = $AgentPort
 $env:AGENT_STATIC_DIR = $StaticDir
-$env:HOSPITAL_INFO_SERVICE_URL = "http://localhost:$InfoPort"
+$env:HOSPITAL_INFO_SERVICE_URL = "http://127.0.0.1:$InfoPort"
 
 try {
     Push-Location "ai-agent"
     go run ./cmd/server -p $AgentPort
     Pop-Location
 } finally {
-    Stop-Job -Job $InfoJob -ErrorAction SilentlyContinue
-    Remove-Job -Job $InfoJob -Force -ErrorAction SilentlyContinue
+    foreach ($Job in @($DashboardJob, $InfoJob)) {
+        Stop-Job -Job $Job -ErrorAction SilentlyContinue
+        Remove-Job -Job $Job -Force -ErrorAction SilentlyContinue
+    }
 }

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 )
@@ -95,15 +96,37 @@ func requestID(next http.Handler) http.Handler {
 
 func cors(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
+		origin := r.Header.Get("Origin")
+		allowed := origin == "" || isLocalDashboardOrigin(origin)
+		if origin != "" && allowed {
+			w.Header().Set("Access-Control-Allow-Origin", origin)
+			w.Header().Add("Vary", "Origin")
+		}
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, X-Request-ID")
-		w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, PUT, OPTIONS")
 		if r.Method == http.MethodOptions {
+			if !allowed {
+				writeError(w, http.StatusForbidden, "ORIGIN_NOT_ALLOWED", "Origin không được phép cập nhật dữ liệu local")
+				return
+			}
 			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		if r.Method == http.MethodPut && !allowed {
+			writeError(w, http.StatusForbidden, "ORIGIN_NOT_ALLOWED", "Origin không được phép cập nhật dữ liệu local")
 			return
 		}
 		next.ServeHTTP(w, r)
 	})
+}
+
+func isLocalDashboardOrigin(origin string) bool {
+	parsed, err := url.Parse(origin)
+	if err != nil || (parsed.Scheme != "http" && parsed.Scheme != "https") {
+		return false
+	}
+	host := strings.ToLower(parsed.Hostname())
+	return host == "localhost" || host == "127.0.0.1" || host == "::1"
 }
 
 func recoverer(next http.Handler) http.Handler {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"log"
+	"time"
 
 	"hospital-info-service/internal/api"
 	"hospital-info-service/internal/data"
@@ -18,8 +19,11 @@ func main() {
 	if err != nil {
 		log.Fatalf("load hospital data: %v", err)
 	}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	store.StartWatcher(ctx, 300*time.Millisecond)
 	server := api.NewServer(":"+*port, store)
-	if err := server.Run(context.Background()); err != nil {
+	if err := server.Run(ctx); err != nil {
 		log.Fatalf("server: %v", err)
 	}
 }

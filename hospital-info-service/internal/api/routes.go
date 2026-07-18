@@ -21,5 +21,9 @@ func (s *Server) addRoutes() {
 	mux.HandleFunc("GET /api/v1/scheduling/patterns", s.assignmentPatterns)
 	mux.HandleFunc("GET /api/v1/data-dictionary", s.dataDictionary)
 	mux.HandleFunc("GET /api/v1/source-registry", s.sourceRegistry)
+	mux.HandleFunc("GET /api/v1/admin/datasets", s.adminDatasets)
+	mux.HandleFunc("GET /api/v1/admin/datasets/{name}", s.adminDataset)
+	mux.HandleFunc("PUT /api/v1/admin/datasets/{name}", s.updateAdminDataset)
+	mux.HandleFunc("GET /api/v1/admin/events", s.adminEvents)
 	s.httpServer.Handler = cors(requestID(recoverer(mux)))
 }

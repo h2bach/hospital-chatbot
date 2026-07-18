@@ -4,14 +4,23 @@ services:
       context: ./hospital-info-service
     command: ["--port", "8080", "--data", "/app/data"]
     volumes:
-      - ./hospital-data:/app/data:ro
+      - ./hospital-data:/app/data
     ports:
-      - "8081:8080"
+      - "127.0.0.1:8081:8080"
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:8080/health"]
       interval: 5s
       timeout: 3s
       retries: 10
+
+  hospital-data-dashboard:
+    build:
+      context: ./hospital-data/web-dashboard
+    depends_on:
+      hospital-info-service:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8082:8080"
 
   ai-agent:
     build:

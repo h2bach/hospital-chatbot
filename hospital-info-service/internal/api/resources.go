@@ -10,8 +10,9 @@ import (
 
 func (s *Server) health(w http.ResponseWriter, _ *http.Request) {
 	schedule, err := s.store.CurrentSchedule()
+	revision, reloadError := s.store.Revision()
 	status := "ok"
-	if err != nil {
+	if err != nil || reloadError != "" {
 		status = "degraded"
 	}
 	writeJSON(w, map[string]any{
@@ -19,20 +20,39 @@ func (s *Server) health(w http.ResponseWriter, _ *http.Request) {
 		"service":         "hanoi-heart-hospital-public-info",
 		"data_nature":     "real-observed data served by a local mock API",
 		"schedule_status": schedule.PublishedStatus,
+		"data_revision":   revision,
+		"reload_error":    emptyToNil(reloadError),
 	}, http.StatusOK)
 }
 
 func (s *Server) metadata(w http.ResponseWriter, _ *http.Request) {
-	writeJSON(w, map[string]any{"data": s.store.Meta}, http.StatusOK)
+	store := s.store.Snapshot()
+	meta := clone(store.Meta)
+	counts := map[string]any{}
+	if existing, ok := store.Meta["counts"].(map[string]any); ok {
+		for key, value := range existing {
+			counts[key] = value
+		}
+	}
+	counts["facilities"] = len(store.Facilities)
+	counts["rooms"] = len(store.Rooms)
+	counts["doctors"] = len(store.Doctors)
+	counts["scheduling_rules"] = len(store.Rules)
+	counts["assignment_patterns"] = len(store.Patterns)
+	counts["organization_units"] = len(store.Units)
+	counts["source_images"] = len(store.Sources)
+	meta["counts"] = counts
+	writeJSON(w, map[string]any{"data": meta}, http.StatusOK)
 }
 
 func (s *Server) facilities(w http.ResponseWriter, _ *http.Request) {
-	result := make([]data.Record, 0, len(s.store.Facilities))
-	for _, facility := range s.store.Facilities {
+	store := s.store.Snapshot()
+	result := make([]data.Record, 0, len(store.Facilities))
+	for _, facility := range store.Facilities {
 		copy := clone(facility)
 		areas := map[string]string{}
 		roomCount := 0
-		for _, room := range s.store.Rooms {
+		for _, room := range store.Rooms {
 			if fmt.Sprint(room["facility_id"]) == fmt.Sprint(facility["facility_id"]) {
 				roomCount++
 				areas[fmt.Sprint(room["area_id"])] = fmt.Sprint(room["area_name"])
@@ -46,29 +66,30 @@ func (s *Server) facilities(w http.ResponseWriter, _ *http.Request) {
 }
 
 func (s *Server) facility(w http.ResponseWriter, r *http.Request) {
-	record, ok := data.Find(s.store.Facilities, "facility_id", r.PathValue("id"))
+	store := s.store.Snapshot()
+	record, ok := data.Find(store.Facilities, "facility_id", r.PathValue("id"))
 	if !ok {
 		writeError(w, http.StatusNotFound, "FACILITY_NOT_FOUND", "Không tìm thấy cơ sở")
 		return
 	}
-	rooms := filter(s.store.Rooms, map[string]string{"facility_id": r.PathValue("id")}, "")
+	rooms := filter(store.Rooms, map[string]string{"facility_id": r.PathValue("id")}, "")
 	writeJSON(w, map[string]any{"data": record, "rooms": rooms, "room_total": len(rooms)}, http.StatusOK)
 }
 
 func (s *Server) organization(w http.ResponseWriter, r *http.Request) {
 	filters := queryFilters(r, "block", "parent_id", "unit_type")
-	rows := filter(s.store.Units, filters, r.URL.Query().Get("q"))
+	rows := filter(s.store.Snapshot().Units, filters, r.URL.Query().Get("q"))
 	s.writePage(w, r, rows)
 }
 
 func (s *Server) rooms(w http.ResponseWriter, r *http.Request) {
 	filters := queryFilters(r, "facility_id", "area_id", "specialty")
-	rows := filter(s.store.Rooms, filters, r.URL.Query().Get("q"))
+	rows := filter(s.store.Snapshot().Rooms, filters, r.URL.Query().Get("q"))
 	s.writePage(w, r, rows)
 }
 
 func (s *Server) room(w http.ResponseWriter, r *http.Request) {
-	record, ok := data.Find(s.store.Rooms, "room_id", r.PathValue("id"))
+	record, ok := data.Find(s.store.Snapshot().Rooms, "room_id", r.PathValue("id"))
 	if !ok {
 		writeError(w, http.StatusNotFound, "ROOM_NOT_FOUND", "Không tìm thấy phòng khám")
 		return
@@ -78,37 +99,38 @@ func (s *Server) room(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) doctors(w http.ResponseWriter, r *http.Request) {
 	filters := queryFilters(r, "staff_id", "credential_normalized", "observed_facilities", "observed_areas")
-	rows := filter(s.store.Doctors, filters, r.URL.Query().Get("q"))
+	rows := filter(s.store.Snapshot().Doctors, filters, r.URL.Query().Get("q"))
 	s.writePage(w, r, rows)
 }
 
 func (s *Server) doctor(w http.ResponseWriter, r *http.Request) {
-	record, ok := data.Find(s.store.Doctors, "staff_id", r.PathValue("id"))
+	store := s.store.Snapshot()
+	record, ok := data.Find(store.Doctors, "staff_id", r.PathValue("id"))
 	if !ok {
 		writeError(w, http.StatusNotFound, "DOCTOR_NOT_FOUND", "Không tìm thấy bác sĩ")
 		return
 	}
-	patterns := filter(s.store.Patterns, map[string]string{"staff_id": r.PathValue("id")}, "")
+	patterns := filter(store.Patterns, map[string]string{"staff_id": r.PathValue("id")}, "")
 	writeJSON(w, map[string]any{"data": record, "observed_assignment_patterns": patterns}, http.StatusOK)
 }
 
 func (s *Server) schedulingRules(w http.ResponseWriter, r *http.Request) {
-	rows := filter(s.store.Rules, queryFilters(r, "rule_id", "group", "level", "confidence"), r.URL.Query().Get("q"))
+	rows := filter(s.store.Snapshot().Rules, queryFilters(r, "rule_id", "group", "level", "confidence"), r.URL.Query().Get("q"))
 	s.writePage(w, r, rows)
 }
 
 func (s *Server) assignmentPatterns(w http.ResponseWriter, r *http.Request) {
-	rows := filter(s.store.Patterns, queryFilters(r, "pattern_id", "area_id", "room_or_scope", "pattern_type", "confidence", "staff_id"), r.URL.Query().Get("q"))
+	rows := filter(s.store.Snapshot().Patterns, queryFilters(r, "pattern_id", "area_id", "room_or_scope", "pattern_type", "confidence", "staff_id"), r.URL.Query().Get("q"))
 	s.writePage(w, r, rows)
 }
 
 func (s *Server) dataDictionary(w http.ResponseWriter, r *http.Request) {
-	rows := filter(s.store.Dictionary, queryFilters(r, "field", "type"), r.URL.Query().Get("q"))
+	rows := filter(s.store.Snapshot().Dictionary, queryFilters(r, "field", "type"), r.URL.Query().Get("q"))
 	s.writePage(w, r, rows)
 }
 
 func (s *Server) sourceRegistry(w http.ResponseWriter, r *http.Request) {
-	rows := filter(s.store.Sources, queryFilters(r, "source_id", "facility_id", "status"), r.URL.Query().Get("q"))
+	rows := filter(s.store.Snapshot().Sources, queryFilters(r, "source_id", "facility_id", "status"), r.URL.Query().Get("q"))
 	s.writePage(w, r, rows)
 }
 
@@ -131,7 +153,7 @@ func (s *Server) schedules(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) doctorSchedule(w http.ResponseWriter, r *http.Request) {
-	if _, ok := data.Find(s.store.Doctors, "staff_id", r.PathValue("id")); !ok {
+	if _, ok := data.Find(s.store.Snapshot().Doctors, "staff_id", r.PathValue("id")); !ok {
 		writeError(w, http.StatusNotFound, "DOCTOR_NOT_FOUND", "Không tìm thấy bác sĩ")
 		return
 	}
@@ -159,6 +181,7 @@ func (s *Server) availability(w http.ResponseWriter, r *http.Request) {
 		filters["schedule_date"] = date
 	}
 	rows := filter(schedule.Assignments, filters, "")
+	store := s.store.Snapshot()
 	result := make([]data.Record, 0, len(rows))
 	for _, row := range rows {
 		status := fmt.Sprint(row["assignment_status"])
@@ -169,10 +192,10 @@ func (s *Server) availability(w http.ResponseWriter, r *http.Request) {
 		item["is_scheduled_available"] = true
 		item["availability_basis"] = "PUBLISHED_WEEKLY_SCHEDULE"
 		item["booking_slot_confirmed"] = false
-		if doctor, ok := data.Find(s.store.Doctors, "staff_id", fmt.Sprint(row["staff_id"])); ok {
+		if doctor, ok := data.Find(store.Doctors, "staff_id", fmt.Sprint(row["staff_id"])); ok {
 			item["doctor"] = doctor
 		}
-		if room, ok := data.Find(s.store.Rooms, "room_id", fmt.Sprint(row["room_id"])); ok {
+		if room, ok := data.Find(store.Rooms, "room_id", fmt.Sprint(row["room_id"])); ok {
 			item["room"] = room
 		}
 		result = append(result, item)
@@ -201,9 +224,10 @@ func (s *Server) search(w http.ResponseWriter, r *http.Request) {
 			types[name] = true
 		}
 	}
+	store := s.store.Snapshot()
 	collections := map[string][]data.Record{
-		"doctors": s.store.Doctors, "rooms": s.store.Rooms, "organization": s.store.Units,
-		"rules": s.store.Rules, "patterns": s.store.Patterns,
+		"doctors": store.Doctors, "rooms": store.Rooms, "organization": store.Units,
+		"rules": store.Rules, "patterns": store.Patterns,
 	}
 	result := make([]data.Record, 0)
 	for _, name := range []string{"doctors", "rooms", "organization", "rules", "patterns"} {
@@ -302,4 +326,11 @@ func scheduleNotice(schedule data.Schedule) string {
 		return "Chưa có lịch tuần đã công bố. Hãy dùng scripts/schedule_manager.py để nhập lịch tuần kế tiếp."
 	}
 	return "Lịch tuần hiện hành được nạp từ current_schedule.json; hệ thống không lưu lịch sử các tuần trước."
+}
+
+func emptyToNil(value string) any {
+	if value == "" {
+		return nil
+	}
+	return value
 }
