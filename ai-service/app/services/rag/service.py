@@ -96,7 +96,7 @@ class RAGService(AgentService):
                 max_iterations=kwargs.get("max_iterations", 5),
             )
 
-            # Invoke the graph
+            # Invoke the graph (returns dict, not MainState object)
             result = await self.graph.ainvoke(initial_state)
             
             latency_ms = (time.perf_counter() - start) * 1000
@@ -106,17 +106,17 @@ class RAGService(AgentService):
                 extra={
                     "trace_id": trace_id,
                     "latency_ms": f"{latency_ms:.1f}",
-                    "iterations": result.iteration,
-                    "result_count": len(result.branch_results),
+                    "iterations": result.get("iteration", 0),
+                    "result_count": len(result.get("branch_results", [])),
                 },
             )
 
             return {
-                "answer": result.final_answer,
+                "answer": result.get("final_answer", ""),
                 "trace_id": trace_id,
-                "iterations": result.iteration,
-                "result_count": len(result.branch_results),
-                "error_count": len(result.errors),
+                "iterations": result.get("iteration", 0),
+                "result_count": len(result.get("branch_results", [])),
+                "error_count": len(result.get("errors", [])),
                 "latency_ms": round(latency_ms, 1),
             }
 

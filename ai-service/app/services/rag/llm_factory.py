@@ -104,18 +104,21 @@ class LLMProviderFactory(ABC):
 
 class OllamaProviderFactory(LLMProviderFactory):
     """Factory for Ollama provider."""
-    
+
     def create_llm(self, model_name: str) -> Any:
+        if not model_name:
+            raise ModelConfigError(
+                "model_name is required for Ollama — set it via <TIER>_MODEL_NAME"
+            )
         return ChatOllama(
             base_url=self.settings.ollama_base_url,
-            model=model_name or self.settings.ollama_model,
+            model=model_name,
             temperature=self.settings.llm_temperature,
             num_predict=self.settings.llm_max_tokens,
             timeout=self.settings.llm_timeout,
         )
-    
+
     def validate_config(self) -> bool:
-        # Ollama doesn't need API key, just check if base_url is set
         return bool(self.settings.ollama_base_url)
 
 
@@ -140,40 +143,51 @@ class GoogleProviderFactory(LLMProviderFactory):
 
 
 class OpenAIProviderFactory(LLMProviderFactory):
-    """Factory for OpenAI provider."""
-    
+    """Factory for OpenAI provider (reads OPENAI_API_KEY from env automatically)."""
+
     def create_llm(self, model_name: str) -> Any:
-        # OpenAI reads OPENAI_API_KEY from environment automatically
+        if not model_name:
+            raise ModelConfigError(
+                "model_name is required for OpenAI — set it via <TIER>_MODEL_NAME"
+            )
         return ChatOpenAI(
-            model=model_name or self.settings.openai_model,
+            model=model_name,
             temperature=self.settings.llm_temperature,
             max_tokens=self.settings.llm_max_tokens,
             timeout=self.settings.llm_timeout,
         )
-    
+
     def validate_config(self) -> bool:
-        return bool(self.settings.openai_api_key and
-                   self.settings.openai_api_key != "your-openai-api-key-here")
+        import os
+        return bool(os.environ.get("OPENAI_API_KEY", ""))
 
 
 class OtherProviderFactory(LLMProviderFactory):
     """Factory for OpenAI-compatible providers (shopaikey, etc.)."""
-    
+
+    def __init__(self, settings: Settings, api_key_override: str = "", base_url_override: str = ""):
+        super().__init__(settings)
+        self._api_key_override = api_key_override
+        self._base_url_override = base_url_override
+
     def create_llm(self, model_name: str) -> Any:
-        if not self.settings.other_api_key:
+        api_key = self._api_key_override or self.settings.other_api_key
+        base_url = self._base_url_override or self.settings.other_base_url
+
+        if not api_key:
             raise ModelConfigError("OTHER_API_KEY is required")
-        
+
         return ChatOpenAI(
             model=model_name or self.settings.other_model,
-            api_key=self.settings.other_api_key,
-            base_url=self.settings.other_base_url,
+            api_key=api_key,
+            base_url=base_url,
             temperature=self.settings.llm_temperature,
             max_tokens=self.settings.llm_max_tokens,
             timeout=self.settings.llm_timeout,
         )
-    
+
     def validate_config(self) -> bool:
-        return bool(self.settings.other_api_key)
+        return bool(self._api_key_override or self.settings.other_api_key)
 
 
 # ============================================================================
@@ -194,32 +208,50 @@ PROVIDER_FACTORIES: dict[str, type[LLMProviderFactory]] = {
 
 def _build_tier_configs(settings: Settings) -> dict[ModelTier, TierConfig]:
     """
-    Build tier configurations with fallback chains.
-    
-    This is WHERE tier logic is DEFINED.
-    Only model names from settings are used, not tier mappings.
+    Build tier configurations from settings.
+
+    Tier-to-model mapping is driven by .env:
+        STRONG_MODEL_PROVIDER, STRONG_MODEL_NAME, STRONG_MODEL_API_KEY, STRONG_MODEL_BASE_URL
+        MIDDLE_MODEL_PROVIDER, MIDDLE_MODEL_NAME, ...
+        CHEAP_MODEL_PROVIDER,  CHEAP_MODEL_NAME,  ...
+
+    Falls back to the generic 'other' provider values when tier-specific fields
+    are not set.
     """
+
+    def _spec(provider: str, name: str) -> ModelSpec:
+        return ModelSpec(provider or "other", name or settings.other_model)
+
+    strong_provider = settings.strong_model_provider or "other"
+    strong_name     = settings.strong_model_name     or settings.other_model
+
+    middle_provider = settings.middle_model_provider or "other"
+    middle_name     = settings.middle_model_name     or settings.other_model
+
+    cheap_provider  = settings.cheap_model_provider  or "other"
+    cheap_name      = settings.cheap_model_name      or settings.other_model
+
     return {
-        "cheap": TierConfig(
-            primary=ModelSpec("other", settings.other_model),
+        "strong": TierConfig(
+            primary=_spec(strong_provider, strong_name),
             fallbacks=[
-                ModelSpec("other", "gpt-4o-mini"),
-                ModelSpec("google", settings.google_model),
-            ]
+                _spec("other", settings.other_model),
+                _spec("google", settings.google_model),
+            ],
         ),
         "middle": TierConfig(
-            primary=ModelSpec("other", settings.other_model),
+            primary=_spec(middle_provider, middle_name),
             fallbacks=[
-                ModelSpec("other", "gpt-4o-mini"),
-                ModelSpec("google", settings.google_model),
-            ]
+                _spec("other", settings.other_model),
+                _spec("google", settings.google_model),
+            ],
         ),
-        "strong": TierConfig(
-            primary=ModelSpec("other", "gpt-4o"),
+        "cheap": TierConfig(
+            primary=_spec(cheap_provider, cheap_name),
             fallbacks=[
-                ModelSpec("other", settings.other_model),
-                ModelSpec("other", "gpt-4o-mini"),
-            ]
+                _spec("other", settings.other_model),
+                _spec("google", settings.google_model),
+            ],
         ),
     }
 
@@ -374,43 +406,69 @@ def create_llm(
 def _parse_model_spec(spec: str, settings: Settings) -> ModelSpec:
     """
     Parse model specification string.
-    
-    Format: "provider:model" or "provider"
-    If only provider given, use default model from settings.
+
+    Format: "provider:model_name"
+    Both provider and model_name are required — no implicit defaults
+    since per-provider default model fields have been removed from config.
     """
     if not spec or not spec.strip():
         raise ModelConfigError("Model specification cannot be empty")
-    
+
     parts = spec.strip().split(":", 1)
     provider = parts[0].lower()
-    model_name = parts[1] if len(parts) > 1 else ""
-    
-    # If no model specified, use default from settings
-    if not model_name:
-        defaults = {
-            "ollama": settings.ollama_model,
-            "google": settings.google_model,
-            "openai": settings.openai_model,
-            "other": settings.other_model,
-        }
-        model_name = defaults.get(provider, "")
-        if not model_name:
-            raise ModelConfigError(
-                f"No default model configured for provider '{provider}'"
-            )
-    
+
+    if len(parts) < 2 or not parts[1].strip():
+        raise ModelConfigError(
+            f"model_override must be 'provider:model_name', got '{spec}'. "
+            f"Example: 'other:gpt-4o' or 'google:gemini-2.5-flash'"
+        )
+
+    model_name = parts[1].strip()
+
     if provider not in PROVIDER_FACTORIES:
         raise ProviderNotSupportedError(
             f"Provider '{provider}' not supported. "
             f"Available: {', '.join(sorted(PROVIDER_FACTORIES.keys()))}"
         )
-    
+
     return ModelSpec(provider, model_name)
 
 
 # ============================================================================
 # Utility Functions
 # ============================================================================
+
+def create_tier_llm(
+    settings: Settings,
+    tier: ModelTier,
+    temperature: float = 0.0,
+    disable_cache: bool = False,
+) -> Any:
+    """
+    Convenience wrapper around create_llm() with temperature override.
+
+    Uses the full fallback chain from create_llm() so that if the primary
+    model fails (e.g. 503), the next model in the chain is tried automatically.
+
+    Args:
+        settings: Application settings
+        tier: "cheap" | "middle" | "strong"
+        temperature: Override temperature (default 0.0 for structured tasks)
+        disable_cache: Skip singleton cache (useful in tests)
+
+    Returns:
+        LLM instance ready to use
+    """
+    llm = create_llm(settings, tier=tier, disable_cache=disable_cache)
+    llm = llm.bind(temperature=temperature)
+    tier_configs = _build_tier_configs(settings)
+    primary = tier_configs[tier].primary
+    logger.info(
+        "create_tier_llm: tier=%s model=%s temp=%.1f",
+        tier, primary.model_name, temperature,
+    )
+    return llm
+
 
 def clear_llm_cache() -> None:
     """Clear the LLM singleton cache."""

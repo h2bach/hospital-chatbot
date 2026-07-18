@@ -48,22 +48,19 @@ class ErrorResponse(BaseModel):
 
 # ── Retrieve ─────────────────────────────────────────────────────────────
 
-class RetrieveContext(BaseModel):
-    """Single context item returned from retrieval."""
-    
-    content: str = Field(description="The retrieved content/text")
-    score: float = Field(description="Relevance score")
-    metadata: dict = Field(default_factory=dict, description="Associated metadata")
-    source: str | None = Field(default=None, description="Source identifier")
-
-
 class RetrieveResponse(BaseModel):
-    """Successful response from POST /retrieve."""
+    """Successful response from POST /retrieve.
+    
+    The RAG pipeline runs the full graph (planner → subgraphs → synthesizer)
+    and returns a synthesized answer along with execution metadata.
+    """
 
     query: str
-    data_type: str
-    contexts: list[RetrieveContext]
-    total_results: int
+    answer: str = Field(description="Synthesized answer from the RAG pipeline")
+    trace_id: str = Field(description="Unique trace ID for this request")
+    iterations: int = Field(description="Number of planner iterations executed")
+    result_count: int = Field(description="Total branch results collected")
+    error_count: int = Field(description="Number of failed branches")
     latency_ms: float
     timestamp: datetime = Field(default_factory=_utcnow)
 

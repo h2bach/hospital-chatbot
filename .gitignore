@@ -1,5 +1,6 @@
 /build/
 /.env
+/ai-service/.env
 /.envrc
 
 
@@ -53,3 +54,4 @@ data/*.pkl
 
 # Test files
 test_*.py
+architecture.md

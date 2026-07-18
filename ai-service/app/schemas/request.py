@@ -11,23 +11,18 @@ class RetrieveRequest(BaseModel):
         ...,
         min_length=1,
         max_length=10_000,
-        description="Query string to retrieve relevant context",
+        description="Query string for the RAG pipeline",
         examples=["What is the company policy on remote work?"],
     )
-    data_type: str = Field(
-        ...,
-        description="Type of data to query (e.g., 'document', 'policy', 'faq', 'code')",
-        examples=["document"],
+    session_id: str | None = Field(
+        default=None,
+        description="Optional session ID for multi-turn conversation tracking",
     )
-    top_k: int | None = Field(
+    max_iterations: int = Field(
         default=5,
         ge=1,
-        le=50,
-        description="Number of top results to return",
-    )
-    filters: dict | None = Field(
-        default=None,
-        description="Additional filters for retrieval (e.g., date range, category)",
+        le=10,
+        description="Maximum planner iterations before force-stopping",
     )
 
 

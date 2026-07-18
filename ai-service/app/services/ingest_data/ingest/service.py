@@ -78,6 +78,9 @@ class DefaultIngestService(IngestService):
         return ChromaVectorStore(
             persist_directory=self.settings.chroma_persist_dir,
             collection_name=self.settings.chroma_collection_name,
+            embedding_api_key=self.settings.embedding_api_key,
+            embedding_base_url=self.settings.embedding_base_url,
+            embedding_model=self.settings.embedding_model,
         )
 
     @cached_property

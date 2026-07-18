@@ -45,9 +45,9 @@ app = FastAPI(
         "RAG Service API — Production-ready data ingestion and retrieval service.\n\n"
         "Endpoints:\n"
         "- **GET /health** — Service status\n"
-        "- **POST /retrieve** — Retrieve context from vector store\n"
-        "- **POST /ingest** — Ingest data from backend API\n"
-        "- **POST /update** — Update or delete data in vector store\n"
+        "- **POST /retrieve** — Run full RAG pipeline, return synthesized answer\n"
+        "- **POST /ingest** — Ingest data from backend API into vector store\n"
+        "- **POST /update** — Synchronize create/update/delete changes in vector store\n"
     ),
     lifespan=lifespan,
 )

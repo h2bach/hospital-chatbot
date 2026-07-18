@@ -51,6 +51,9 @@ class ChromaVectorStore(BaseVectorStore):
         persist_directory: str | Path,
         collection_name: str = "documents",
         embedding_function: Any = None,
+        embedding_api_key: str = "",
+        embedding_base_url: str = "",
+        embedding_model: str = "text-embedding-3-small",
     ) -> None:
         try:
             import chromadb
@@ -75,27 +78,24 @@ class ChromaVectorStore(BaseVectorStore):
         if embedding_function is not None:
             kwargs["embedding_function"] = embedding_function
         else:
-            # Use OpenAI embedding function with environment variables
-            embedding_api_key = os.getenv("EMBEDDING_API_KEY")
-            embedding_base_url = os.getenv("EMBEDDING_BASE_URL")
-            embedding_model = os.getenv("EMBEDDING_MODEL", "text-embedding-3-small")
-            
-            if not embedding_api_key:
+            # Prefer explicit args; fall back to os.getenv for backward compat
+            api_key = embedding_api_key or os.getenv("EMBEDDING_API_KEY", "")
+            base_url = embedding_base_url or os.getenv("EMBEDDING_BASE_URL", "")
+            model = embedding_model or os.getenv("EMBEDDING_MODEL", "text-embedding-3-small")
+
+            if not api_key:
                 raise ValueError(
-                    "EMBEDDING_API_KEY environment variable is required "
-                    "when no embedding_function is provided"
+                    "EMBEDDING_API_KEY is required when no embedding_function is provided"
                 )
-            
-            if not embedding_base_url:
+            if not base_url:
                 raise ValueError(
-                    "EMBEDDING_BASE_URL environment variable is required "
-                    "when no embedding_function is provided"
+                    "EMBEDDING_BASE_URL is required when no embedding_function is provided"
                 )
-            
+
             kwargs["embedding_function"] = OpenAIEmbeddingFunction(
-                api_key=embedding_api_key,
-                api_base=embedding_base_url,
-                model_name=embedding_model,
+                api_key=api_key,
+                api_base=base_url,
+                model_name=model,
             )
 
         self._collection = self._client.get_or_create_collection(

@@ -1,267 +1,134 @@
 """
-Main RAG Graph — Complete RAG workflow with LangGraph.
+Main RAG Graph — Correctly wired with Send() as conditional edge.
 
-This graph orchestrates the full RAG multi-agent pipeline using MainState:
-    - Planner: Analyzes query and generates tasks
-    - Router: Dispatches tasks to subgraphs (type1, type2, type3)
-    - Subgraphs: Execute tasks in parallel
-    - Merge: Aggregates results from branches
-    - Synthesizer: Generates final answer
+LangGraph v1.x rule: Send() MUST come from a conditional edge function,
+NOT from a regular node.
 
-Architecture:
-    START → planner → router → [subgraphs] → merge → planner (loop) → synthesizer → END
+Flow:
+    START
+      │
+      ▼
+    planner  (Chain1 on iter=0 / Chain2 on iter>0)
+      │
+      └── conditional edge: dispatch_tasks()
+              │
+              ├── "synthesizer"    when is_finished=True
+              │
+              ├── list[Send]       fan-out to subgraph nodes
+              │         │
+              │   ┌─────┴──────┐
+              │   ▼            ▼
+              │ type1_subgraph  …(future typeN)
+              │         │
+              │         ▼
+              │       merge  ──► planner  (loop)
+              │
+              └── "merge"          fallback when all tasks blocked
 
-Logic is separated:
-    1. build_rag_graph() — Initialize graph structure (nodes + edges)
-    2. compile_rag_graph() — Compile the graph for execution
+Extensibility:
+  1. Implement new subgraph → build_typeN_subgraph(settings)
+  2. builder.add_node("typeN_subgraph", ...)
+  3. builder.add_edge("typeN_subgraph", "merge")
+  4. SUBGRAPH_NODE_MAP["typeN"] = "typeN_subgraph"  (router/node.py)
+  No other changes required.
 """
 
+from __future__ import annotations
+
 import logging
+from typing import Any
 
 from langgraph.graph import END, START, StateGraph
 
 from app.config import Settings
 from app.services.rag.graph.main_state import MainState
 
+# ── Node implementations ──────────────────────────────────────────────────────
+from app.services.rag.graph.nodes.planner.node import run_planner_node
+from app.services.rag.graph.nodes.merge.node import run_merge_node
+from app.services.rag.graph.nodes.synthesizer.node import run_synthesizer_node
+
+# ── Conditional edge (Send dispatcher) ───────────────────────────────────────
+from app.services.rag.graph.nodes.router.node import dispatch_tasks, SUBGRAPH_NODE_MAP
+
+# ── Subgraph builders ─────────────────────────────────────────────────────────
+from app.services.rag.type1.graph import build_type1_subgraph
+
 logger = logging.getLogger(__name__)
 
 
-# ============================================================================
-# Node Implementations (Placeholders - to be implemented)
-# ============================================================================
-
-async def _planner_node(state: MainState, settings: Settings) -> dict:
-    """
-    Planner node — Analyzes query and generates execution plan.
-    
-    Responsibilities:
-        1. Analyze user query and current state
-        2. Determine if enough information is available (is_finished)
-        3. Generate tasks for data retrieval if needed
-        4. Handle replanning based on branch results
-    
-    Returns:
-        dict with: tasks, is_finished, iteration
-    """
-    logger.info(
-        "Planner node executing",
-        extra={
-            "trace_id": state.trace_id,
-            "iteration": state.iteration,
-            "query": state.query[:100],
-        },
-    )
-    
-    # TODO: Implement planner logic
-    # For now, return a simple finished state
-    return {
-        "is_finished": True,
-        "tasks": [],
-        "iteration": state.iteration + 1,
-    }
-
-
-async def _router_node(state: MainState, settings: Settings) -> dict:
-    """
-    Router node — Dispatches tasks to appropriate subgraphs.
-    
-    Responsibilities:
-        1. Read tasks from planner
-        2. Route each task to correct subgraph (type1/type2/type3)
-        3. Handle parallel execution with Send()
-    
-    This is a branching node that uses Send() for parallel execution.
-    """
-    logger.info(
-        "Router node executing",
-        extra={
-            "trace_id": state.trace_id,
-            "task_count": len(state.tasks),
-        },
-    )
-    
-    # TODO: Implement router logic with Send()
-    # For now, just return empty dict
-    return {}
-
-
-async def _merge_node(state: MainState, settings: Settings) -> dict:
-    """
-    Merge node — Aggregates results from all branches.
-    
-    Responsibilities:
-        1. Collect all branch_results
-        2. Aggregate and deduplicate information
-        3. Handle errors from failed branches
-        4. Prepare aggregated context for next planner iteration
-    
-    Returns:
-        dict with aggregated metadata for planner
-    """
-    logger.info(
-        "Merge node executing",
-        extra={
-            "trace_id": state.trace_id,
-            "result_count": len(state.branch_results),
-            "error_count": len(state.errors),
-        },
-    )
-    
-    # TODO: Implement merge logic
-    return {}
-
-
-async def _synthesizer_node(state: MainState, settings: Settings) -> dict:
-    """
-    Synthesizer node — Generates final answer from aggregated results.
-    
-    Responsibilities:
-        1. Read all branch_results
-        2. Synthesize comprehensive answer
-        3. Handle case where no results available
-        4. Format final response
-    
-    Returns:
-        dict with: final_answer
-    """
-    logger.info(
-        "Synthesizer node executing",
-        extra={
-            "trace_id": state.trace_id,
-            "result_count": len(state.branch_results),
-        },
-    )
-    
-    # TODO: Implement synthesizer logic with LLM
-    # For now, return placeholder answer
-    return {
-        "final_answer": f"Placeholder answer for query: {state.query}",
-    }
-
-
-# ============================================================================
-# Conditional Edge Functions
-# ============================================================================
-
-def _should_continue(state: MainState) -> str:
-    """
-    Conditional edge after planner.
-    
-    Decides whether to:
-        - END: if is_finished or max_iterations reached
-        - "router": continue with task execution
-    """
-    if state.is_finished:
-        logger.info(
-            "Planning finished - moving to synthesizer",
-            extra={"trace_id": state.trace_id},
-        )
-        return "synthesizer"
-    
-    if state.iteration >= state.max_iterations:
-        logger.warning(
-            "Max iterations reached - forcing completion",
-            extra={"trace_id": state.trace_id, "iteration": state.iteration},
-        )
-        return "synthesizer"
-    
-    logger.info(
-        "Continuing to router",
-        extra={"trace_id": state.trace_id, "task_count": len(state.tasks)},
-    )
-    return "router"
-
-
-# ============================================================================
-# Graph Construction Functions
-# ============================================================================
+# =============================================================================
+# Graph construction
+# =============================================================================
 
 def build_rag_graph(settings: Settings) -> StateGraph:
     """
-    Build (initialize) the RAG graph structure.
-    
-    This function creates the graph with nodes and edges,
-    but does NOT compile it yet.
-    
-    Current flow:
-        START → planner → [router → subgraphs → merge → planner] → synthesizer → END
-    
-    The planner-router-merge forms a loop for iterative refinement.
-    
-    Args:
-        settings: Application settings
-        
-    Returns:
-        StateGraph builder (not compiled)
+    Build the RAG StateGraph (not compiled yet).
+
+    All nodes are bound to `settings` via closures — the API layer only
+    needs to call graph.ainvoke(state).
     """
-    logger.info("Building RAG graph structure")
-    
-    # Create wrapper functions that bind settings
-    async def planner_wrapper(state: MainState) -> dict:
-        return await _planner_node(state, settings)
-    
-    async def router_wrapper(state: MainState) -> dict:
-        return await _router_node(state, settings)
-    
-    async def merge_wrapper(state: MainState) -> dict:
-        return await _merge_node(state, settings)
-    
-    async def synthesizer_wrapper(state: MainState) -> dict:
-        return await _synthesizer_node(state, settings)
-    
-    # Initialize graph builder
+    logger.info("Building RAG graph")
+
+    # ── Bind settings to nodes ────────────────────────────────────────────
+    async def planner_node(state: MainState) -> dict:
+        return await run_planner_node(state, settings)
+
+    async def merge_node(state: MainState) -> dict:
+        return await run_merge_node(state, settings)
+
+    async def synthesizer_node(state: MainState) -> dict:
+        return await run_synthesizer_node(state, settings)
+
+    # ── Build subgraphs ───────────────────────────────────────────────────
+    type1_subgraph = build_type1_subgraph(settings)
+
+    # ── Assemble graph ────────────────────────────────────────────────────
     builder = StateGraph(MainState)
-    
-    # Add nodes
-    builder.add_node("planner", planner_wrapper)
-    builder.add_node("router", router_wrapper)
-    builder.add_node("merge", merge_wrapper)
-    builder.add_node("synthesizer", synthesizer_wrapper)
-    
-    # Add edges
+
+    # Core nodes
+    builder.add_node("planner", planner_node)
+    builder.add_node("merge", merge_node)
+    builder.add_node("synthesizer", synthesizer_node)
+
+    # Subgraph nodes — name MUST match SUBGRAPH_NODE_MAP values
+    builder.add_node("type1_subgraph", type1_subgraph)
+    # builder.add_node("type2_subgraph", build_type2_subgraph(settings))
+
+    # ── Edges ─────────────────────────────────────────────────────────────
+
+    # Entry point
     builder.add_edge(START, "planner")
-    
-    # Conditional edge from planner
+
+    # Planner → conditional edge (Send fan-out OR string routing)
+    # dispatch_tasks() returns either list[Send] or a string key.
     builder.add_conditional_edges(
         "planner",
-        _should_continue,
+        dispatch_tasks,
+        # Map string keys to node names; Send() objects bypass this map.
         {
-            "router": "router",
             "synthesizer": "synthesizer",
+            "merge": "merge",
         },
     )
-    
-    # Router will use Send() to dispatch to subgraphs (implemented later)
-    builder.add_edge("router", "merge")
-    
-    # After merge, loop back to planner for replanning
+
+    # Each subgraph converges to merge after completion
+    builder.add_edge("type1_subgraph", "merge")
+    # builder.add_edge("type2_subgraph", "merge")
+
+    # Merge loops back to planner (Chain 2 decision)
     builder.add_edge("merge", "planner")
-    
-    # Synthesizer outputs final answer
+
+    # Terminal
     builder.add_edge("synthesizer", END)
-    
-    logger.info("RAG graph structure built successfully")
-    
+
+    logger.info("RAG graph built — nodes: %s", list(builder.nodes))
     return builder
 
 
-def compile_rag_graph(builder: StateGraph) -> any:
-    """
-    Compile the RAG graph for execution.
-    
-    This function takes the initialized graph builder
-    and compiles it into an executable graph.
-    
-    Args:
-        builder: StateGraph builder from build_rag_graph()
-        
-    Returns:
-        Compiled graph ready for execution
-    """
+def compile_rag_graph(builder: StateGraph) -> Any:
+    """Compile the StateGraph into an executable graph."""
     logger.info("Compiling RAG graph")
-    
     compiled = builder.compile()
-    
-    logger.info("RAG graph compiled successfully")
-    
+    logger.info("RAG graph compiled")
     return compiled

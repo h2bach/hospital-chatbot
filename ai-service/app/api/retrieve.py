@@ -1,17 +1,16 @@
 """
-POST /retrieve — Retrieve relevant context from vector store
+POST /retrieve — Run the full RAG pipeline and return a synthesized answer.
 
-This endpoint accepts a query and data type, then returns
-relevant context/documents for RAG applications.
+Accepts a query, invokes the LangGraph multi-agent pipeline
+(planner → subgraphs → synthesizer), and returns the final answer
+along with execution metadata.
 """
-
-import time
 
 from fastapi import APIRouter, Depends
 
 from app.core.dependencies import get_agent_service
 from app.schemas.request import RetrieveRequest
-from app.schemas.response import ErrorResponse, RetrieveResponse, RetrieveContext
+from app.schemas.response import ErrorResponse, RetrieveResponse
 from app.services.base import AgentService
 
 router = APIRouter(prefix="/retrieve", tags=["Retrieval"])
@@ -22,46 +21,43 @@ router = APIRouter(prefix="/retrieve", tags=["Retrieval"])
     response_model=RetrieveResponse,
     responses={
         422: {"model": ErrorResponse, "description": "Invalid request"},
-        500: {"model": ErrorResponse, "description": "Retrieval error"},
+        500: {"model": ErrorResponse, "description": "Retrieval or pipeline error"},
     },
-    summary="Retrieve context for RAG",
-    description="Query the vector store and retrieve relevant context based on data type.",
+    summary="Run RAG pipeline and retrieve answer",
+    description=(
+        "Invoke the full RAG pipeline: planner decomposes the query into tasks, "
+        "subgraphs execute hybrid search (vector + BM25 + RRF), "
+        "and the synthesizer produces a final answer. "
+        "Returns the answer along with trace metadata."
+    ),
 )
 async def retrieve(
     request: RetrieveRequest,
     agent: AgentService = Depends(get_agent_service),
 ) -> RetrieveResponse:
     """
-    Retrieve relevant context from the vector store.
-    
-    TODO: Implement actual retrieval logic:
-        1. Search vector store by data_type
-        2. Apply filters if provided
-        3. Return top_k results with scores
+    Run the full RAG pipeline for the given query.
+
+    The pipeline:
+        1. Planner analyses query and creates retrieval tasks
+        2. Router dispatches tasks to type1/type2/type3 subgraphs in parallel
+        3. Each subgraph runs hybrid search (BM25 + vector → RRF fusion)
+        4. Merge aggregates all branch results
+        5. Planner decides to finish or replan
+        6. Synthesizer produces the final answer
     """
-    start = time.perf_counter()
-    
-    # Placeholder implementation
-    # TODO: Replace with actual vector search
-    contexts = []
-    
-    # Example mock data
-    if request.data_type == "document":
-        contexts = [
-            RetrieveContext(
-                content="This is a placeholder context for document retrieval.",
-                score=0.95,
-                metadata={"source": "example_doc_1", "created_at": "2026-07-01"},
-                source="example_doc_1",
-            )
-        ]
-    
-    latency_ms = (time.perf_counter() - start) * 1000
-    
+    result = await agent.invoke(
+        message=request.query,
+        session_id=request.session_id,
+        max_iterations=request.max_iterations,
+    )
+
     return RetrieveResponse(
         query=request.query,
-        data_type=request.data_type,
-        contexts=contexts,
-        total_results=len(contexts),
-        latency_ms=round(latency_ms, 1),
+        answer=result["answer"],
+        trace_id=result["trace_id"],
+        iterations=result["iterations"],
+        result_count=result["result_count"],
+        error_count=result["error_count"],
+        latency_ms=result["latency_ms"],
     )
