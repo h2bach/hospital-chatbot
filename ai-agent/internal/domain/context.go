@@ -16,9 +16,10 @@ const (
 )
 
 type Message struct {
-	Role    Role
-	Content string
-	Images  []Image
+	Role             Role
+	Content          string
+	ReasoningContent string
+	Images           []Image
 }
 
 type Image struct {

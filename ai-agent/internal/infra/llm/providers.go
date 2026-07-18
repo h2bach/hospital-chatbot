@@ -45,6 +45,16 @@ func NewFromEnvironment(ctx context.Context) (agent.LLMClient, error) {
 				return nil, fmt.Errorf("configure FPT: %w", err)
 			}
 			clients = append(clients, client)
+		case "deepseek":
+			keys := os.Getenv("DEEPSEEK_API_KEYS")
+			if keys == "" {
+				keys = os.Getenv("DEEPSEEK_API_KEY")
+			}
+			client, err := NewDeepSeekClientWithModel(keys, os.Getenv("DEEPSEEK_MODEL"), os.Getenv("DEEPSEEK_BASE_URL"))
+			if err != nil {
+				return nil, fmt.Errorf("configure DeepSeek: %w", err)
+			}
+			clients = append(clients, client)
 		default:
 			return nil, fmt.Errorf("unsupported LLM provider %q", provider)
 		}

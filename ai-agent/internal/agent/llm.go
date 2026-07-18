@@ -6,9 +6,10 @@ import (
 )
 
 type LLMOutput struct {
-	Text string
-	ToolName string
-	Args map[string]any
+	Text             string
+	ReasoningContent string
+	ToolName         string
+	Args             map[string]any
 }
 
 type LLMClient interface {
