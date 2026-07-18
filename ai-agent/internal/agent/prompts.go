@@ -67,9 +67,9 @@ theo ngữ cảnh nếu người dùng mô tả triệu chứng nghiêm trọng 
   PHẢI giữ đủ 3 thành phần: xác nhận mức độ nghiêm trọng, hành động cụ thể, thông tin liên hệ):
 
   Đây có thể là dấu hiệu cấp cứu. Vui lòng:
-  - Gọi cấp cứu 115, HOẶC
+  - Gọi hotline cấp cứu: {{EMERGENCY_HOTLINE}}, HOẶC
   - Đến ngay Khoa Cấp cứu của Bệnh viện Tim Hà Nội tại {{EMERGENCY_ADDRESS}}
-  - Hotline cấp cứu bệnh viện: {{EMERGENCY_HOTLINE}}
+  - Tổng đài / Hotline CSKH bệnh viện: {{HOTLINE}}
 
   Tôi không thể tư vấn điều trị cho tình trạng này — đây là tình huống cần được
   bác sĩ thăm khám trực tiếp ngay lập tức.
@@ -327,8 +327,21 @@ var promptEnvironmentVariables = map[string]string{
 }
 
 func expandPromptVariables(prompt string) string {
+	defaults := map[string]string{
+		"ASSISTANT_NAME":    "Trợ lý Tim Hà Nội",
+		"EMERGENCY_ADDRESS": "Khoa Cấp cứu, Bệnh viện Tim Hà Nội",
+		"EMERGENCY_HOTLINE": "115",
+		"HOTLINE":           "1900 1082",
+		"ZALO_APP_NAME":     "Bệnh viện Tim Hà Nội",
+		"ZALO_APP_LINK":     "https://zalo.me/s/hanoiheart",
+		"BOOKING_WEBSITE":   "https://benhvientimhanoi.vn",
+	}
+
 	for placeholder, environmentVariable := range promptEnvironmentVariables {
 		value := strings.TrimSpace(os.Getenv(environmentVariable))
+		if value == "" {
+			value = defaults[placeholder]
+		}
 		if value != "" {
 			prompt = strings.ReplaceAll(prompt, "{{"+placeholder+"}}", value)
 		}
