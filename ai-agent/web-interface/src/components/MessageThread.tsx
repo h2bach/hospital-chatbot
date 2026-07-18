@@ -230,7 +230,7 @@ export function MessageThread({
         </div>
         <p className="eyebrow">
           <ShieldCheck aria-hidden="true" />
-          THÔNG TIN TỪ NGUỒN CHÍNH THỨC
+          HỖ TRỢ THÔNG TIN BỆNH VIỆN
         </p>
         <h2 id="welcome-title">Xin chào, tôi là Trợ lý AI của Bệnh viện Tim Hà Nội</h2>
         <p className="welcome-copy">
