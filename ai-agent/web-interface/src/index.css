@@ -2398,11 +2398,12 @@ button:disabled {
 
   .message-assistant .message-body {
     width: auto;
-    max-width: calc(100% - 76px);
+    margin-right: 28px;
+    max-width: calc(100% - 80px);
   }
 
   .message-user .message-body {
-    max-width: 80%;
+    max-width: 85%;
   }
 
   .header-logo {
@@ -2447,11 +2448,12 @@ button:disabled {
 
   .message-assistant .message-body {
     width: auto;
-    max-width: calc(100% - 68px);
+    margin-right: 32px;
+    max-width: calc(100% - 84px);
   }
 
   .message-user .message-body {
-    max-width: 80%;
+    max-width: 85%;
   }
 
   .composer-wrap {
