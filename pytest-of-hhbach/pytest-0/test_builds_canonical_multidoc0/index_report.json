@@ -1,0 +1,31 @@
+{
+  "chunk_count": 3007,
+  "chunks_by_document": {
+    "doc_gia_dvbv_tim_hn": 2946,
+    "doc_qt_25_01": 61
+  },
+  "chunks_by_type": {
+    "paragraph": 19,
+    "price_service": 2946,
+    "process_table_row": 42
+  },
+  "document_count": 2,
+  "duplicate_chunk_ids": 0,
+  "generated_at": "2026-07-18T13:22:56.329182+00:00",
+  "max_token_count": 334,
+  "normalized_price_rows": 2946,
+  "price_diagnostics": {
+    "continuation_rows_merged": 132,
+    "empty_both_prices": 4,
+    "empty_service_names": 0,
+    "malformed_numbered_rows": 0,
+    "orphan_continuations": 0,
+    "parsed_entries": 2946
+  },
+  "section_count": 20,
+  "source_dir": "/path/to/local/documents/heartcare_ai/vaic-heart-hanoi-problem/docs/data_rag",
+  "source_hashes": {
+    "GiaDVBV_tim_HN.md": "sha256:8070ac0d84aa4e91223037708587d41abb275ddee1b2481177fe1de34e93a747",
+    "quy-trinh-don-tiep-benh-nhan.md": "sha256:b9623b38904d0905bcaac7d7476223a550feaaccae1d9ef4a347f9d5870dccfb"
+  }
+}
