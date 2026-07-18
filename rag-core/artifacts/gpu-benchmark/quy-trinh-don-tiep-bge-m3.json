@@ -1,0 +1,147 @@
+{
+  "embedding_model": "BAAI/bge-m3",
+  "reranker_model": "BAAI/bge-reranker-v2-m3",
+  "device": "cuda",
+  "chunk_count": 65,
+  "golden_count": 15,
+  "index_build_seconds": 96.67,
+  "baselines": {
+    "b0": {
+      "configuration": "b0",
+      "sample_count": 15,
+      "recall_at_k": {
+        "1": 0.7666666666666667,
+        "3": 0.9666666666666667,
+        "5": 0.9666666666666667,
+        "10": 1.0
+      },
+      "mrr": 0.9333333333333333,
+      "ndcg_at_k": {
+        "1": 0.8666666666666667,
+        "3": 0.9250004466605583,
+        "5": 0.9250004466605583,
+        "10": 0.9378955402350431
+      },
+      "document_hit_rate": 1.0,
+      "section_hit_rate": 1.0,
+      "failures": [],
+      "latency": {
+        "p50_ms": 1.32,
+        "p95_ms": 3.88
+      }
+    },
+    "b1": {
+      "configuration": "b1",
+      "sample_count": 15,
+      "recall_at_k": {
+        "1": 0.6333333333333333,
+        "3": 0.8666666666666667,
+        "5": 0.8666666666666667,
+        "10": 0.9
+      },
+      "mrr": 0.8111111111111111,
+      "ndcg_at_k": {
+        "1": 0.7333333333333333,
+        "3": 0.7904816092734916,
+        "5": 0.7904816092734916,
+        "10": 0.8050421050613693
+      },
+      "document_hit_rate": 1.0,
+      "section_hit_rate": 0.9333333333333333,
+      "failures": [
+        {
+          "query_id": "qt_002",
+          "query": "Quy trình tiếp nhận này áp dụng cho nhóm người bệnh và khu khám nào?",
+          "retrieved_chunk_ids": [
+            "chk_8bef698edd53bda56332",
+            "chk_cdb0764d01ae11bd72bf",
+            "chk_2eff63df3b3f500e6b30",
+            "chk_0e842663f79a46051f91",
+            "chk_d080b5c7a766f78212ad",
+            "chk_0afd83a81c5ccf61ef5e",
+            "chk_e8ae9a16f5e9f2548350",
+            "chk_d915f9d2d48d318c8d4f",
+            "chk_7fec0316a1b55d8d5271",
+            "chk_acca4e8a526343af3547"
+          ]
+        }
+      ],
+      "latency": {
+        "p50_ms": 85.74,
+        "p95_ms": 115.7
+      }
+    },
+    "b2": {
+      "configuration": "b2",
+      "sample_count": 15,
+      "recall_at_k": {
+        "1": 0.7,
+        "3": 0.9666666666666667,
+        "5": 0.9666666666666667,
+        "10": 1.0
+      },
+      "mrr": 0.888888888888889,
+      "ndcg_at_k": {
+        "1": 0.8,
+        "3": 0.8916671133272249,
+        "5": 0.8916671133272249,
+        "10": 0.9039721597791961
+      },
+      "document_hit_rate": 1.0,
+      "section_hit_rate": 1.0,
+      "failures": [],
+      "latency": {
+        "p50_ms": 84.4,
+        "p95_ms": 110.64
+      }
+    },
+    "b3": {
+      "configuration": "b3",
+      "sample_count": 15,
+      "recall_at_k": {
+        "1": 0.7666666666666667,
+        "3": 0.8666666666666667,
+        "5": 1.0,
+        "10": 1.0
+      },
+      "mrr": 0.8966666666666666,
+      "ndcg_at_k": {
+        "1": 0.8666666666666667,
+        "3": 0.8613147192765458,
+        "5": 0.9158166769637416,
+        "10": 0.9158166769637416
+      },
+      "document_hit_rate": 1.0,
+      "section_hit_rate": 1.0,
+      "failures": [],
+      "latency": {
+        "p50_ms": 1104.56,
+        "p95_ms": 1161.48
+      }
+    },
+    "b4": {
+      "configuration": "b4",
+      "sample_count": 15,
+      "recall_at_k": {
+        "1": 0.7666666666666667,
+        "3": 0.8666666666666667,
+        "5": 1.0,
+        "10": 1.0
+      },
+      "mrr": 0.8966666666666666,
+      "ndcg_at_k": {
+        "1": 0.8666666666666667,
+        "3": 0.8613147192765458,
+        "5": 0.9158166769637416,
+        "10": 0.9158166769637416
+      },
+      "document_hit_rate": 1.0,
+      "section_hit_rate": 1.0,
+      "failures": [],
+      "latency": {
+        "p50_ms": 1133.62,
+        "p95_ms": 1261.35
+      }
+    }
+  }
+}

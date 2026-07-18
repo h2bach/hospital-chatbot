@@ -1,0 +1,14 @@
+{
+  "status": "pass",
+  "sample_count": 17,
+  "retrieval_sample_count": 13,
+  "route_safety_sample_count": 4,
+  "recall_at_1": 1.0,
+  "recall_at_3": 1.0,
+  "recall_at_5": 1.0,
+  "mrr_at_5": 1.0,
+  "answer_term_pass_rate": 1.0,
+  "latency_ms_p50": 71.9,
+  "latency_ms_p95": 117.25,
+  "failures": []
+}

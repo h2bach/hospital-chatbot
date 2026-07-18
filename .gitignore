@@ -1,6 +1,13 @@
 /build/
 /.env
 /.envrc
+/.venv-rag-gpu/
+**/.venv/
+**/.pytest_cache/
+**/__pycache__/
+**/*.py[cod]
+/pytest-of-*/
+/rag-core/artifacts/data-rag/dense/
 **/node_modules/
 **/dist/
 **/*.tsbuildinfo

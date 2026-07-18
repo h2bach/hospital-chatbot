@@ -1,0 +1,28 @@
+{"id":"bhyt_scope","query":"BHYT chi trả những gì?","expected_source_chunk_ids":["POL_SCOPE_001"]}
+{"id":"bhyt_base_rate","query":"Thẻ BHYT được hưởng bao nhiêu phần trăm?","expected_source_chunk_ids":["POL_BASE_RATE_001"]}
+{"id":"bhyt_low_cost","query":"Chi phí khám thấp có được BHYT trả 100% không?","expected_source_chunk_ids":["POL_LOW_COST_001"]}
+{"id":"bhyt_five_year","query":"BHYT 5 năm liên tục được lợi gì?","expected_source_chunk_ids":["POL_FIVE_YEAR_001"]}
+{"id":"bhyt_hospital_level","query":"Bệnh viện Tim Hà Nội là cấp nào?","expected_source_chunk_ids":["POL_HOSPITAL_LEVEL_001"]}
+{"id":"bhyt_self_referral_out","query":"Khám trái tuyến ngoại trú Bệnh viện Tim Hà Nội được hưởng bao nhiêu?","expected_source_chunk_ids":["POL_SELF_REFERRAL_OUT_001"]}
+{"id":"bhyt_self_referral_in","query":"Nằm viện Tim Hà Nội không giấy chuyển tuyến có được BHYT không?","expected_source_chunk_ids":["POL_SELF_REFERRAL_IN_001"]}
+{"id":"bhyt_emergency","query":"Cấp cứu trái tuyến được hưởng BHYT thế nào?","expected_source_chunk_ids":["POL_EMERGENCY_001"]}
+{"id":"bhyt_special_general","query":"Bệnh nào được lên thẳng Bệnh viện Tim Hà Nội không cần chuyển tuyến?","expected_source_chunk_ids":["POL_SPECIAL_DISEASE_GENERAL_001"]}
+{"id":"bhyt_heart_failure","query":"Mã I50 có cần giấy chuyển viện không?","expected_source_chunk_ids":["POL_SPECIAL_CARDIAC_001"]}
+{"id":"bhyt_initial_registration","query":"Có đăng ký BHYT ban đầu tại Bệnh viện Tim Hà Nội được không?","expected_source_chunk_ids":["POL_INITIAL_REG_001"]}
+{"id":"bhyt_documents","query":"Đi khám BHYT cần mang gì?","expected_source_chunk_ids":["POL_DOCUMENTS_001"]}
+{"id":"bhyt_temporary_residence","query":"Tạm trú ở Hà Nội khám BHYT thế nào?","expected_source_chunk_ids":["POL_TEMP_RESIDENCE_001"]}
+{"id":"bhyt_followup","query":"Giấy hẹn tái khám dùng được mấy lần?","expected_source_chunk_ids":["POL_FOLLOWUP_001"]}
+{"id":"bhyt_referral","query":"Giấy chuyển viện có giá trị bao lâu?","expected_source_chunk_ids":["POL_REFERRAL_001"]}
+{"id":"bhyt_direct_cases","query":"Khi nào được BHXH thanh toán trực tiếp?","expected_source_chunk_ids":["POL_DIRECT_PAYMENT_CASES_001"]}
+{"id":"bhyt_direct_docs","query":"Hồ sơ hoàn tiền BHYT gồm gì?","expected_source_chunk_ids":["POL_DIRECT_PAYMENT_DOCS_001"]}
+{"id":"bhyt_direct_process","query":"Nộp hồ sơ hoàn BHYT ở đâu?","expected_source_chunk_ids":["POL_DIRECT_PAYMENT_PROCESS_001"]}
+{"id":"bhyt_self_purchase","query":"Tự mua thuốc ngoài bệnh viện có được BHYT hoàn không?","expected_source_chunk_ids":["POL_SELF_PURCHASE_001"]}
+{"id":"bhyt_requested_service","query":"Chọn bác sĩ hoặc phòng dịch vụ BHYT trả phần nào?","expected_source_chunk_ids":["POL_REQUESTED_SERVICE_001"]}
+{"id":"bhyt_exclusions","query":"BHYT có trả răng giả kính mắt máy trợ thính không?","expected_source_chunk_ids":["POL_EXCLUSIONS_001"]}
+{"id":"bhyt_cost_formula","query":"Công thức tính phần quỹ BHYT là gì?","expected_source_chunk_ids":["POL_COST_FORMULA_001"]}
+{"id":"bhyt_current_price_source","query":"Bảng giá nào đang áp dụng tại Bệnh viện Tim Hà Nội?","expected_source_chunk_ids":["POL_PRICE_CURRENTNESS_001"]}
+{"id":"bhyt_price_ultrasound","query":"Mã 01.0303.0001 theo BHYT có giá bao nhiêu?","expected_source_chunk_ids":["PRICE_TECH_BHYT_0001"]}
+{"id":"bhyt_price_tee","query":"Giá BHYT của Siêu âm doppler màu tim 3D/4D qua thực quản tại Hà Nội?","expected_source_chunk_ids":["PRICE_TECH_BHYT_0083"]}
+{"id":"bhyt_price_xray","query":"Mã 18.0119.0012 theo BHYT có giá bao nhiêu?","expected_source_chunk_ids":["PRICE_TECH_BHYT_0157"]}
+{"id":"bhyt_price_valve","query":"Giá BHYT phẫu thuật thay lại 1 van tim tại Hà Nội?","expected_source_chunk_ids":["PRICE_TECH_BHYT_3460"]}
+{"id":"bhyt_price_spect","query":"Giá BHYT SPECT/CT tưới máu cơ tim gắng sức với Tetrofosmin?","expected_source_chunk_ids":["PRICE_TECH_BHYT_8730"]}
