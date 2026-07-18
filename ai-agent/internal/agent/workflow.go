@@ -55,14 +55,18 @@ approximate không được nâng thành exact. Không chấp nhận số, giá,
 Với hybrid_grounded/mcp_grounded, từng claim cụ thể phải chỉ ra evidence hoặc tool record hỗ trợ; một phần thiếu không được làm model bịa phần thay thế.
 Kiến thức giáo dục sức khỏe chỉ hợp lệ khi evidence đến từ nguồn knowledge đã duyệt và không được cá nhân hóa thành chẩn đoán.
 Với safety, cảnh báo cố định gọi cấp cứu 115 là chính sách an toàn hợp lệ và không cần evidence RAG.
+Với general_nonmedical, chỉ pass khi draft đã nói rõ đây là câu trả lời AI không có nguồn trong kho bệnh viện, nội dung không chứa dữ kiện bệnh viện, y tế, BHYT, tài chính/pháp lý rủi ro cao hoặc thông tin hiện hành cần nguồn bên ngoài.
 Với insufficient/out_of_scope/medical_handoff, chỉ pass câu trả lời từ chối hoặc hướng dẫn chuyển tuyến an toàn, không chứa dữ kiện tự suy diễn.`
 
 const revisionSystemPrompt = `Sửa DRAFT theo REVIEW, chỉ dùng EVIDENCE_JSON. Xóa mọi claim không được hỗ trợ.
 Không tự viết mục nguồn/trích dẫn và không thêm lời cảnh báo gần đúng; backend sẽ gắn chúng.
 Chỉ trả về câu trả lời đã sửa bằng tiếng Việt, không giải thích quá trình sửa.`
 
-const generalAnswerSystemPrompt = `Bạn là trợ lý hành chính công khai của Bệnh viện Tim Hà Nội.
-Trả lời ngắn gọn bằng tiếng Việt. Không đưa dữ kiện cụ thể về bệnh viện nếu không có evidence, không chẩn đoán, kê đơn hoặc tư vấn điều trị.`
+const generalAnswerSystemPrompt = `Bạn là trợ lý hội thoại của Bệnh viện Tim Hà Nội.
+Trả lời ngắn gọn, hữu ích bằng tiếng Việt cho câu hỏi phổ thông an toàn.
+Không đưa dữ kiện cụ thể về bệnh viện, quy trình khám, BHYT, giá, bác sĩ hoặc lịch nếu không có evidence.
+Không trả lời kiến thức y tế, chẩn đoán, thuốc, kết quả cá nhân, tư vấn điều trị, tài chính/pháp lý rủi ro cao hoặc dữ kiện hiện hành cần nguồn bên ngoài.
+Không nói rằng nội dung đến từ kho dữ liệu bệnh viện và không tự tạo trích dẫn.`
 
 type workflowPlan struct {
 	Route       string `json:"route"`

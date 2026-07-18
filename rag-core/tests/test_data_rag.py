@@ -96,6 +96,16 @@ def test_unrelated_query_is_insufficient_in_evidence_contract():
     assert response["route"]["decision"] == "out_of_scope"
 
 
+def test_short_unrelated_acronym_is_not_fuzzy_matched_to_medical_catalog():
+    app = RAGApplication(ARTIFACT / "chunks.jsonl")
+
+    response = app.retrieve("HTTP là gì?", top_k=5)
+
+    assert response["answerability"]["status"] == "insufficient"
+    assert response["evidence"] == []
+    assert response["clarification"]["options"] == []
+
+
 def test_unaccented_queries_are_retrievable():
     app = RAGApplication(ARTIFACT / "chunks.jsonl")
     answer = app.answer("gia sieu am tim qua thuc quan cap cuu tai giuong?")
@@ -118,6 +128,26 @@ def test_process_title_query_returns_concrete_multi_step_overview():
     assert "lĩnh thuốc" in answer
     assert "trang 4" in answer and "trang 8" in answer
     assert "float:right" not in answer
+
+
+def test_official_booking_channels_query_matches_existing_process_evidence():
+    app = RAGApplication(ARTIFACT / "chunks.jsonl")
+
+    result = app.retrieve(
+        "Tôi muốn đặt lịch khám tại Bệnh viện Tim Hà Nội. Xin hướng dẫn các kênh đăng ký chính thức.",
+        top_k=5,
+    )
+
+    assert result["answerability"]["status"] == "exact"
+    assert len(result["evidence"]) == 1
+    assert "Nhận đặt lịch khám Tự nguyện 1" in result["evidence"][0]["chunk"]["facts"].get(
+        "process_step", ""
+    )
+    assert any(
+        channel in item["chunk"]["content_text"]
+        for channel in ("điện thoại", "Website", "Fanpage")
+        for item in result["evidence"]
+    )
 
 
 def test_structured_retrieval_finds_service_entity_without_price_keyword():

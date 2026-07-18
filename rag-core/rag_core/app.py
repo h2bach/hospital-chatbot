@@ -554,6 +554,12 @@ class RAGApplication:
         target = price_target_terms(query)
         if not target:
             return []
+        if len(target) == 1 and len(next(iter(target))) < 6:
+            # Short unrelated acronyms can have a deceptively high edit ratio
+            # against medical abbreviations (for example HTTP vs TTP). Exact
+            # acronyms are already handled by BM25; fuzzy correction requires
+            # a longer token with enough identity to be safe.
+            return []
         results = []
         for chunk in self.price_chunks:
             coverage, quality = fuzzy_match_stats(target, self.price_terms[chunk.chunk_id])
@@ -570,6 +576,8 @@ class RAGApplication:
     ) -> list[RetrievedChunk]:
         target = meaningful_terms(query)
         if not target:
+            return []
+        if len(target) == 1 and len(next(iter(target))) < 6:
             return []
         results = []
         for chunk in chunks if chunks is not None else self.process_index.chunks:
@@ -725,7 +733,11 @@ class RAGApplication:
         exact_coverage = process_exact_coverage(query, top.chunk)
         similarity = process_match_similarity(query, top.chunk)
         if exact_coverage >= 0.75:
-            exact_items = retrieved[:1] if top.chunk.content_type in {"bhyt_policy", "bhyt_update_alert"} else retrieved[:3]
+            # Full workflow questions are handled by the explicit overview path
+            # above. Ordinary process/FAQ questions are atomic: returning
+            # neighbouring rows adds unrelated steps and makes grounded
+            # evaluation reject an otherwise correct answer.
+            exact_items = retrieved[:1]
             return self._build_evidence_envelope(
                 request_id, query, exact_items, "exact", min(0.96, 0.7 + 0.25 * exact_coverage),
                 ["PROCESS_EVIDENCE_COVERED"],
@@ -1132,7 +1144,7 @@ STOPWORDS = {
     "luc", "minh", "mot", "nao", "nay", "neu", "nhieu", "nhung", "o", "toi", "trong", "tu", "va", "voi",
     "xin", "tai", "the", "thi", "ve", "dau", "can", "phai", "noi", "thong", "tin", "benh", "vien",
     "ha", "noi", "ai", "bang", "bat", "chua", "den", "dung", "khi", "khong", "mang", "sau", "thay",
-    "khoan",
+    "khoan", "muon", "huong", "dan", "kenh", "chinh", "thuc",
 }
 PRICE_INTENT_TERMS = ("gia", "chi phi", "vien phi", "bao nhieu tien", "muc thu", "bao nhieu")
 
@@ -1553,6 +1565,14 @@ def has_specific_price_service_anchor(query: str) -> bool:
 def expand_query(query: str) -> str:
     value = fold(query)
     additions = []
+    if (
+        ("dat lich" in value or "dang ky" in value)
+        and ("kenh" in value or "chinh thuc" in value)
+    ):
+        # Vietnamese users often ask for a generic "kênh" while the approved
+        # procedure names the concrete media. This is a BM25 synonym expansion;
+        # the returned facts still have to come from the matched source chunk.
+        additions.append("điện thoại Website Fanpage")
     if "chua dat lich" in value or "khong dat lich" in value:
         additions.append("không đặt lịch lấy số trực tiếp cây lấy số tự động")
     if "bhyt giay" in value or "the bao hiem giay" in value:

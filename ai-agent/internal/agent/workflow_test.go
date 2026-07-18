@@ -227,6 +227,64 @@ func TestUnifiedCompilerCapsPlanAtEightAllowlistedCapabilities(t *testing.T) {
 			t.Fatalf("non-allowlisted capability survived compilation: %q", task.Capability)
 		}
 	}
+	if plan.Tasks[0].Capability != "knowledge.search" {
+		t.Fatalf("first capability = %q, want knowledge.search", plan.Tasks[0].Capability)
+	}
+	for _, task := range plan.Tasks[1:] {
+		if len(task.DependsOn) == 0 || task.DependsOn[0] != plan.Tasks[0].ID {
+			t.Fatalf("task %q does not depend on RAG preflight: %#v", task.Capability, task.DependsOn)
+		}
+	}
+}
+
+func TestUnifiedCompilerInjectsRAGBeforeDirectoryTask(t *testing.T) {
+	plan := executionPlan{Intent: "administrative", AnswerMode: "grounded", Tasks: []executionTask{{
+		ID: "directory_first", Capability: "hospital.facilities", Required: true,
+	}}}
+
+	compileExecutionPlan(&plan, "Bệnh viện có những cơ sở nào?")
+
+	if len(plan.Tasks) != 2 || plan.Tasks[0].Capability != "knowledge.search" || plan.Tasks[1].Capability != "hospital.facilities" {
+		t.Fatalf("RAG-first plan = %#v", plan.Tasks)
+	}
+	if len(plan.Tasks[1].DependsOn) != 1 || plan.Tasks[1].DependsOn[0] != plan.Tasks[0].ID {
+		t.Fatalf("directory dependency = %#v, want RAG task %q", plan.Tasks[1].DependsOn, plan.Tasks[0].ID)
+	}
+	if plan.Tasks[0].Arguments["query"] != "Bệnh viện có những cơ sở nào?" || plan.Tasks[0].Arguments["top_k"] != 5 {
+		t.Fatalf("RAG preflight arguments = %#v", plan.Tasks[0].Arguments)
+	}
+}
+
+func TestUnifiedCompilerPreventsGeneralFallbackForOfficialHospitalQuestion(t *testing.T) {
+	plan := executionPlan{Intent: "general_nonmedical", AnswerMode: "general"}
+
+	compileExecutionPlan(&plan, "Tôi muốn đặt lịch khám tại Bệnh viện Tim Hà Nội")
+
+	if plan.Intent != "administrative" || plan.ReasonCode != "PROTECTED_ADMINISTRATIVE_KNOWLEDGE_OVERRIDE" {
+		t.Fatalf("official question was not protected from model fallback: %#v", plan)
+	}
+	if len(plan.Tasks) != 1 || plan.Tasks[0].Capability != "knowledge.search" {
+		t.Fatalf("protected official plan = %#v", plan.Tasks)
+	}
+}
+
+func TestProcessContextExpansionOnlyAppliesToFullWorkflowQuestions(t *testing.T) {
+	for _, input := range []string{
+		"quy trình đón tiếp bệnh nhân và khám chữa bệnh ngoại trú tại khu TN1 - CS1",
+		"Cho tôi toàn bộ quy trình khám ngoại trú",
+	} {
+		if !requiresFullProcessContext(input) {
+			t.Fatalf("full process query was not expanded: %q", input)
+		}
+	}
+	for _, input := range []string{
+		"Tôi muốn đặt lịch khám qua kênh nào?",
+		"Tôi có giấy hẹn tái khám, cần chuẩn bị gì?",
+	} {
+		if requiresFullProcessContext(input) {
+			t.Fatalf("atomic process question was over-expanded: %q", input)
+		}
+	}
 }
 
 func TestUnifiedExecutorNeverExceedsThreeConcurrentToolCalls(t *testing.T) {
@@ -433,6 +491,76 @@ func TestUnifiedPatientEducationAbstainsWithoutPublishedCorpus(t *testing.T) {
 	}
 	if len(mcpClient.calls) != 2 || len(llm.calls) != 2 {
 		t.Fatalf("patient education calls = MCP %v, FPT %d", mcpClient.calls, len(llm.calls))
+	}
+}
+
+func TestUnifiedGeneralNonmedicalFallsBackOnlyAfterValidatedRAGMiss(t *testing.T) {
+	t.Setenv("ORCHESTRATOR_MODE", "unified")
+	llm := &queuedLLM{outputs: []*LLMOutput{
+		{Text: `{"intent":"general_nonmedical","answer_mode":"general","tasks":[],"reason_code":"SAFE_GENERAL"}`},
+		{Text: "HTTP là giao thức giúp trình duyệt và máy chủ trao đổi dữ liệu trên web."},
+		{Text: `{"verdict":"pass","mode":"general_nonmedical","unsupported_claims":[],"claims":[],"reason_code":"SAFE_GENERAL"}`},
+	}}
+	mcpClient := &fakeMCPClient{
+		tools:       []mcp_sdk.Tool{{Name: "searchHospitalKnowledge"}},
+		toolOutputs: map[string]string{"searchHospitalKnowledge": knowledgeToolFixture(t, "insufficient")},
+	}
+	workflow := NewAgent(llm, mcpClient, &fakeRetriever{})
+
+	result, err := workflow.CallDetailed(context.Background(), "HTTP là gì?", &domain.Context{})
+	if err != nil {
+		t.Fatalf("CallDetailed() error = %v", err)
+	}
+	if len(mcpClient.calls) != 1 || mcpClient.calls[0] != "searchHospitalKnowledge" {
+		t.Fatalf("RAG was not the first MCP gate: %#v", mcpClient.calls)
+	}
+	if len(llm.calls) != 3 || result.Grounding.Mode != "general_nonmedical" || result.Grounding.Confidence != 0 {
+		t.Fatalf("general fallback metadata = %#v, FPT calls=%d", result, len(llm.calls))
+	}
+	if !strings.Contains(result.Text, "không có nội dung này") || !strings.Contains(result.Text, "HTTP là giao thức") {
+		t.Fatalf("general fallback disclosure/answer missing: %q", result.Text)
+	}
+	if strings.Contains(result.Text, "Dữ liệu được tra cứu từ các nguồn công khai") {
+		t.Fatalf("RAG eligibility check was misrepresented as answer evidence: %q", result.Text)
+	}
+}
+
+func TestUnifiedGeneralNonmedicalFailsClosedWhenRAGIsUnavailable(t *testing.T) {
+	t.Setenv("ORCHESTRATOR_MODE", "unified")
+	llm := &queuedLLM{outputs: []*LLMOutput{
+		{Text: `{"intent":"general_nonmedical","answer_mode":"general","tasks":[],"reason_code":"SAFE_GENERAL"}`},
+		{Text: `{"verdict":"pass","mode":"insufficient","unsupported_claims":[],"claims":[],"reason_code":"RAG_UNAVAILABLE"}`},
+	}}
+	mcpClient := &fakeMCPClient{}
+	workflow := NewAgent(llm, mcpClient, &fakeRetriever{})
+
+	result, err := workflow.CallDetailed(context.Background(), "HTTP là gì?", &domain.Context{})
+	if err != nil {
+		t.Fatalf("CallDetailed() error = %v", err)
+	}
+	if len(llm.calls) != 2 || result.Grounding.Mode == "general_nonmedical" || strings.Contains(result.Text, "HTTP là giao thức") {
+		t.Fatalf("RAG outage incorrectly enabled model fallback: %#v, FPT calls=%d", result, len(llm.calls))
+	}
+}
+
+func TestUnifiedOfficialHospitalQuestionNeverUsesGeneralFallback(t *testing.T) {
+	t.Setenv("ORCHESTRATOR_MODE", "unified")
+	llm := &queuedLLM{outputs: []*LLMOutput{
+		{Text: `{"intent":"administrative","answer_mode":"grounded","tasks":[],"reason_code":"HOSPITAL_SERVICE"}`},
+		{Text: `{"verdict":"pass","mode":"insufficient","unsupported_claims":[],"claims":[],"reason_code":"NO_OFFICIAL_EVIDENCE"}`},
+	}}
+	mcpClient := &fakeMCPClient{
+		tools:       []mcp_sdk.Tool{{Name: "searchHospitalKnowledge"}},
+		toolOutputs: map[string]string{"searchHospitalKnowledge": knowledgeToolFixture(t, "insufficient")},
+	}
+	workflow := NewAgent(llm, mcpClient, &fakeRetriever{})
+
+	result, err := workflow.CallDetailed(context.Background(), "Bệnh viện có phẫu thuật proton không?", &domain.Context{})
+	if err != nil {
+		t.Fatalf("CallDetailed() error = %v", err)
+	}
+	if len(llm.calls) != 2 || result.Grounding.Mode != "rag_insufficient" {
+		t.Fatalf("official question escaped protected path: %#v, FPT calls=%d", result, len(llm.calls))
 	}
 }
 

@@ -382,6 +382,7 @@ func isProtectedRAGIntent(input string) bool {
 		"quy trình", "thủ tục", "bhyt", "bảo hiểm y tế", "đón tiếp", "ngoại trú",
 		"quy trinh", "thu tuc", "bao hiem y te", "don tiep", "ngoai tru",
 		"tái khám", "tai kham", "lấy số", "lay so", "tetrofosmin", "spect/ct",
+		"đặt lịch", "dat lich", "đăng ký khám", "dang ky kham", "giấy hẹn", "giay hen",
 	} {
 		if strings.Contains(value, marker) {
 			return true
