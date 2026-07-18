@@ -234,7 +234,7 @@ export function MessageThread({
         </p>
         <h2 id="welcome-title">Xin chào, tôi là Trợ lý AI của Bệnh viện Tim Hà Nội</h2>
         <p className="welcome-copy">
-          Tôi hỗ trợ Anh/Chị tìm hiểu về đặt lịch, quy trình khám, bảo hiểm y tế,
+          Hỗ trợ tìm hiểu về đặt lịch, quy trình khám, bảo hiểm y tế,
           tái khám và dịch vụ bệnh viện.
         </p>
 
