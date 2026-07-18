@@ -2385,9 +2385,9 @@ button:disabled {
 
 @media (max-width: 480px) {
   .workspace-header {
-    min-height: 56px;
-    padding: 8px 10px;
-    gap: 6px;
+    min-height: 50px;
+    padding: 6px 8px;
+    gap: 4px;
   }
 
   .header-leading,
@@ -2395,9 +2395,30 @@ button:disabled {
     gap: 4px;
   }
 
+  .mobile-menu-button,
+  .icon-button {
+    width: 36px;
+    height: 36px;
+  }
+
+  .emergency-button {
+    width: 36px;
+    min-width: 36px;
+    height: 36px;
+    padding: 0;
+  }
+
+  .emergency-button span {
+    display: none;
+  }
+
+  .server-pill {
+    display: none;
+  }
+
   .header-title h1 {
-    font-size: 14px;
-    max-width: 32vw;
+    font-size: 13px;
+    max-width: 25vw;
   }
 
   .thread {
@@ -2478,7 +2499,17 @@ button:disabled {
 
 @media (max-width: 380px) {
   .workspace-header {
-    padding: 6px 8px;
+    min-height: 46px;
+    padding: 5px 6px;
+    gap: 3px;
+  }
+
+  .mobile-menu-button,
+  .icon-button,
+  .emergency-button {
+    width: 34px;
+    min-width: 34px;
+    height: 34px;
   }
 
   .thread {
