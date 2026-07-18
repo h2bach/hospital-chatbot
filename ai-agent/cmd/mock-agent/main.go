@@ -33,17 +33,9 @@ func main() {
 	}
 
 	ctx := context.Background()
-	apiKeys := os.Getenv("GEMINI_API_KEYS")
-	if apiKeys == "" {
-		apiKeys = os.Getenv("GEMINI_API_KEY")
-	}
-	if apiKeys == "" {
-		fmt.Printf("Error: Require GEMINI_API_KEYS or GEMINI_API_KEY environment variable.\n")
-		os.Exit(1)
-	}
-	gemini, err := llm.NewGeminiClient(ctx, apiKeys)
+	model, err := llm.NewFromEnvironment(ctx)
 	if err != nil {
-		log.Fatalf("Failed to connect to Gemini: %s", err)
+		log.Fatalf("Failed to initialize LLM providers: %s", err)
 	}
 	if (*route)[0] != '/' {
 		r := ("/" + *route)
@@ -58,7 +50,7 @@ func main() {
 		fmt.Println("----------------------------------------------")
 	}
 
-	a := agent.NewAgent(gemini, mcpClient)
+	a := agent.NewAgent(model, mcpClient)
 
 	agentContext := domain.Context{}
 	scanner := bufio.NewScanner(os.Stdin)

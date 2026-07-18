@@ -15,10 +15,13 @@ import (
 
 type GeminiClient struct {
 	GeminiAPIKey string
+	Model        string
 	keys         []string
 	clients      []*genai.Client
 	nextKey      atomic.Uint64
 }
+
+const defaultGeminiModel = "gemini-3.5-flash"
 
 func parseAPIKeys(value string) []string {
 	parts := strings.FieldsFunc(value, func(r rune) bool {
@@ -43,9 +46,17 @@ func parseAPIKeys(value string) []string {
 // NewGeminiClient accepts one key or a comma/newline-separated key list.
 // Calls rotate round-robin and fail over to the remaining keys on errors.
 func NewGeminiClient(ctx context.Context, apiKeys string) (*GeminiClient, error) {
+	return NewGeminiClientWithModel(ctx, apiKeys, defaultGeminiModel)
+}
+
+func NewGeminiClientWithModel(ctx context.Context, apiKeys, model string) (*GeminiClient, error) {
 	keys := parseAPIKeys(apiKeys)
 	if len(keys) == 0 {
 		return nil, fmt.Errorf("no Gemini API keys configured")
+	}
+	model = strings.TrimSpace(model)
+	if model == "" {
+		model = defaultGeminiModel
 	}
 	clients := make([]*genai.Client, 0, len(keys))
 	for _, key := range keys {
@@ -55,7 +66,7 @@ func NewGeminiClient(ctx context.Context, apiKeys string) (*GeminiClient, error)
 		}
 		clients = append(clients, client)
 	}
-	return &GeminiClient{GeminiAPIKey: keys[0], keys: keys, clients: clients}, nil
+	return &GeminiClient{GeminiAPIKey: keys[0], Model: model, keys: keys, clients: clients}, nil
 }
 
 func (client *GeminiClient) Chat(ctx context.Context, agentContext domain.Context) (*agent.LLMOutput, error) {
@@ -82,7 +93,7 @@ func (client *GeminiClient) Chat(ctx context.Context, agentContext domain.Contex
 	var lastErr error
 	for offset := range client.clients {
 		index := (start + uint64(offset)) % uint64(len(client.clients))
-		chatResult, err := client.clients[index].Models.GenerateContent(ctx, "gemini-3.5-flash", contents, &genai.GenerateContentConfig{
+		chatResult, err := client.clients[index].Models.GenerateContent(ctx, client.Model, contents, &genai.GenerateContentConfig{
 			Tools: toolListAdapter(agentContext.Tools),
 		})
 		if err != nil {

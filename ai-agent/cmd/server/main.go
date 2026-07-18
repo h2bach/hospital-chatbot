@@ -29,20 +29,16 @@ func main() {
 	}
 
 	ctx := context.Background()
-	apiKeys := os.Getenv("GEMINI_API_KEYS")
-	if apiKeys == "" {
-		apiKeys = os.Getenv("GEMINI_API_KEY")
-	}
-	gemini, err := llm.NewGeminiClient(ctx, apiKeys)
+	model, err := llm.NewFromEnvironment(ctx)
 	if err != nil {
-		log.Fatalf("Failed to connect to Gemini: %s", err)
+		log.Fatalf("Failed to initialize LLM providers: %s", err)
 	}
 
 	server := api.NewServer(
 		ctx,
 		":"+*port,
 		store.NewMockSessionStore(),
-		gemini,
+		model,
 	)
 	server.Run(ctx)
 }
