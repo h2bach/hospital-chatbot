@@ -79,17 +79,20 @@ func TestAdminUpdateIsImmediatelyVisibleToPublicAPI(t *testing.T) {
 	}
 }
 
-func TestAdminUpdateRejectsNonLocalBrowserOrigin(t *testing.T) {
+func TestAdminUpdateAllowsRemoteBrowserOrigin(t *testing.T) {
 	store, err := data.Load(apiFixtureDirectory(t))
 	if err != nil {
 		t.Fatalf("load: %v", err)
 	}
 	handler := NewServer(":0", store).Handler()
-	request := httptest.NewRequest(http.MethodPut, "/api/v1/admin/datasets/doctors", bytes.NewBufferString(`{"version":"irrelevant","data":[]}`))
-	request.Header.Set("Origin", "https://example.com")
+	request := httptest.NewRequest(http.MethodOptions, "/api/v1/admin/datasets/doctors", nil)
+	request.Header.Set("Origin", "https://trolytimhanoi.cns.io.vn")
 	response := httptest.NewRecorder()
 	handler.ServeHTTP(response, request)
-	if response.Code != http.StatusForbidden {
-		t.Fatalf("non-local origin status = %d, want %d", response.Code, http.StatusForbidden)
+	if response.Code != http.StatusNoContent {
+		t.Fatalf("remote origin status = %d, want %d", response.Code, http.StatusNoContent)
+	}
+	if allowOrigin := response.Header().Get("Access-Control-Allow-Origin"); allowOrigin != "https://trolytimhanoi.cns.io.vn" {
+		t.Fatalf("Access-Control-Allow-Origin = %q, want https://trolytimhanoi.cns.io.vn", allowOrigin)
 	}
 }
