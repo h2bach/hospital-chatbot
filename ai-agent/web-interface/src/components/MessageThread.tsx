@@ -12,7 +12,7 @@ import {
 import { useEffect, useRef, useState } from "react"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
-import type { ChatMessage, MessageRole } from "../types"
+import type { ChatImage, ChatMessage, MessageRole } from "../types"
 
 interface MessageThreadProps {
   messages: ChatMessage[]
@@ -20,6 +20,7 @@ interface MessageThreadProps {
   sending: boolean
   error: string | null
   onRetry: () => void
+  onRetryMessage?: (content: string, images: ChatImage[]) => void
   onSuggestion: (prompt: string) => void
 }
 
@@ -79,7 +80,13 @@ function speakResponse(content: string) {
   window.speechSynthesis.speak(utterance)
 }
 
-function MessageItem({ message }: { message: ChatMessage }) {
+function MessageItem({
+  message,
+  onRetryMessage,
+}: {
+  message: ChatMessage
+  onRetryMessage?: (content: string, images: ChatImage[]) => void
+}) {
   const { label, Icon } = roleDetails(message.role)
   const roleClass = message.role.toLowerCase()
   const canSpeak = message.role === "Assistant" && "speechSynthesis" in window
@@ -93,14 +100,28 @@ function MessageItem({ message }: { message: ChatMessage }) {
       <div className="message-body">
         <div className="message-meta">
           <strong>{label}</strong>
-          {message.delivery === "failed" ? <span>Gửi thất bại</span> : null}
+          {message.delivery === "failed" ? (
+            <div className="message-failed-tag">
+              <span>Gửi thất bại</span>
+              {onRetryMessage ? (
+                <button
+                  type="button"
+                  className="retry-inline-button"
+                  onClick={() => onRetryMessage(message.content, message.images ?? [])}
+                >
+                  <RefreshCw aria-hidden="true" />
+                  Thử lại
+                </button>
+              ) : null}
+            </div>
+          ) : null}
           {canSpeak ? (
             <button
               type="button"
               className="speak-button"
               aria-label="Đọc phản hồi thành tiếng"
               title="Đọc phản hồi"
-            onClick={() => speakResponse(message.content)}
+              onClick={() => speakResponse(message.content)}
             >
               <Volume2 aria-hidden="true" />
             </button>
@@ -149,6 +170,7 @@ export function MessageThread({
   sending,
   error,
   onRetry,
+  onRetryMessage,
   onSuggestion,
 }: MessageThreadProps) {
   const bottomRef = useRef<HTMLDivElement>(null)
@@ -248,6 +270,7 @@ export function MessageThread({
         <MessageItem
           key={`${message.role}-${index}-${message.content.slice(0, 24)}`}
           message={message}
+          onRetryMessage={onRetryMessage}
         />
       ))}
       {sending ? (

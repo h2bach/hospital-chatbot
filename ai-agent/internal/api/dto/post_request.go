@@ -17,6 +17,7 @@ const (
 var validImageTypes = map[string]struct{}{
 	"image/jpeg": {},
 	"image/png":  {},
+	"image/webp": {},
 }
 
 type PostMessageRequest struct {

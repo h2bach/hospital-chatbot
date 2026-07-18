@@ -53,6 +53,7 @@ export function App() {
   const [activeSession, setActiveSession] = useState<ChatSession | null>(null)
   const [sessionQuery, setSessionQuery] = useState("")
   const [composerValue, setComposerValue] = useState("")
+  const [composerImages, setComposerImages] = useState<ChatImage[]>([])
   const [accessRole, setAccessRole] = useState<AccessRole>("GUEST")
   const [serverStatus, setServerStatus] = useState<ServerStatus>("checking")
   const [loadingSessions, setLoadingSessions] = useState(true)
@@ -229,6 +230,7 @@ export function App() {
   async function handleSend(message: string, images: ChatImage[] = []) {
     if (sending) return
     setComposerValue("")
+    setComposerImages([])
     setMessageError(null)
     setActionError(null)
 
@@ -237,6 +239,7 @@ export function App() {
       sessionId = await handleCreateSession()
       if (!sessionId) {
         setComposerValue(message)
+        setComposerImages(images)
         return
       }
     }
@@ -297,6 +300,7 @@ export function App() {
         return current
       })
       setComposerValue(message)
+      setComposerImages(images)
       setMessageError(errorMessage(error))
       if (error instanceof ApiError && error.status === 0) setServerStatus("offline")
     } finally {
@@ -433,15 +437,18 @@ export function App() {
             sending={sending}
             error={activeError}
             onRetry={() => selectedId && void loadActiveSession(selectedId)}
+            onRetryMessage={(msg, imgs) => void handleSend(msg, imgs)}
             onSuggestion={setComposerValue}
           />
         </div>
 
         <Composer
           value={composerValue}
+          images={composerImages}
           sending={sending || creating}
           error={messageError}
           onChange={setComposerValue}
+          onImagesChange={setComposerImages}
           onSend={(message, images) => void handleSend(message, images)}
           onReload={() => selectedId && void loadActiveSession(selectedId)}
         />
