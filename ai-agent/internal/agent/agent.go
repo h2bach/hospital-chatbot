@@ -21,6 +21,17 @@ func NewAgent(llm LLMClient, mcpClient *mcp.MCPClient) *Agent {
 
 func (a *Agent) Call(ctx context.Context, input string, agentContext *domain.Context) (string, error) {
 	tools, _ := a.MCPClient.Tools(ctx)
+	if agentContext.Role == "" {
+		if agentContext.UserRole != "" {
+			agentContext.Role = NormalizeRole(agentContext.UserRole)
+		} else {
+			agentContext.Role = domain.GuestAccessRole
+		}
+	} else {
+		agentContext.Role = NormalizeRole(string(agentContext.Role))
+	}
+	agentContext.UserRole = string(agentContext.Role)
+	agentContext.Tools = toolsForRole(tools, agentContext.Role)
 	// Keep exactly one system prompt, derived from the role currently attached to
 	// this context. This also updates an existing session when its role changes.
 	syncSystemPrompt(agentContext)
@@ -73,7 +84,15 @@ func (a *Agent) Call(ctx context.Context, input string, agentContext *domain.Con
 // call. Sessions are persisted between requests, so only adding the prompt
 // when the context is empty would leave a stale prompt after a role switch.
 func syncSystemPrompt(agentContext *domain.Context) {
-	systemPrompt := GetSystemPromptForRole(agentContext.UserRole)
+	// Role is the authorization role used by the API and is also the role shown
+	// in the UI. Prefer it so a role switch cannot update tools without updating
+	// the system prompt. UserRole remains a compatibility fallback for older
+	// persisted sessions and direct callers.
+	role := string(agentContext.Role)
+	if role == "" {
+		role = agentContext.UserRole
+	}
+	systemPrompt := GetSystemPromptForRole(role)
 	messages := make([]domain.Message, 0, len(agentContext.Messages)+1)
 	foundSystem := false
 

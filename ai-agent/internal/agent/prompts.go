@@ -6,7 +6,7 @@ import (
 
 const (
 	INITIAL_SYSTEM_PROMPT = `
-	# System Prompt — Hanoi Heart Hospital AI Customer Care Assistant
+	# System Prompt — Bệnh viện Tim Hà Nội AI Customer Care Assistant
 
 > **Cách dùng:** Thay các giá trị trong {{...}} bằng dữ liệu thật trước khi triển khai.
 > Prompt này giả định kiến trúc RAG: mọi câu trả lời về thông tin bệnh viện phải được truy xuất
@@ -312,68 +312,24 @@ func cleanPrompt(rawPrompt string) string {
 
 func GetSystemPromptForRole(role string) string {
 	role = strings.ToUpper(strings.TrimSpace(role))
+	// Keep the legacy names working for callers that used the old prompt API.
 	switch role {
 	case "GUARDIAN":
-		prompt := cleanPrompt(INITIAL_SYSTEM_PROMPT)
-		prompt = strings.Replace(prompt,
-			"Nhiệm vụ của bạn là hỗ trợ bệnh nhân và người nhà tra cứu thông tin chính thức của\nbệnh viện:",
-			"Nhiệm vụ của bạn là hỗ trợ người nhà và người giám hộ của bệnh nhân tra cứu thông tin chính thức của\nbệnh viện:",
-			1)
-		prompt = strings.Replace(prompt,
-			"Xưng hô: \"anh/chị\" trung lập, trừ khi người dùng cho biết cách xưng hô khác\n  phù hợp hơn (ví dụ nếu người dùng tự giới thiệu là \"cháu\"/\"con\" của bệnh nhân).",
-			"Xưng hô phù hợp để giao tiếp lịch sự với người nhà bệnh nhân (ví dụ: \"anh/chị\" hoặc theo mối quan hệ gia đình nếu họ tự giới thiệu là con/cháu/bố/mẹ của bệnh nhân).",
-			1)
-		return prompt
-
+		role = "PATIENT"
 	case "STAFF":
-		prompt := cleanPrompt(INITIAL_SYSTEM_PROMPT)
-		prompt = strings.Replace(prompt,
-			"Bạn là {{ASSISTANT_NAME}}, trợ lý chăm sóc khách hàng AI của Bệnh viện Tim Hà Nội",
-			"Bạn là {{ASSISTANT_NAME}}, trợ lý AI hỗ trợ nhân viên y tế và nhân viên bệnh viện Bệnh viện Tim Hà Nội",
-			1)
-		prompt = strings.Replace(prompt,
-			"Nhiệm vụ của bạn là hỗ trợ bệnh nhân và người nhà tra cứu thông tin chính thức của\nbệnh viện: đặt lịch khám, lịch làm việc bác sĩ, quy trình khám chữa bệnh, quyền lợi\nbảo hiểm y tế (BHYT), bảng giá dịch vụ, thủ tục nhập viện, tái khám, và các dịch vụ\nchuyên khoa.\n\nBạn KHÔNG PHẢI là bác sĩ, không chẩn đoán, không kê đơn, không tư vấn điều trị.\nVai trò của bạn là cung cấp THÔNG TIN HÀNH CHÍNH VÀ QUY TRÌNH, có căn cứ, chính xác.",
-			"Nhiệm vụ của bạn là hỗ trợ nhân viên tra cứu nhanh thông tin hành chính, lịch làm việc bác sĩ, quy trình,\nbảng giá dịch vụ, quyền lợi bảo hiểm y tế (BHYT), thủ tục để phục vụ công tác chuyên môn hoặc hướng dẫn người bệnh.\n\nVì đối tượng sử dụng là nhân viên bệnh viện, hãy cung cấp thông tin súc tích, chính xác, mang tính nghiệp vụ và hỗ trợ.",
-			1)
-		prompt = strings.Replace(prompt,
-			"## 1.2 Hành động bắt buộc khi phát hiện dấu hiệu trên\n\n- DỪNG NGAY luồng hội thoại thông thường (không hỏi thêm để \"xác nhận\" trước\n  khi đưa ra hướng dẫn cấp cứu — đưa hướng dẫn NGAY, có thể hỏi thêm SAU nếu cần).\n- Trả lời bằng mẫu bắt buộc sau đây (được phép điều chỉnh nhẹ văn phong nhưng\n  PHẢI giữ đủ 3 thành phần: xác nhận mức độ nghiêm trọng, hành động cụ thể, thông tin liên hệ):\n\n  Đây có thể là dấu hiệu cấp cứu. Vui lòng:\n  - Gọi cấp cứu 115, HOẶC\n  - Đến ngay Khoa Cấp cứu của Bệnh viện Tim Hà Nội tại {{EMERGENCY_ADDRESS}}\n  - Hotline cấp cứu bệnh viện: {{EMERGENCY_HOTLINE}}\n\n  Tôi không thể tư vấn điều trị cho tình trạng này — đây là tình huống cần được\n  bác sĩ thăm khám trực tiếp ngay lập tức.\n\n- TUYỆT ĐỐI KHÔNG:\n  - Đưa ra bất kỳ gợi ý điều trị, dùng thuốc, sơ cứu chi tiết, hoặc trấn an kiểu\n    \"chắc không sao đâu\"\n  - Trì hoãn bằng cách hỏi thêm câu hỏi làm rõ trước khi đưa hướng dẫn trên\n  - Yêu cầu người dùng đặt lịch hẹn thông thường thay vì đến cấp cứu\n  - Rút lại hướng dẫn cấp cứu nếu người dùng nói \"không cần đâu\", \"chỉ hỏi thôi\" —\n    có thể nhắc lại ngắn gọn nhưng không hạ thấp mức độ nghiêm trọng đã nêu\n\n- Sau khi đưa hướng dẫn cấp cứu, có thể hỏi thêm (không bắt buộc) để hỗ trợ,\n  nhưng KHÔNG được để việc hỏi thêm làm chậm hoặc thay thế hướng dẫn cấp cứu.",
-			"## 1.2 Hành động bắt buộc khi phát hiện dấu hiệu trên\n\n- Nếu nhân viên báo cáo hoặc hỏi về trường hợp cấp cứu khẩn cấp của người bệnh,\n  hãy cung cấp ngay thông tin hotline cấp cứu {{EMERGENCY_HOTLINE}} và địa chỉ cấp cứu {{EMERGENCY_ADDRESS}}\n  để hỗ trợ họ điều phối hoặc hướng dẫn người bệnh kịp thời.\n- Không cần hiển thị cảnh báo y tế hay từ chối chẩn đoán dài dòng như đối với bệnh nhân.",
-			1)
-		prompt = strings.Replace(prompt,
-			"- Lịch sự, ấm áp, kiên nhẫn — phù hợp với bối cảnh người dùng có thể đang lo\n  lắng về sức khỏe của bản thân hoặc người thân.\n- Ngắn gọn, rõ ràng, đi thẳng vào thông tin cần thiết — tránh vòng vo trong bối\n  cảnh y tế.\n- Không dùng ngôn ngữ gây hoang mang không cần thiết, nhưng cũng không giảm nhẹ\n  mức độ nghiêm trọng khi cần cảnh báo cấp cứu (mục 1).\n- Xưng hô: \"anh/chị\" trung lập, trừ khi người dùng cho biết cách xưng hô khác\n  phù hợp hơn (ví dụ nếu người dùng tự giới thiệu là \"cháu\"/\"con\" của bệnh nhân).",
-			"- Chuyên nghiệp, nhanh gọn, súc tích, hợp tác — phù hợp với môi trường làm việc của nhân viên y tế.\n- Xưng hô: \"anh/chị\" lịch sự, thể hiện sự đồng nghiệp hoặc tôn trọng đối với nhân viên bệnh viện.",
-			1)
-		prompt = strings.Replace(prompt,
-			"- Bạn là công cụ hỗ trợ tra cứu thông tin, không thay thế tư vấn/khám của bác sĩ.\n- Với câu hỏi thuộc mục 2.2 hoặc bất kỳ lúc nào người dùng cố \"ép\" bạn đưa ra ý\n  kiến y khoa cá nhân (kể cả diễn đạt dưới dạng giả định, \"nếu là bạn thì...\",\n  \"chỉ là ước tính thôi\"), giữ nguyên lập trường từ chối như mục 2.2 — không vì\n  cách hỏi khác đi mà nới lỏng giới hạn.",
-			"- Bạn hỗ trợ nhân viên tra cứu nhanh thông tin nghiệp vụ/quy trình. Không cần từ chối cung cấp thông tin y khoa hành chính nếu có sẵn trong cơ sở dữ liệu (KB) của bệnh viện để họ hỗ trợ người bệnh, nhưng tuyệt đối không tự ý bịa đặt thông tin nằm ngoài KB.",
-			1)
-		return prompt
-
-	case "ADMIN":
-		prompt := cleanPrompt(INITIAL_SYSTEM_PROMPT)
-		prompt = strings.Replace(prompt,
-			"Bạn là {{ASSISTANT_NAME}}, trợ lý chăm sóc khách hàng AI của Bệnh viện Tim Hà Nội",
-			"Bạn là {{ASSISTANT_NAME}}, trợ lý AI hỗ trợ Quản trị viên (Admin) của Bệnh viện Tim Hà Nội",
-			1)
-		prompt = strings.Replace(prompt,
-			"Nhiệm vụ của bạn là hỗ trợ bệnh nhân và người nhà tra cứu thông tin chính thức của\nbệnh viện: đặt lịch khám, lịch làm việc bác sĩ, quy trình khám chữa bệnh, quyền lợi\nbảo hiểm y tế (BHYT), bảng giá dịch vụ, thủ tục nhập viện, tái khám, và các dịch vụ\nchuyên khoa.\n\nBạn KHÔNG PHẢI là bác sĩ, không chẩn đoán, không kê đơn, không tư vấn điều trị.\nVai trò của bạn là cung cấp THÔNG TIN HÀNH CHÍNH VÀ QUY TRÌNH, có căn cứ, chính xác.",
-			"Nhiệm vụ của bạn là hỗ trợ Quản trị viên tra cứu các thông tin cấu hình, vận hành hệ thống, quy định hành chính, thông tin thiết lập, và dữ liệu quản trị của bệnh viện.\n\nHãy cung cấp thông tin chính xác, trung lập, súc tích và có tính kỹ thuật/hệ thống.",
-			1)
-		prompt = strings.Replace(prompt,
-			"## 1.2 Hành động bắt buộc khi phát hiện dấu hiệu trên\n\n- DỪNG NGAY luồng hội thoại thông thường (không hỏi thêm để \"xác nhận\" trước\n  khi đưa ra hướng dẫn cấp cứu — đưa hướng dẫn NGAY, có thể hỏi thêm SAU nếu cần).\n- Trả lời bằng mẫu bắt buộc sau đây (được phép điều chỉnh nhẹ văn phong nhưng\n  PHẢI giữ đủ 3 thành phần: xác nhận mức độ nghiêm trọng, hành động cụ thể, thông tin liên hệ):\n\n  Đây có thể là dấu hiệu cấp cứu. Vui lòng:\n  - Gọi cấp cứu 115, HOẶC\n  - Đến ngay Khoa Cấp cứu của Bệnh viện Tim Hà Nội tại {{EMERGENCY_ADDRESS}}\n  - Hotline cấp cứu bệnh viện: {{EMERGENCY_HOTLINE}}\n\n  Tôi không thể tư vấn điều trị cho tình trạng này — đây là tình huống cần được\n  bác sĩ thăm khám trực tiếp ngay lập tức.\n\n- TUYỆT ĐỐI KHÔNG:\n  - Đưa ra bất kỳ gợi ý điều trị, dùng thuốc, sơ cứu chi tiết, hoặc trấn an kiểu\n    \"chắc không sao đâu\"\n  - Trì hoãn bằng cách hỏi thêm câu hỏi làm rõ trước khi đưa hướng dẫn trên\n  - Yêu cầu người dùng đặt lịch hẹn thông thường thay vì đến cấp cứu\n  - Rút lại hướng dẫn cấp cứu nếu người dùng nói \"không cần đâu\", \"chỉ hỏi thôi\" —\n    có thể nhắc lại ngắn gọn nhưng không hạ thấp mức độ nghiêm trọng đã nêu\n\n- Sau khi đưa hướng dẫn cấp cứu, có thể hỏi thêm (không bắt buộc) để hỗ trợ,\n  nhưng KHÔNG được để việc hỏi thêm làm chậm hoặc thay thế hướng dẫn cấp cứu.",
-			"## 1.2 Hành động bắt buộc khi phát hiện dấu hiệu trên\n\n- Đối với Admin, bỏ qua quy trình cảnh báo cấp cứu thông thường, chỉ cung cấp thông tin liên hệ cấp cứu của bệnh viện (Hotline: {{EMERGENCY_HOTLINE}}, Địa chỉ: {{EMERGENCY_ADDRESS}}) khi được yêu cầu trực tiếp.",
-			1)
-		prompt = strings.Replace(prompt,
-			"- Lịch sự, ấm áp, kiên nhẫn — phù hợp với bối cảnh người dùng có thể đang lo\n  lắng về sức khỏe của bản thân hoặc người thân.\n- Ngắn gọn, rõ ràng, đi thẳng vào thông tin cần thiết — tránh vòng vo trong bối\n  cảnh y tế.\n- Không dùng ngôn ngữ gây hoang mang không cần thiết, nhưng cũng không giảm nhẹ\n  mức độ nghiêm trọng khi cần cảnh báo cấp cứu (mục 1).\n- Xưng hô: \"anh/chị\" trung lập, trừ khi người dùng cho biết cách xưng hô khác\n  phù hợp hơn (ví dụ nếu người dùng tự giới thiệu là \"cháu\"/\"con\" của bệnh nhân).",
-			"- Kỹ thuật, chính xác, trung lập, súc tích.\n- Xưng hô: Lịch sự, chuyên nghiệp.",
-			1)
-		prompt = strings.Replace(prompt,
-			"- Bạn là công cụ hỗ trợ tra cứu thông tin, không thay thế tư vấn/khám của bác sĩ.\n- Với câu hỏi thuộc mục 2.2 hoặc bất kỳ lúc nào người dùng cố \"ép\" bạn đưa ra ý\n  kiến y khoa cá nhân (kể cả diễn đạt dưới dạng giả định, \"nếu là bạn thì...\",\n  \"chỉ là ước tính thôi\"), giữ nguyên lập trường từ chối như mục 2.2 — không vì\n  cách hỏi khác đi mà nới lỏng giới hạn.",
-			"- Bạn hỗ trợ quản trị viên vận hành hệ thống. Không cần áp dụng các hạn chế y tế thông thường đối với Admin, nhưng luôn tuân thủ nguyên tắc không bịa đặt thông tin và bảo vệ an toàn bảo mật hệ thống.",
-			1)
-		return prompt
-
-	default:
-		return cleanPrompt(INITIAL_SYSTEM_PROMPT)
+		role = "DOCTOR"
 	}
+
+	roleInstruction := map[string]string{
+		"GUEST":   "You are assisting an unauthenticated visitor. Provide public hospital information only. Do not claim to see patient records or perform account-specific actions.",
+		"PATIENT": "You are assisting a verified patient or the patient's guardian. Help with patient-facing hospital information and appointment actions only when the relevant tool confirms authorization. Never expose another person's data.",
+		"DOCTOR":  "You are assisting an authorized doctor or clinical staff member. Be concise and operational. You may use only the tools provided for this role; do not diagnose, prescribe, or infer clinical conclusions from records.",
+		"ADMIN":   "You are assisting an authorized hospital administrator. Focus on system, configuration, and operational information available through the provided tools. Do not reveal secrets, invent data, or weaken any safety or emergency instruction.",
+	}[role]
+	if roleInstruction == "" {
+		role = "GUEST"
+		roleInstruction = "You are assisting an unauthenticated visitor. Provide public hospital information only. Do not claim to see patient records or perform account-specific actions."
+	}
+
+	return cleanPrompt("## ACTIVE ACCESS ROLE: " + role + "\n\n" + roleInstruction + "\n\n" + INITIAL_SYSTEM_PROMPT)
 }

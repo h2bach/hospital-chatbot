@@ -59,6 +59,9 @@ func roleToolNames(role domain.AccessRole) map[string]bool {
 		}
 		return guest
 	}
+	if role != domain.AdminAccessRole {
+		return guest
+	}
 	all := map[string]bool{}
 	for _, name := range []string{"checkTime", "createPlan", "mockInfoHealth", "listInfoCollections", "listInfoRecords", "getInfoRecord", "createInfoRecord", "updateInfoRecord", "deleteInfoRecord", "searchInfo", "findAvailableSlots", "createAppointment", "cancelAppointment", "verifyPatient", "searchHospitalKnowledge", "getHospitalInfo", "getHospitalHours", "getEmergencyInfo", "listDoctors", "getDoctorSchedules", "listDepartments", "listMedicalServices", "getMedicalService", "getServicePrices", "getBookingLinks"} {
 		all[name] = true

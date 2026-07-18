@@ -20,8 +20,9 @@ type Message struct {
 
 type Context struct {
 	Messages []Message
-	Tools []mcp_sdk.Tool
-	UserRole string `json:"user_role,omitempty"`
+	Tools    []mcp_sdk.Tool
+	Role     AccessRole `json:"role,omitempty"`
+	UserRole string     `json:"user_role,omitempty"`
 }
 
 type AccessRole string
