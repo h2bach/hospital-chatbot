@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"strings"
 
@@ -174,6 +175,28 @@ func formatRAGResponse(resp ragRetrieveResponse) string {
 			}
 
 			if len(chunk.Facts) > 0 {
+				if legalBasis, ok := chunk.Facts["legal_basis"].([]any); ok {
+					for _, lb := range legalBasis {
+						if lbMap, ok := lb.(map[string]any); ok {
+							docCode, _ := lbMap["document_code"].(string)
+							locator, _ := lbMap["locator"].(string)
+							label := docCode
+							if label == "" {
+								label = "Văn bản chính thức"
+							}
+							if locator != "" {
+								label += " (" + locator + ")"
+							}
+
+							if u, ok := lbMap["official_url"].(string); ok && isValidHTTPURL(u) {
+								b.WriteString(fmt.Sprintf("Link nguồn chính thức: [%s](%s)\n", label, u))
+							} else {
+								b.WriteString(fmt.Sprintf("Nguồn văn bản: %s\n", label))
+							}
+						}
+					}
+				}
+
 				factsJSON, err := json.Marshal(chunk.Facts)
 				if err == nil && len(factsJSON) > 2 {
 					b.WriteString(fmt.Sprintf("Chi tiết: %s\n", string(factsJSON)))
@@ -188,4 +211,22 @@ func formatRAGResponse(resp ragRetrieveResponse) string {
 	}
 
 	return strings.TrimSpace(b.String())
+}
+
+func isValidHTTPURL(rawURL string) bool {
+	u := strings.TrimSpace(rawURL)
+	if u == "" {
+		return false
+	}
+	parsed, err := url.Parse(u)
+	if err != nil {
+		return false
+	}
+	if parsed.Scheme != "http" && parsed.Scheme != "https" {
+		return false
+	}
+	if parsed.Host == "" || strings.Contains(parsed.Host, "example.invalid") || strings.Contains(parsed.Host, "invalid") {
+		return false
+	}
+	return true
 }
