@@ -1,0 +1,24 @@
+{
+  "site": "https://benhvientimhanoi.vn/",
+  "purpose": "Nguồn nguyên văn công khai phục vụ chatbot hỗ trợ thông tin cho người bệnh",
+  "collected_at": "2026-07-18T02:01:01.085Z",
+  "scope": {
+    "seed": "Trang chủ, các URL nội bộ công khai trên trang chủ, liên kết nội bộ được phát hiện trong các trang đã thu thập và một kết quả trang thông tin y học từ truy vấn chỉ mục công khai duy nhất.",
+    "limitations": [
+      "Website không cung cấp robots.txt hoặc sitemap.xml có thể truy cập trong phiên thu thập.",
+      "Nhiều URL chuyên mục/trang danh sách hiển thị danh sách rỗng trên website tại thời điểm thu thập; các URL đó vẫn có bản ghi trạng thái trong corpus.",
+      "Chỉ giữ văn bản hiển thị của nội dung công khai; không gửi biểu mẫu, không đăng nhập và không thu thập hồ sơ/kết quả khám riêng tư."
+    ]
+  },
+  "records": 65,
+  "status_totals": {
+    "supplementary_content": 2,
+    "content": 28,
+    "empty_article_content": 11,
+    "no_article_content": 24
+  },
+  "nonempty_text_records": 30,
+  "characters": 101874,
+  "attachments": [],
+  "errors": []
+}
