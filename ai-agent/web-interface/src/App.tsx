@@ -19,6 +19,42 @@ import type { ChatImage, ChatSession, ServerStatus, SessionSummary } from "./typ
 
 const THEME_STORAGE_KEY = "bvtim-chat-theme"
 const APP_TITLE = "Trợ lý Tim Hà Nội"
+const DEVICE_CACHE_SESSIONS_KEY = "bvtim-device-cached-sessions"
+const DEVICE_RESET_TIMESTAMP_KEY = "bvtim-device-reset-timestamp"
+const AUTO_RESET_INTERVAL_MS = 24 * 60 * 60 * 1000 // 1 day (24 hours)
+
+function checkDevice1DayAutoReset(): boolean {
+  try {
+    const lastReset = Number(window.localStorage.getItem(DEVICE_RESET_TIMESTAMP_KEY) || 0)
+    const now = Date.now()
+    if (!lastReset || now - lastReset >= AUTO_RESET_INTERVAL_MS) {
+      window.localStorage.setItem(DEVICE_RESET_TIMESTAMP_KEY, String(now))
+      window.localStorage.removeItem(DEVICE_CACHE_SESSIONS_KEY)
+      return true
+    }
+  } catch {
+    // Ignore storage errors
+  }
+  return false
+}
+
+function getCachedSessions(): SessionSummary[] | null {
+  try {
+    const raw = window.localStorage.getItem(DEVICE_CACHE_SESSIONS_KEY)
+    if (!raw) return null
+    return JSON.parse(raw) as SessionSummary[]
+  } catch {
+    return null
+  }
+}
+
+function setCachedSessions(sessions: SessionSummary[]) {
+  try {
+    window.localStorage.setItem(DEVICE_CACHE_SESSIONS_KEY, JSON.stringify(sessions))
+  } catch {
+    // Ignore storage errors
+  }
+}
 
 function initialTheme(): Theme {
   const requestedTheme = new URLSearchParams(window.location.search).get("theme")
@@ -141,13 +177,32 @@ export function App() {
     }
   }, [])
 
+
+
   const loadSessionList = useCallback(async () => {
+    const wasReset = checkDevice1DayAutoReset()
+    if (wasReset) {
+      setSessions([])
+      setSelectedId(null)
+      setActiveSession(null)
+    } else {
+      const cached = getCachedSessions()
+      if (cached && cached.length > 0) {
+        setSessions(cached)
+        setSelectedId((current) => {
+          if (current && cached.some((session) => session.id === current)) return current
+          return cached[0]?.id ?? null
+        })
+      }
+    }
+
     setLoadingSessions(true)
     setSessionListError(null)
     setServerStatus("checking")
     try {
       const nextSessions = await getSessions()
       setSessions(nextSessions)
+      setCachedSessions(nextSessions)
       setServerStatus("online")
       setSelectedId((current) => {
         if (current && nextSessions.some((session) => session.id === current)) return current
@@ -165,6 +220,7 @@ export function App() {
     try {
       const nextSessions = await getSessions()
       setSessions(nextSessions)
+      setCachedSessions(nextSessions)
       setServerStatus("online")
     } catch {
       // A metadata refresh should not replace a successful message with an error.
@@ -173,6 +229,20 @@ export function App() {
 
   useEffect(() => {
     void loadSessionList()
+  }, [loadSessionList])
+
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      const resetNeeded = checkDevice1DayAutoReset()
+      if (resetNeeded) {
+        setSessions([])
+        setSelectedId(null)
+        setActiveSession(null)
+        setCachedSessions([])
+        void loadSessionList()
+      }
+    }, 30_000)
+    return () => window.clearInterval(interval)
   }, [loadSessionList])
 
   useEffect(() => {

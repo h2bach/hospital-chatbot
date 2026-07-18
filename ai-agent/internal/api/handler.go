@@ -34,8 +34,17 @@ func writeJSON(w http.ResponseWriter, v any, status int) bool {
 	return true
 }
 
+func getDeviceID(r *http.Request) string {
+	id := r.Header.Get("X-Device-ID")
+	if id == "" {
+		id = r.URL.Query().Get("device_id")
+	}
+	return id
+}
+
 func (svr *Server) GetAllSessions(w http.ResponseWriter, r *http.Request) {
-	sessions := svr.sessionStore.GetAll()
+	deviceID := getDeviceID(r)
+	sessions := svr.sessionStore.GetAllForOwner(deviceID)
 	resp := dto.NewGetAllSessionsResponse(sessions)
 	writeJSON(w, resp, http.StatusOK)
 }
@@ -108,7 +117,8 @@ func (svr *Server) PostMessage(w http.ResponseWriter, r *http.Request) {
 }
 
 func (svr *Server) PostNewSession(w http.ResponseWriter, r *http.Request) {
-	sessionID, err := svr.sessionStore.Create()
+	deviceID := getDeviceID(r)
+	sessionID, err := svr.sessionStore.CreateForOwner(deviceID)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return

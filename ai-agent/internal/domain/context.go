@@ -1,6 +1,8 @@
 package domain
 
 import (
+	"time"
+
 	mcp_sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
@@ -30,8 +32,10 @@ type Context struct {
 }
 
 type Session struct {
-	ID      string
-	Title   string
-	OwnerID string
-	Context Context
+	ID        string
+	Title     string
+	OwnerID   string
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	Context   Context
 }

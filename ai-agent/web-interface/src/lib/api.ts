@@ -105,6 +105,21 @@ export function normalizeSessionList(payload: unknown): SessionSummary[] {
   })
 }
 
+const DEVICE_ID_KEY = "bvtim-device-id"
+
+export function getDeviceId(): string {
+  try {
+    let id = window.localStorage.getItem(DEVICE_ID_KEY)
+    if (!id) {
+      id = "dev-" + Math.random().toString(36).substring(2, 11) + "-" + Date.now().toString(36)
+      window.localStorage.setItem(DEVICE_ID_KEY, id)
+    }
+    return id
+  } catch {
+    return "dev-fallback"
+  }
+}
+
 async function requestJson<T>(path: string, init: RequestInit = {}): Promise<T> {
   const controller = new AbortController()
   const timeout = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
@@ -114,6 +129,7 @@ async function requestJson<T>(path: string, init: RequestInit = {}): Promise<T> 
       ...init,
       headers: {
         Accept: "application/json",
+        "X-Device-ID": getDeviceId(),
         ...init.headers,
       },
       credentials: "same-origin",

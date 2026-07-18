@@ -18,8 +18,10 @@ type JWTService interface {
 
 type SessionStore interface {
 	GetAll() []domain.Session
+	GetAllForOwner(ownerID string) []domain.Session
 	GetByID(id string) (domain.Session, error)
 	Create() (string, error)
+	CreateForOwner(ownerID string) (string, error)
 	Save(session domain.Session) error
 	DeleteByID(id string) error
 }
