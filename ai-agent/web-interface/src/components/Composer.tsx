@@ -1,4 +1,5 @@
 import {
+  AlertCircle,
   ArrowUp,
   LoaderCircle,
   Mic,
@@ -251,7 +252,7 @@ export function Composer({
       recorder.onerror = () => {
         stream.getTracks().forEach((track) => track.stop())
         setListening(false)
-        setVoiceError("Không thể ghi âm. Anh/Chị vui lòng thử lại.")
+        setVoiceError("Không thể chuyển giọng nói thành văn bản. Anh/Chị vui lòng thử lại sau.")
       }
       recorder.onstop = async () => {
         stream.getTracks().forEach((track) => track.stop())
@@ -263,8 +264,8 @@ export function Composer({
           const wav = await convertToWav(new Blob(chunksRef.current, { type: mimeType }))
           const transcript = await transcribeAudio(wav)
           if (transcript) onChange([value.trim(), transcript].filter(Boolean).join(" "))
-        } catch (error) {
-          setVoiceError(error instanceof Error ? error.message : "Chưa nhận dạng được giọng nói.")
+        } catch {
+          setVoiceError("Không thể chuyển giọng nói thành văn bản. Anh/Chị vui lòng thử lại sau.")
         } finally {
           setTranscribing(false)
         }
@@ -277,7 +278,7 @@ export function Composer({
     } catch {
       setListening(false)
       setTranscribing(false)
-      setVoiceError("Không thể truy cập microphone. Anh/Chị vui lòng cấp quyền rồi thử lại.")
+      setVoiceError("Không thể chuyển giọng nói thành văn bản. Anh/Chị vui lòng thử lại sau.")
     }
   }
 
@@ -408,20 +409,35 @@ export function Composer({
       </div>
       {listening ? (
         <div className="voice-status voice-status-recording" role="status">
-          <span className="recording-dot" aria-hidden="true" />
-          <strong>Đang ghi âm</strong>
-          <span>{String(Math.floor(recordingSeconds / 60)).padStart(2, "0")}:{String(recordingSeconds % 60).padStart(2, "0")}</span>
-          <small>Nhấn nút vuông để dừng</small>
+          <div className="voice-status-left">
+            <span className="recording-dot-wrap" aria-hidden="true">
+              <span className="recording-dot" />
+            </span>
+            <strong className="recording-title">Đang ghi âm…</strong>
+            <span className="recording-timer">
+              {String(Math.floor(recordingSeconds / 60)).padStart(2, "0")}:{String(recordingSeconds % 60).padStart(2, "0")}
+            </span>
+          </div>
+          <span className="recording-hint">Nhấn nút vuông để dừng và gửi</span>
         </div>
       ) : transcribing ? (
         <div className="voice-status voice-status-transcribing" role="status">
-          <span className="recording-spinner" aria-hidden="true" />
+          <LoaderCircle className="spin" aria-hidden="true" />
           <span>Đang chuyển giọng nói thành văn bản…</span>
         </div>
       ) : voiceError ? (
-        <p className="voice-error" role="status">
-          {voiceError}
-        </p>
+        <div className="voice-status voice-status-error" role="status">
+          <AlertCircle aria-hidden="true" />
+          <span>{voiceError}</span>
+          <button
+            type="button"
+            className="voice-error-dismiss"
+            aria-label="Đóng thông báo lỗi"
+            onClick={() => setVoiceError(null)}
+          >
+            <X aria-hidden="true" />
+          </button>
+        </div>
       ) : null}
       <div className="composer-footer">
         <p id="composer-help" className="composer-help">
