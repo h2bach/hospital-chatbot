@@ -22,21 +22,25 @@ func main() {
 		fmt.Println("Error: Too many arguments")
 		fmt.Printf("Type: '%s -h' for help.\n", os.Args[0])
 		os.Exit(1)
-	} 
-	if flag.NFlag() < 1 { 
+	}
+	if flag.NFlag() < 1 {
 		fmt.Print("Host server at port: ")
 		fmt.Scan(port)
 	}
 
 	ctx := context.Background()
-	gemini, err := llm.NewGeminiClient(ctx, os.Getenv("GEMINI_API_KEY"))
+	apiKeys := os.Getenv("GEMINI_API_KEYS")
+	if apiKeys == "" {
+		apiKeys = os.Getenv("GEMINI_API_KEY")
+	}
+	gemini, err := llm.NewGeminiClient(ctx, apiKeys)
 	if err != nil {
 		log.Fatalf("Failed to connect to Gemini: %s", err)
 	}
 
 	server := api.NewServer(
 		ctx,
-		":" + *port,
+		":"+*port,
 		store.NewMockSessionStore(),
 		gemini,
 	)

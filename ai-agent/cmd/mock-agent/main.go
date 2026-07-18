@@ -7,14 +7,14 @@ import (
 	"agent/internal/mcp"
 	"bufio"
 	"context"
+	"flag"
 	"fmt"
 	"log"
 	"os"
-	"flag"
 )
 
 var (
-	port = flag.String("p", "8080", "The port to connect to local MCP server")
+	port  = flag.String("p", "8080", "The port to connect to local MCP server")
 	route = flag.String("r", "/", "The route that host the MCP server")
 )
 
@@ -24,8 +24,8 @@ func main() {
 		fmt.Println("Error: Too many arguments")
 		fmt.Printf("Type: '%s -h' for help.\n", os.Args[0])
 		os.Exit(1)
-	} 
-	if flag.NFlag() < 1 { 
+	}
+	if flag.NFlag() < 1 {
 		fmt.Print("Connect to local MCP server at port: ")
 		fmt.Scan(port)
 		fmt.Print("Connect to local MCP server at route: ")
@@ -33,12 +33,15 @@ func main() {
 	}
 
 	ctx := context.Background()
-	apiKey := os.Getenv("GEMINI_API_KEY")
-	if apiKey == "" {
-		fmt.Printf("Error: Require valid GEMINI_API_KEY environment variable.\n")
+	apiKeys := os.Getenv("GEMINI_API_KEYS")
+	if apiKeys == "" {
+		apiKeys = os.Getenv("GEMINI_API_KEY")
+	}
+	if apiKeys == "" {
+		fmt.Printf("Error: Require GEMINI_API_KEYS or GEMINI_API_KEY environment variable.\n")
 		os.Exit(1)
 	}
-	gemini, err := llm.NewGeminiClient(ctx, apiKey)
+	gemini, err := llm.NewGeminiClient(ctx, apiKeys)
 	if err != nil {
 		log.Fatalf("Failed to connect to Gemini: %s", err)
 	}
@@ -48,7 +51,7 @@ func main() {
 	}
 
 	log.Printf("Client is connecting to MCP server at http://localhost:%s%s\n", *port, *route)
-	mcpClient, err := mcp.NewMCPClient(ctx, "http://localhost:" + *port + *route)
+	mcpClient, err := mcp.NewMCPClient(ctx, "http://localhost:"+*port+*route)
 	if err != nil {
 		log.Printf("Failed to connect to MCP Server: %s\n", err)
 		fmt.Printf("Continuing anyways...\n")
@@ -61,7 +64,7 @@ func main() {
 	scanner := bufio.NewScanner(os.Stdin)
 	fmt.Print("Prompt: ")
 	for scanner.Scan() {
-		var prompt string 
+		var prompt string
 		prompt = scanner.Text()
 
 		text, err := a.Call(ctx, prompt, &agentContext)
@@ -71,7 +74,7 @@ func main() {
 		fmt.Println("Agent: " + text)
 		fmt.Println("----------------------------------------------")
 		agentContext.Messages = append(agentContext.Messages, domain.Message{
-			Role: domain.AgentRole,
+			Role:    domain.AgentRole,
 			Content: text,
 		})
 		fmt.Print("Prompt: ")

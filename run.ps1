@@ -13,9 +13,12 @@ if (Test-Path ".env") {
     }
 }
 
-$ApiKey = $env:GEMINI_API_KEY
-if (-not $ApiKey -or $ApiKey -eq "your_actual_gemini_api_key_here") {
-    Write-Host "[Error] GEMINI_API_KEY is not set. Please add your actual Gemini API Key to the '.env' file in the workspace root." -ForegroundColor Red
+$ApiKeys = $env:GEMINI_API_KEYS
+if (-not $ApiKeys -or $ApiKeys -eq "your_actual_gemini_api_key_here") {
+    $ApiKeys = $env:GEMINI_API_KEY
+}
+if (-not $ApiKeys -or $ApiKeys -eq "your_actual_gemini_api_key_here") {
+    Write-Host "[Error] GEMINI_API_KEYS or GEMINI_API_KEY is not set. Add one or more Gemini API keys to the '.env' file." -ForegroundColor Red
     Exit 1
 }
 
@@ -108,7 +111,7 @@ Write-Host "[Info] Starting AI Agent Server on port $AgentPort..." -ForegroundCo
 Write-Host "Access the application at: http://localhost:$AgentPort" -ForegroundColor Green
 Write-Host "Press Ctrl+C to stop the agent server." -ForegroundColor Yellow
 
-$env:GEMINI_API_KEY = $ApiKey
+$env:GEMINI_API_KEYS = $ApiKeys
 $env:PORT = $AgentPort
 $env:AGENT_STATIC_DIR = $StaticDir
 $env:MOCK_INFO_SERVICE_URL = "http://localhost:$MockPort"

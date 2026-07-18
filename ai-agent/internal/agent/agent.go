@@ -12,6 +12,8 @@ type Agent struct {
 	MCPClient *mcp.MCPClient
 }
 
+const maxModelTurns = 8
+
 func NewAgent(llm LLMClient, mcpClient *mcp.MCPClient) *Agent {
 	return &Agent{
 		LLM:       llm,
@@ -42,11 +44,14 @@ func (a *Agent) Call(ctx context.Context, input string, agentContext *domain.Con
 		Content: input,
 	})
 
-	for {
+	for turn := 0; turn < maxModelTurns; turn++ {
 		a.MCPClient.Retry(ctx)
 		chatOutput, err := a.LLM.Chat(ctx, *agentContext)
 		if err != nil {
 			return "", err
+		}
+		if chatOutput == nil {
+			return "", fmt.Errorf("model returned an empty response")
 		}
 
 		if IsToolCall(chatOutput) {
@@ -78,6 +83,8 @@ func (a *Agent) Call(ctx context.Context, input string, agentContext *domain.Con
 			return chatOutput.Text, nil
 		}
 	}
+
+	return "", fmt.Errorf("model did not return a user-visible answer after %d turns", maxModelTurns)
 }
 
 // syncSystemPrompt makes the role-specific prompt authoritative for every LLM
