@@ -245,6 +245,7 @@ class RAGApplication:
         documents_path: Path | None = None,
         knowledge_manifest_path: Path | None = None,
         dense_url: str | None = None,
+        retrieval_mode: str | None = None,
     ):
         self.knowledge_manifest = load_knowledge_manifest(knowledge_manifest_path)
         published_ids = {
@@ -256,7 +257,19 @@ class RAGApplication:
             if is_searchable(chunk) and (not self.knowledge_manifest or chunk.document_id in published_ids)
         ]
         self.by_id = {chunk.chunk_id: chunk for chunk in self.chunks}
+        requested_mode = (
+            retrieval_mode if retrieval_mode is not None
+            else os.getenv("RAG_RETRIEVAL_MODE", "auto")
+        ).strip().lower()
+        if requested_mode not in {"auto", "cpu", "gpu"}:
+            raise ValueError("RAG_RETRIEVAL_MODE phải là auto, cpu hoặc gpu")
         dense_url = dense_url if dense_url is not None else os.getenv("DENSE_RETRIEVAL_URL", "")
+        dense_url = dense_url.strip()
+        if requested_mode == "cpu":
+            dense_url = ""
+        elif requested_mode == "gpu" and not dense_url:
+            raise ValueError("RAG_RETRIEVAL_MODE=gpu yêu cầu DENSE_RETRIEVAL_URL")
+        self.retrieval_mode = "gpu" if dense_url else "cpu"
         self.dense_client = DenseClient(dense_url, self.by_id) if dense_url else None
         self.process_index = BM25Index()
         self.process_index.build([chunk for chunk in self.chunks if not is_price_chunk(chunk)])
@@ -308,6 +321,7 @@ class RAGApplication:
         return {
             "status": "ok",
             "service": "heartcare-rag-demo",
+            "retrieval_mode": self.retrieval_mode,
             "retriever": "bm25+bge-m3-hybrid" if self.dense_client else "bm25",
             "document_count": len(documents),
             "document_ids": documents,

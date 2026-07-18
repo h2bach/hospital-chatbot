@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import pytest
+
 from rag_core.app import RAGApplication
 
 
@@ -17,6 +19,46 @@ def test_health_reports_loaded_corpus_and_catalog():
     assert health["price_service_chunks"] == 12648
     assert health["bhyt_policy_chunks"] == 29
     assert health["knowledge_sources"] == 3
+
+
+def test_cpu_mode_forces_bm25_even_when_dense_url_is_present():
+    application = RAGApplication(
+        ROOT / "rag-core/artifacts/data-rag/chunks.jsonl",
+        dense_url="http://dense-retrieval:6690",
+        retrieval_mode="cpu",
+    )
+    health = application.health()
+    assert health["retrieval_mode"] == "cpu"
+    assert health["retriever"] == "bm25"
+    assert application.dense_client is None
+
+
+def test_gpu_mode_requires_dense_service_url():
+    with pytest.raises(ValueError, match="DENSE_RETRIEVAL_URL"):
+        RAGApplication(
+            ROOT / "rag-core/artifacts/data-rag/chunks.jsonl",
+            dense_url="",
+            retrieval_mode="gpu",
+        )
+
+
+def test_gpu_mode_reports_hybrid_retrieval_when_configured():
+    application = RAGApplication(
+        ROOT / "rag-core/artifacts/data-rag/chunks.jsonl",
+        dense_url="http://dense-retrieval:6690",
+        retrieval_mode="gpu",
+    )
+    health = application.health()
+    assert health["retrieval_mode"] == "gpu"
+    assert health["retriever"] == "bm25+bge-m3-hybrid"
+
+
+def test_invalid_retrieval_mode_is_rejected():
+    with pytest.raises(ValueError, match="auto, cpu hoặc gpu"):
+        RAGApplication(
+            ROOT / "rag-core/artifacts/data-rag/chunks.jsonl",
+            retrieval_mode="tpu",
+        )
 
 
 def test_knowledge_catalog_and_ordered_context_are_read_only_extensions():
