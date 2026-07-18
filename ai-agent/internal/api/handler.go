@@ -81,29 +81,9 @@ func (svr *Server) PostMessage(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, errorResponse, http.StatusBadRequest)
 		return
 	}
-	// Role is supplied by the authenticated gateway/client. Preserve the
-	// session's access role when a later request omits the header.
-	if rawRole := r.Header.Get("Role"); rawRole != "" {
-		session.Context.Role = agent.NormalizeRole(rawRole)
-		session.Context.UserRole = string(session.Context.Role)
-	}
-
-	// Extract user role from request headers or query parameters
-	role := r.Header.Get("X-User-Role")
-	if role == "" {
-		role = r.Header.Get("X-Role")
-	}
-	if role == "" {
-		role = r.URL.Query().Get("role")
-	}
-	if role != "" && r.Header.Get("Role") == "" {
-		session.Context.Role = agent.NormalizeRole(role)
-		session.Context.UserRole = string(session.Context.Role)
-	}
-
 	agentResponse, err := svr.agent.CallWithImages(r.Context(), req.Message, images, &session.Context)
 	if err != nil {
-		log.Printf("agent request failed session=%s role=%s: %v", sessionID, session.Context.Role, err)
+		log.Printf("agent request failed session=%s: %v", sessionID, err)
 		userFacingError := StandardizeModelError(err)
 		writeJSON(w, dto.NewErrorResponse(userFacingError), http.StatusInternalServerError)
 		return
@@ -132,27 +112,6 @@ func (svr *Server) PostNewSession(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
-	}
-
-	// Initialize the session with the same normalized role used for its first
-	// message, so it cannot start with a guest prompt and switch later.
-	role := r.Header.Get("Role")
-	if role == "" {
-		role = r.Header.Get("X-User-Role")
-	}
-	if role == "" {
-		role = r.Header.Get("X-Role")
-	}
-	if role == "" {
-		role = r.URL.Query().Get("role")
-	}
-	if role != "" {
-		normalizedRole := agent.NormalizeRole(role)
-		if session, err := svr.sessionStore.GetByID(sessionID); err == nil {
-			session.Context.Role = normalizedRole
-			session.Context.UserRole = string(normalizedRole)
-			_ = svr.sessionStore.Save(session)
-		}
 	}
 
 	resp := dto.NewPostNewSessionResponse(sessionID)

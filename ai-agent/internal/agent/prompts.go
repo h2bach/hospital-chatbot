@@ -332,26 +332,11 @@ func expandPromptVariables(prompt string) string {
 	return prompt
 }
 
-func GetSystemPromptForRole(role string) string {
-	role = strings.ToUpper(strings.TrimSpace(role))
-	// Keep the legacy names working for callers that used the old prompt API.
-	switch role {
-	case "GUARDIAN":
-		role = "PATIENT"
-	case "STAFF":
-		role = "DOCTOR"
-	}
+func GetSystemPrompt() string {
+	roleInstruction := "You are assisting a visitor of Bệnh viện Tim Hà Nội. Provide public hospital information, appointment guidance, and hospital services."
+	return expandPromptVariables(cleanPrompt(roleInstruction + "\n\n" + INITIAL_SYSTEM_PROMPT))
+}
 
-	roleInstruction := map[string]string{
-		"GUEST":   "You are assisting an unauthenticated visitor. Provide public hospital information only. Do not claim to see patient records or perform account-specific actions.",
-		"PATIENT": "You are assisting a verified patient or the patient's guardian. Help with patient-facing hospital information and appointment actions only when the relevant tool confirms authorization. Never expose another person's data.",
-		"DOCTOR":  "You are assisting an authorized doctor or clinical staff member. Be concise and operational. You may use only the tools provided for this role; do not diagnose, prescribe, or infer clinical conclusions from records.",
-		"ADMIN":   "You are assisting an authorized hospital administrator. Focus on system, configuration, and operational information available through the provided tools. Do not reveal secrets, invent data, or weaken any safety or emergency instruction.",
-	}[role]
-	if roleInstruction == "" {
-		role = "GUEST"
-		roleInstruction = "You are assisting an unauthenticated visitor. Provide public hospital information only. Do not claim to see patient records or perform account-specific actions."
-	}
-
-	return expandPromptVariables(cleanPrompt("## ACTIVE ACCESS ROLE: " + role + "\n\n" + roleInstruction + "\n\n" + INITIAL_SYSTEM_PROMPT))
+func GetSystemPromptForRole(_ string) string {
+	return GetSystemPrompt()
 }

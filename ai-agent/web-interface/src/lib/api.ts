@@ -1,5 +1,4 @@
 import type {
-  AccessRole,
   ChatMessage,
   ChatSession,
   MessageRole,
@@ -182,7 +181,6 @@ export async function getSession(id: string): Promise<ChatSession> {
 export async function sendMessage(
   id: string,
   message: string,
-  role: AccessRole = "GUEST",
   images: ChatImage[] = [],
 ): Promise<string> {
   const response = asRecord(
@@ -190,7 +188,6 @@ export async function sendMessage(
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Role: role,
       },
       body: JSON.stringify({
         message,

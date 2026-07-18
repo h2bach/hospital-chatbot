@@ -5,7 +5,6 @@ import { Composer } from "./components/Composer"
 import { ConfirmDeleteDialog } from "./components/ConfirmDeleteDialog"
 import { EmergencyDialog } from "./components/EmergencyDialog"
 import { MessageThread } from "./components/MessageThread"
-import { RoleSwitcher } from "./components/RoleSwitcher"
 import { Sidebar } from "./components/Sidebar"
 import { ThemeToggle, type Theme } from "./components/ThemeToggle"
 import {
@@ -16,10 +15,10 @@ import {
   getSessions,
   sendMessage,
 } from "./lib/api"
-import type { AccessRole, ChatImage, ChatSession, ServerStatus, SessionSummary } from "./types"
+import type { ChatImage, ChatSession, ServerStatus, SessionSummary } from "./types"
 
 const THEME_STORAGE_KEY = "bvtim-chat-theme"
-const APP_TITLE = "Trợ lý Tim Hà Nội - Hỗ trợ thông tin"
+const APP_TITLE = "Trợ lý Tim Hà Nội"
 
 function initialTheme(): Theme {
   const requestedTheme = new URLSearchParams(window.location.search).get("theme")
@@ -28,9 +27,9 @@ function initialTheme(): Theme {
     const saved = window.localStorage.getItem(THEME_STORAGE_KEY)
     if (saved === "light" || saved === "dark") return saved
   } catch {
-    // Third-party storage can be unavailable when the app runs in an iframe.
+    // Ignore storage errors
   }
-  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
+  return "light"
 }
 
 function initialEmbeddedMode() {
@@ -54,7 +53,6 @@ export function App() {
   const [sessionQuery, setSessionQuery] = useState("")
   const [composerValue, setComposerValue] = useState("")
   const [composerImages, setComposerImages] = useState<ChatImage[]>([])
-  const [accessRole, setAccessRole] = useState<AccessRole>("GUEST")
   const [serverStatus, setServerStatus] = useState<ServerStatus>("checking")
   const [loadingSessions, setLoadingSessions] = useState(true)
   const [loadingActive, setLoadingActive] = useState(false)
@@ -262,7 +260,7 @@ export function App() {
     })
 
     try {
-      const answer = await sendMessage(currentId, message, accessRole, images)
+      const answer = await sendMessage(currentId, message, images)
       setActiveSession((current) => {
         if (!current || current.id !== currentId) return current
         const messages = current.messages.map((item, index) =>
@@ -394,11 +392,6 @@ export function App() {
             </div>
           </div>
           <div className="header-actions">
-            <RoleSwitcher
-              value={accessRole}
-              disabled={sending || creating}
-              onChange={setAccessRole}
-            />
             <button
               type="button"
               className="emergency-button"

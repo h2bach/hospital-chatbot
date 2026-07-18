@@ -27,18 +27,7 @@ type Image struct {
 type Context struct {
 	Messages []Message
 	Tools    []mcp_sdk.Tool
-	Role     AccessRole `json:"role,omitempty"`
-	UserRole string     `json:"user_role,omitempty"`
 }
-
-type AccessRole string
-
-const (
-	GuestAccessRole   AccessRole = "GUEST"
-	PatientAccessRole AccessRole = "PATIENT"
-	DoctorAccessRole  AccessRole = "DOCTOR"
-	AdminAccessRole   AccessRole = "ADMIN"
-)
 
 type Session struct {
 	ID      string

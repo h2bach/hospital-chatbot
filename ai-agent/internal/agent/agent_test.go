@@ -7,9 +7,8 @@ import (
 	"agent/internal/domain"
 )
 
-func TestSyncSystemPromptUsesCurrentRole(t *testing.T) {
+func TestSyncSystemPrompt(t *testing.T) {
 	context := domain.Context{
-		Role: domain.PatientAccessRole,
 		Messages: []domain.Message{
 			{Role: domain.SystemRole, Content: "old prompt"},
 			{Role: domain.UserRole, Content: "previous question"},
@@ -17,43 +16,14 @@ func TestSyncSystemPromptUsesCurrentRole(t *testing.T) {
 	}
 
 	syncSystemPrompt(&context)
-	guardianPrompt := context.Messages[0].Content
-	if guardianPrompt == "old prompt" || !strings.Contains(guardianPrompt, "PATIENT") {
-		t.Fatalf("expected patient-specific system prompt, got %q", guardianPrompt)
-	}
-
-	context.Role = domain.DoctorAccessRole
-	syncSystemPrompt(&context)
-
 	if len(context.Messages) != 2 {
 		t.Fatalf("expected one system message and preserved history, got %d messages", len(context.Messages))
 	}
 	if context.Messages[0].Role != domain.SystemRole {
 		t.Fatalf("expected system message first, got %q", context.Messages[0].Role)
 	}
-	if context.Messages[0].Content == guardianPrompt || !strings.Contains(context.Messages[0].Content, "DOCTOR") {
-		t.Fatalf("expected doctor-specific system prompt after role switch, got %q", context.Messages[0].Content)
-	}
 	if context.Messages[1].Content != "previous question" {
-		t.Fatalf("role switch should preserve conversation history, got %q", context.Messages[1].Content)
-	}
-}
-
-func TestSystemPromptsAreDistinctForAccessRoles(t *testing.T) {
-	roles := []domain.AccessRole{
-		domain.GuestAccessRole,
-		domain.PatientAccessRole,
-		domain.DoctorAccessRole,
-		domain.AdminAccessRole,
-	}
-	for _, role := range roles {
-		prompt := GetSystemPromptForRole(string(role))
-		if !strings.Contains(prompt, "ACTIVE ACCESS ROLE: "+string(role)) {
-			t.Errorf("prompt for %s does not identify the active role", role)
-		}
-	}
-	if GetSystemPromptForRole("GUEST") == GetSystemPromptForRole("PATIENT") {
-		t.Fatal("guest and patient prompts must differ")
+		t.Fatalf("sync should preserve conversation history, got %q", context.Messages[1].Content)
 	}
 }
 
@@ -62,7 +32,7 @@ func TestSystemPromptExpandsEnvironmentVariables(t *testing.T) {
 	t.Setenv("EMERGENCY_ADDRESS", "Khoa Cấp cứu, Bệnh viện Tim Hà Nội")
 	t.Setenv("ZALO_APP_NAME", "Bệnh viện Tim Hà Nội")
 	t.Setenv("ZALO_APP_LINK", "https://zalo.me/s/heart-hanoi")
-	prompt := GetSystemPromptForRole("GUEST")
+	prompt := GetSystemPrompt()
 	if !strings.Contains(prompt, "1900 1082") || !strings.Contains(prompt, "Khoa Cấp cứu, Bệnh viện Tim Hà Nội") || !strings.Contains(prompt, "https://zalo.me/s/heart-hanoi") {
 		t.Fatal("expected configured prompt values to be expanded")
 	}
@@ -73,7 +43,6 @@ func TestSystemPromptExpandsEnvironmentVariables(t *testing.T) {
 
 func TestSyncSystemPromptRemovesDuplicateSystemMessages(t *testing.T) {
 	context := domain.Context{
-		UserRole: "admin",
 		Messages: []domain.Message{
 			{Role: domain.SystemRole, Content: "stale"},
 			{Role: domain.UserRole, Content: "question"},

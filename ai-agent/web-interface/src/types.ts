@@ -1,6 +1,6 @@
 export type MessageRole = "User" | "Assistant" | "System" | "Tool"
 
-export type AccessRole = "GUEST" | "PATIENT" | "DOCTOR" | "ADMIN"
+
 
 export type DeliveryState = "sending" | "failed"
 

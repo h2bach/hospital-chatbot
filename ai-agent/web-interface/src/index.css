@@ -816,87 +816,7 @@ button:disabled {
   font-weight: 540;
 }
 
-.role-switcher {
-  display: grid;
-  grid-template-columns: 18px minmax(0, 1fr) 14px;
-  min-width: 126px;
-  min-height: 42px;
-  padding: 5px 9px;
-  align-items: center;
-  gap: 6px;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  background: var(--surface-subtle);
-  color: var(--muted-foreground);
-  transition: border-color 180ms ease, background-color 180ms ease, box-shadow 180ms ease;
-}
 
-.role-switcher:hover,
-.role-switcher:focus-within {
-  border-color: color-mix(in srgb, var(--primary) 45%, var(--border));
-  background: var(--primary-soft);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--focus) 10%, transparent);
-}
-
-.role-switcher[data-role="ADMIN"] {
-  border-color: color-mix(in srgb, var(--warning) 38%, var(--border));
-  background: var(--warning-soft);
-}
-
-.role-switcher > svg:first-child {
-  width: 18px;
-  height: 18px;
-  color: var(--primary);
-  pointer-events: none;
-}
-
-.role-switcher[data-role="ADMIN"] > svg:first-child {
-  color: var(--warning);
-}
-
-.role-switcher-copy {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  line-height: 1;
-}
-
-.role-switcher small {
-  color: var(--subtle-foreground);
-  font-size: 8px;
-  font-weight: 780;
-  letter-spacing: 0.12em;
-}
-
-.role-switcher select {
-  width: 100%;
-  min-height: 18px;
-  padding: 0;
-  border: 0;
-  outline: 0;
-  appearance: none;
-  background: transparent;
-  color: var(--primary);
-  font-size: 11px;
-  font-weight: 820;
-  line-height: 1.2;
-  cursor: pointer;
-}
-
-.role-switcher[data-role="ADMIN"] select {
-  color: var(--warning);
-}
-
-.role-switcher select:disabled {
-  cursor: not-allowed;
-}
-
-.role-switcher-chevron {
-  width: 14px;
-  height: 14px;
-  color: var(--subtle-foreground);
-  pointer-events: none;
-}
 
 .server-pill {
   display: inline-flex;
@@ -2312,15 +2232,7 @@ button:disabled {
     display: none;
   }
 
-  .role-switcher {
-    min-width: 92px;
-    min-height: 44px;
-    padding: 5px 8px;
-  }
 
-  .role-switcher small {
-    display: none;
-  }
 
   .thread {
     padding: 24px 14px 36px;

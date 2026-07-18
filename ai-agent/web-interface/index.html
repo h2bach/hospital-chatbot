@@ -14,15 +14,12 @@
         const params = new URLSearchParams(window.location.search)
         const requestedTheme = params.get("theme")
         const savedTheme = localStorage.getItem("bvtim-chat-theme")
-        const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches
         document.documentElement.dataset.theme =
           requestedTheme === "light" || requestedTheme === "dark"
             ? requestedTheme
             : savedTheme === "light" || savedTheme === "dark"
               ? savedTheme
-              : prefersDark
-                ? "dark"
-                : "light"
+              : "light"
         document.documentElement.dataset.embedded =
           params.get("embed") === "1" ||
           params.get("embed") === "true" ||
@@ -33,7 +30,7 @@
         document.documentElement.dataset.theme = "light"
       }
     </script>
-    <title>Trợ lý Tim Hà Nội - Hỗ trợ thông tin</title>
+    <title>Trợ lý Tim Hà Nội</title>
   </head>
   <body>
     <div id="root"></div>

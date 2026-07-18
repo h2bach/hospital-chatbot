@@ -28,19 +28,7 @@ func (a *Agent) Call(ctx context.Context, input string, agentContext *domain.Con
 
 func (a *Agent) CallWithImages(ctx context.Context, input string, images []domain.Image, agentContext *domain.Context) (string, error) {
 	tools, _ := a.MCPClient.Tools(ctx)
-	if agentContext.Role == "" {
-		if agentContext.UserRole != "" {
-			agentContext.Role = NormalizeRole(agentContext.UserRole)
-		} else {
-			agentContext.Role = domain.GuestAccessRole
-		}
-	} else {
-		agentContext.Role = NormalizeRole(string(agentContext.Role))
-	}
-	agentContext.UserRole = string(agentContext.Role)
-	agentContext.Tools = toolsForRole(tools, agentContext.Role)
-	// Keep exactly one system prompt, derived from the role currently attached to
-	// this context. This also updates an existing session when its role changes.
+	agentContext.Tools = tools
 	syncSystemPrompt(agentContext)
 
 	// User initial input
@@ -61,9 +49,6 @@ func (a *Agent) CallWithImages(ctx context.Context, input string, images []domai
 		}
 
 		if IsToolCall(chatOutput) {
-			if err := ensureToolAllowed(agentContext.Role, chatOutput.ToolName); err != nil {
-				return "", err
-			}
 			toolOutput, err := a.MCPClient.CallTool(ctx, chatOutput.ToolName, chatOutput.Args)
 			agentContext.Messages = append(agentContext.Messages, domain.Message{
 				Role:    domain.AgentRole,
@@ -101,19 +86,8 @@ func marshalToolArgs(args map[string]any) string {
 	return string(encoded)
 }
 
-// syncSystemPrompt makes the role-specific prompt authoritative for every LLM
-// call. Sessions are persisted between requests, so only adding the prompt
-// when the context is empty would leave a stale prompt after a role switch.
 func syncSystemPrompt(agentContext *domain.Context) {
-	// Role is the authorization role used by the API and is also the role shown
-	// in the UI. Prefer it so a role switch cannot update tools without updating
-	// the system prompt. UserRole remains a compatibility fallback for older
-	// persisted sessions and direct callers.
-	role := string(agentContext.Role)
-	if role == "" {
-		role = agentContext.UserRole
-	}
-	systemPrompt := GetSystemPromptForRole(role)
+	systemPrompt := GetSystemPrompt()
 	messages := make([]domain.Message, 0, len(agentContext.Messages)+1)
 	foundSystem := false
 
