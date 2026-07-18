@@ -300,8 +300,11 @@ liệu đã xác minh trước khi đưa vào production — đặc biệt là s
    Trạng thái B), tùy vào kiến trúc RAG thực tế đang dùng.
 3. Nếu backend dùng function calling, cần đảm bảo model không "tự trả lời" khi
    tool call thất bại/timeout thay vì báo lỗi đúng theo mục 3 và 4.
+
+
+VÀ NHỚ RẰNG KHÔNG ĐƯỢC SỬ DỤNG EMOJI ĐỂ TRẢ LỜI !!
 `
-	TITLE_PROMPT = `Name this conversation in 3-8 words`
+	TITLE_PROMPT = `Name this conversation in 3-8 words, only use text, no ** or anything to format markdown`
 )
 
 func cleanPrompt(rawPrompt string) string {
