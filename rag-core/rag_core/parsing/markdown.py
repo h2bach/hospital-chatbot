@@ -4,7 +4,7 @@ import re
 from dataclasses import dataclass, field
 
 
-PAGE_RE = re.compile(r"^\s*<!--\s*page:\s*(\d+)\s*-->\s*$", re.I)
+PAGE_RE = re.compile(r"^\s*<!--\s*(?:page\s*:\s*|trang\s+pdf\s+)(\d+).*?-->\s*$", re.I)
 OFFSET_RE = re.compile(r"^\s*<!--\s*source-offset:\s*(\d+)\s*[-:]\s*(\d+)\s*-->\s*$", re.I)
 HEADING_RE = re.compile(r"^(#{1,6})\s+(.+?)\s*$")
 LIST_RE = re.compile(r"^\s*(?:[-*+]\s+|\d+[.)]\s+)(.+)$")
@@ -126,4 +126,3 @@ def parse_markdown(source: str, fallback_title: str = "Untitled") -> ParsedMarkd
 def metadata_language(language: str) -> int:
     # Kept as a level-neutral value; language remains in the source code fence.
     return 0
-

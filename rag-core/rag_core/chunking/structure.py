@@ -47,6 +47,19 @@ def _sentence_groups(text: str, max_tokens: int) -> list[str]:
     return groups
 
 
+def _table_groups(text: str, max_tokens: int) -> list[str]:
+    if estimate_tokens(text) <= max_tokens:
+        return [text]
+    lines = [line for line in text.splitlines() if line.strip()]
+    # Keep each source row intact when possible. The separator row carries no
+    # retrieval value; column meaning is already represented in the table header.
+    rows = [line for index, line in enumerate(lines) if index != 1]
+    groups: list[str] = []
+    for row in rows:
+        groups.extend(_sentence_groups(row, max_tokens))
+    return groups
+
+
 def chunk_document(
     parsed: ParsedMarkdown,
     document: Document,
@@ -94,8 +107,14 @@ def chunk_document(
             continue
         path = tuple(node.heading_path) or tuple(sections[0].heading_path)
         section = section_by_path.get(path) or sections[0]
-        # Tables, lists and FAQ are atomic unless exceptionally large. Paragraphs split on sentence boundaries.
-        parts = [node.text] if node.node_type in {"table", "list", "faq", "code"} else _sentence_groups(node.text, cfg.max_tokens)
+        # Tables are row-split only when they exceed the hard limit. Lists, FAQ and
+        # code remain atomic; paragraphs split on sentence boundaries.
+        if node.node_type == "table":
+            parts = _table_groups(node.text, cfg.max_tokens)
+        elif node.node_type in {"list", "faq", "code"}:
+            parts = [node.text]
+        else:
+            parts = _sentence_groups(node.text, cfg.max_tokens)
         for part in parts:
             idx = len(chunks)
             chunk_id = stable_id("chk", document.document_id, version.version_id, section.section_id, idx, part)
@@ -137,4 +156,3 @@ def chunk_document(
         source_anchor=f"page={chunk.page_start or ''}&section={chunk.section_id}&start={chunk.offset_start}&end={chunk.offset_end}",
     ) for chunk in chunks]
     return sections, chunks, citations
-

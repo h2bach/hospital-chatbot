@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from rag_core.indexing import BM25Index, DenseIndex
+from rag_core.indexing import BM25Index, DenseIndex, EmbeddingProvider
 from rag_core.reranking import LexicalReranker, Reranker
 from rag_core.schemas import Chunk, RetrievedChunk
 
@@ -36,14 +36,15 @@ def reciprocal_rank_fusion(rankings: list[list[RetrievedChunk]], k: int = 60) ->
 
 
 class HybridRetriever:
-    def __init__(self, chunks: list[Chunk], reranker: Reranker | None = None):
+    def __init__(self, chunks: list[Chunk], reranker: Reranker | None = None,
+                 embedding_provider: EmbeddingProvider | None = None):
         self.chunks = chunks
         self.by_id = {chunk.chunk_id: chunk for chunk in chunks}
         self.by_section: dict[str, list[Chunk]] = {}
         for chunk in chunks:
             self.by_section.setdefault(chunk.section_id, []).append(chunk)
         self.bm25 = BM25Index()
-        self.dense = DenseIndex()
+        self.dense = DenseIndex(embedding_provider)
         self.bm25.build(chunks)
         self.dense.build(chunks)
         self.reranker = reranker or LexicalReranker()
@@ -52,9 +53,9 @@ class HybridRetriever:
                  filters: dict[str, object] | None = None) -> list[RetrievedChunk]:
         cfg = config or RetrievalConfig()
         bm25 = self.bm25.search(query, cfg.candidate_k, filters)
-        dense = self.dense.search(query, cfg.candidate_k, filters)
         if cfg.mode == "b0":
             return bm25[:cfg.final_k]
+        dense = self.dense.search(query, cfg.candidate_k, filters)
         if cfg.mode == "b1":
             return dense[:cfg.final_k]
         candidates = reciprocal_rank_fusion([bm25, dense], cfg.rrf_k)[:cfg.candidate_k]
@@ -74,12 +75,14 @@ class HybridRetriever:
                 start, end = max(0, position - cfg.expand_neighbors), min(len(siblings), position + cfg.expand_neighbors + 1)
                 for sibling in siblings[start:end]:
                     expanded.setdefault(sibling.chunk_id, RetrievedChunk(sibling, item.score * 0.8, "context_expansion"))
-        ordered = sorted(expanded.values(), key=lambda item: (item.chunk.document_id, item.chunk.chunk_index))
+        # Reserve budget for retrieved children first; expansion must never evict the
+        # evidence that caused it to be selected. Render order is restored afterward.
+        selected_ids = {item.chunk.chunk_id for item in selected}
+        candidates = selected + [item for key, item in expanded.items() if key not in selected_ids]
         budgeted, tokens = [], 0
-        for item in ordered:
+        for item in candidates:
             if tokens + item.chunk.token_count > cfg.max_context_tokens:
                 continue
             budgeted.append(item)
             tokens += item.chunk.token_count
-        return budgeted
-
+        return sorted(budgeted, key=lambda item: (item.chunk.document_id, item.chunk.chunk_index))

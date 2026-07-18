@@ -36,6 +36,14 @@ def test_parser_preserves_structure_and_source_location():
     assert any(node.node_type == "list" for node in parsed.nodes)
 
 
+def test_parser_recognizes_vietnamese_pdf_page_markers():
+    parsed = parse_markdown("# Tài liệu\n<!-- Trang PDF 8 -->\nNội dung trang tám.\n"
+                            "<!-- Trang PDF 9: bản scan trùng lặp -->\n>Nội dung ghi chú.\n")
+    paragraphs = [node for node in parsed.nodes if node.node_type == "paragraph"]
+    assert paragraphs[0].page_start == 8
+    assert paragraphs[1].page_start == 9
+
+
 def test_ingestion_is_deterministic_and_keeps_one_chunk_id_everywhere():
     first = ingest_markdown(SOURCE, CONFIG)
     second = ingest_markdown(SOURCE, CONFIG)
@@ -54,4 +62,3 @@ def test_canonical_store_upsert_and_deactivate(tmp_path):
     store.deactivate_document(result.document.document_id)
     assert store.active_chunks() == []
     store.close()
-

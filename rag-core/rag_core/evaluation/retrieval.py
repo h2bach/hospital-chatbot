@@ -37,7 +37,10 @@ def evaluate_retriever(retriever: HybridRetriever, samples: list[GoldenSample], 
     max_k = max(ks)
     for sample in samples:
         found = retriever.retrieve(sample.query, RetrievalConfig(mode=mode, final_k=max_k))
-        ids = [item.chunk.chunk_id for item in found]
+        # B4 adds parent/neighbor chunks for generation context. These are not retrieval
+        # candidates and must not alter retrieval rank metrics.
+        ranked = sorted((item for item in found if item.source != "context_expansion"), key=lambda item: item.rank)
+        ids = [item.chunk.chunk_id for item in ranked]
         expected = set(sample.expected_chunk_ids)
         relevant_positions = [index for index, chunk_id in enumerate(ids, 1) if chunk_id in expected]
         reciprocal_ranks.append(1 / relevant_positions[0] if relevant_positions else 0.0)
@@ -47,8 +50,8 @@ def evaluate_retriever(retriever: HybridRetriever, samples: list[GoldenSample], 
             dcg = sum(1 / math.log2(position + 1) for position in relevant_positions if position <= k)
             ideal = sum(1 / math.log2(position + 1) for position in range(1, min(len(expected), k) + 1))
             ndcgs[k] += dcg / ideal if ideal else 0.0
-        found_docs = {item.chunk.document_id for item in found}
-        found_sections = {item.chunk.section_id for item in found}
+        found_docs = {item.chunk.document_id for item in ranked}
+        found_sections = {item.chunk.section_id for item in ranked}
         document_hits += int(bool(found_docs & set(sample.expected_document_ids)))
         section_hits += int(bool(found_sections & set(sample.expected_section_ids)))
         if not relevant_positions:
@@ -57,4 +60,3 @@ def evaluate_retriever(retriever: HybridRetriever, samples: list[GoldenSample], 
     return EvaluationReport(mode, len(samples), {k: value / count for k, value in recalls.items()},
                             sum(reciprocal_ranks) / count, {k: value / count for k, value in ndcgs.items()},
                             document_hits / count, section_hits / count, failures)
-
