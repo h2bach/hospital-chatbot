@@ -5,16 +5,20 @@ import difflib
 import json
 import math
 import mimetypes
+import os
 import re
 import signal
 import threading
 import unicodedata
 import uuid
-from collections import Counter
+from collections import Counter, defaultdict
 from dataclasses import dataclass
+from functools import lru_cache
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from urllib import error as urllib_error
+from urllib import request as urllib_request
 from urllib.parse import unquote, urlparse
 
 
@@ -73,39 +77,87 @@ class BM25Index:
     def __init__(self, k1: float = 1.5, b: float = 0.75):
         self.k1, self.b = k1, b
         self.chunks: list[Chunk] = []
+        self.chunks_by_id: dict[str, Chunk] = {}
         self.tf: dict[str, Counter[str]] = {}
         self.df: Counter[str] = Counter()
+        self.lengths: dict[str, int] = {}
+        self.postings: dict[str, list[tuple[str, int]]] = defaultdict(list)
         self.average_length = 0.0
 
     def build(self, chunks: list[Chunk]) -> None:
         self.chunks = chunks
+        self.chunks_by_id = {chunk.chunk_id: chunk for chunk in chunks}
+        self.tf.clear()
+        self.df.clear()
+        self.lengths.clear()
+        self.postings.clear()
         lengths = []
         for chunk in chunks:
             terms = tokenize(chunk.retrieval_text)
             frequencies = Counter(terms)
             self.tf[chunk.chunk_id] = frequencies
             self.df.update(frequencies.keys())
+            self.lengths[chunk.chunk_id] = len(terms)
             lengths.append(len(terms))
+            for term, frequency in frequencies.items():
+                self.postings[term].append((chunk.chunk_id, frequency))
         self.average_length = sum(lengths) / max(1, len(lengths))
 
     def search(self, query: str, top_k: int) -> list[RetrievedChunk]:
         terms, count = tokenize(query), len(self.chunks)
-        results = []
-        for chunk in self.chunks:
-            frequencies = self.tf[chunk.chunk_id]
-            length = sum(frequencies.values())
-            score = 0.0
-            for term in terms:
-                frequency = frequencies[term]
-                if not frequency:
-                    continue
-                df = self.df[term]
-                idf = math.log(1 + (count - df + 0.5) / (df + 0.5))
+        scores: dict[str, float] = defaultdict(float)
+        for term in terms:
+            df = self.df[term]
+            if not df:
+                continue
+            idf = math.log(1 + (count - df + 0.5) / (df + 0.5))
+            for chunk_id, frequency in self.postings[term]:
+                length = self.lengths[chunk_id]
                 denominator = frequency + self.k1 * (1 - self.b + self.b * length / (self.average_length or 1))
-                score += idf * frequency * (self.k1 + 1) / denominator
-            if score:
-                results.append(RetrievedChunk(chunk, score))
+                scores[chunk_id] += idf * frequency * (self.k1 + 1) / denominator
+        results = [
+            RetrievedChunk(self.chunks_by_id[chunk_id], score)
+            for chunk_id, score in scores.items()
+        ]
         return sorted(results, key=lambda item: (-item.score, item.chunk.chunk_id))[:top_k]
+
+
+class DenseClient:
+    """Internal dense retriever that can only return known canonical chunks."""
+
+    def __init__(self, base_url: str, chunks_by_id: dict[str, Chunk], timeout: float = 8.0):
+        self.base_url = base_url.rstrip("/")
+        self.chunks_by_id = chunks_by_id
+        self.timeout = timeout
+
+    def search(self, query: str, top_k: int, content_types: set[str]) -> list[RetrievedChunk]:
+        payload = json.dumps({
+            "query": query,
+            "top_k": max(1, min(top_k, 100)),
+            "content_types": sorted(content_types),
+        }, ensure_ascii=False).encode("utf-8")
+        request = urllib_request.Request(
+            self.base_url + "/search",
+            data=payload,
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        try:
+            with urllib_request.urlopen(request, timeout=self.timeout) as response:
+                result = json.loads(response.read().decode("utf-8"))
+        except (OSError, TimeoutError, urllib_error.URLError, json.JSONDecodeError):
+            return []
+        retrieved = []
+        for item in result.get("results", []):
+            chunk = self.chunks_by_id.get(str(item.get("chunk_id", "")))
+            if chunk is None or chunk.content_type not in content_types:
+                continue
+            try:
+                score = float(item.get("score", 0.0))
+            except (TypeError, ValueError):
+                continue
+            retrieved.append(RetrievedChunk(chunk, score))
+        return retrieved
 
 
 @dataclass(slots=True)
@@ -192,6 +244,7 @@ class RAGApplication:
         catalog_path: Path | None = None,
         documents_path: Path | None = None,
         knowledge_manifest_path: Path | None = None,
+        dense_url: str | None = None,
     ):
         self.knowledge_manifest = load_knowledge_manifest(knowledge_manifest_path)
         published_ids = {
@@ -203,8 +256,15 @@ class RAGApplication:
             if is_searchable(chunk) and (not self.knowledge_manifest or chunk.document_id in published_ids)
         ]
         self.by_id = {chunk.chunk_id: chunk for chunk in self.chunks}
+        dense_url = dense_url if dense_url is not None else os.getenv("DENSE_RETRIEVAL_URL", "")
+        self.dense_client = DenseClient(dense_url, self.by_id) if dense_url else None
         self.process_index = BM25Index()
         self.process_index.build([chunk for chunk in self.chunks if not is_price_chunk(chunk)])
+        self.legacy_process_index = BM25Index()
+        self.legacy_process_index.build([
+            chunk for chunk in self.chunks
+            if chunk.document_id == "doc_qt_25_01" and not is_price_chunk(chunk)
+        ])
         self.policy_index = BM25Index()
         self.policy_index.build([
             chunk for chunk in self.chunks
@@ -216,15 +276,22 @@ class RAGApplication:
         self.process_canonical_vocabulary = set().union(
             *(set(canonical_tokens(chunk.retrieval_text)) for chunk in self.process_index.chunks)
         ) if self.process_index.chunks else set()
-        self.price_index = BM25Index()
-        self.price_index.build([chunk for chunk in self.chunks if is_price_chunk(chunk)])
+        self.price_chunks = [chunk for chunk in self.chunks if is_price_chunk(chunk)]
+        self.legacy_price_index = BM25Index()
+        self.legacy_price_index.build([
+            chunk for chunk in self.chunks if chunk.content_type == "price_service"
+        ])
+        self.bhyt_price_index = BM25Index()
+        self.bhyt_price_index.build([
+            chunk for chunk in self.chunks if chunk.content_type == "bhyt_price_service"
+        ])
         self.price_terms = {
             chunk.chunk_id: service_evidence_terms(chunk)
-            for chunk in self.price_index.chunks
+            for chunk in self.price_chunks
         }
         self.service_codes = {
             str((chunk.metadata or {}).get("service_code", ""))
-            for chunk in self.price_index.chunks
+            for chunk in self.price_chunks
             if (chunk.metadata or {}).get("service_code")
         }
         self.process_terms = {
@@ -241,13 +308,13 @@ class RAGApplication:
         return {
             "status": "ok",
             "service": "heartcare-rag-demo",
-            "retriever": "bm25-hybrid-ready",
+            "retriever": "bm25+bge-m3-hybrid" if self.dense_client else "bm25",
             "document_count": len(documents),
             "document_ids": documents,
             "indexed_chunks": len(self.chunks),
             "process_chunks": len(self.process_index.chunks),
             "bhyt_policy_chunks": len(self.policy_index.chunks),
-            "price_service_chunks": len(self.price_index.chunks),
+            "price_service_chunks": len(self.price_chunks),
             "catalog_answers": len(self.catalog),
             "knowledge_sources": len(self.knowledge_catalog()),
             "evidence_contract": "heartcare.rag.evidence.v1",
@@ -364,16 +431,42 @@ class RAGApplication:
         # must not be swallowed by the generic word "chi phí" and routed into
         # the 12k-row price catalog. A named service/code still uses price
         # retrieval and can later be paired with policy evidence by the Agent.
-        if is_bhyt_policy_query(query) and not has_specific_price_service_anchor(query):
+        if (
+            is_bhyt_policy_query(query)
+            and not has_specific_price_service_anchor(query)
+            and not has_legacy_process_anchor(query)
+        ):
             policy_initial = self.policy_index.search(expand_query(query), max(28, limit))
-            policy_ranked = self._rerank_process(query, policy_initial)
+            dense_policy = self._dense_search(
+                query, max(28, limit), {"bhyt_policy", "bhyt_update_alert"},
+            )
+            if dense_policy:
+                policy_ranked = self._rerank_policy(
+                    query,
+                    reciprocal_rank_fusion(policy_initial, dense_policy),
+                )
+            else:
+                policy_ranked = self._rerank_policy(query, policy_initial)
             if policy_ranked:
                 return policy_ranked[:limit]
 
         # A service lookup does not always contain an explicit price word. Probe
         # BM25 first because it is fast and can retain enough correctly-spelled
         # anchors (for example SPECT/CT) even when another token is misspelled.
-        price_initial = self.price_index.search(price_search_text(query), max(100, limit))
+        price_probe_size = max(100, limit)
+        price_initial = []
+        if price_intent or not process_anchor:
+            price_lexical = merge_retrieved(
+                self.legacy_price_index.search(price_search_text(query), price_probe_size),
+                self.bhyt_price_index.search(price_search_text(query), price_probe_size),
+            )
+            price_dense = self._dense_search(
+                query, price_probe_size, {"price_service", "bhyt_price_service"},
+            )
+            price_initial = (
+                reciprocal_rank_fusion(price_lexical, price_dense)
+                if price_dense else price_lexical
+            )
         price_ranked = self._rerank_prices(query, price_initial)
         if not process_anchor and price_ranked and price_target_coverage(query, price_ranked[0].chunk) >= 0.6:
             return price_ranked[:limit]
@@ -384,7 +477,16 @@ class RAGApplication:
             fuzzy_prices = self._fuzzy_price_search(query, max(100, limit))
             return self._rerank_prices(query, merge_retrieved(price_initial, fuzzy_prices))[:limit]
 
-        process_initial = self.process_index.search(expand_query(query), max(50, limit))
+        selected_process_index = self.legacy_process_index if has_legacy_process_anchor(query) else self.process_index
+        process_lexical = selected_process_index.search(expand_query(query), max(50, limit))
+        process_types = {"paragraph", "process_table_row"} if has_legacy_process_anchor(query) else {
+            "paragraph", "process_table_row", "bhyt_policy", "bhyt_update_alert",
+        }
+        process_dense = self._dense_search(query, max(50, limit), process_types)
+        process_initial = (
+            reciprocal_rank_fusion(process_lexical, process_dense)
+            if process_dense else process_lexical
+        )
         reranked = self._rerank_process(query, process_initial)
         if reranked and process_target_coverage(query, reranked[0].chunk) >= 0.4:
             return reranked[:limit]
@@ -399,13 +501,37 @@ class RAGApplication:
 
         initial = merge_retrieved(
             process_initial,
-            self._fuzzy_process_search(query, max(50, limit)),
+            self._fuzzy_process_search(
+                query,
+                max(50, limit),
+                selected_process_index.chunks,
+            ),
         )
         return self._rerank_process(query, initial)[:limit]
+
+    def _dense_search(self, query: str, top_k: int, content_types: set[str]) -> list[RetrievedChunk]:
+        if self.dense_client is None:
+            return []
+        return self.dense_client.search(query, top_k, content_types)
 
     def _rerank_process(self, query: str, retrieved: list[RetrievedChunk]) -> list[RetrievedChunk]:
         reranked = [
             RetrievedChunk(item.chunk, item.score + 10.0 * evidence_coverage(query, item.chunk))
+            for item in retrieved
+        ]
+        return sorted(reranked, key=lambda item: (-item.score, item.chunk.chunk_id))
+
+    def _rerank_policy(self, query: str, retrieved: list[RetrievedChunk]) -> list[RetrievedChunk]:
+        # RRF already combines lexical and semantic evidence. A small lexical
+        # coverage tie-break avoids letting incidental legal words such as
+        # "khoản 8" overwhelm the semantically correct policy chunk.
+        reranked = [
+            RetrievedChunk(
+                item.chunk,
+                item.score
+                + evidence_coverage(query, item.chunk)
+                + 20.0 * policy_question_similarity(query, item.chunk),
+            )
             for item in retrieved
         ]
         return sorted(reranked, key=lambda item: (-item.score, item.chunk.chunk_id))
@@ -415,19 +541,24 @@ class RAGApplication:
         if not target:
             return []
         results = []
-        for chunk in self.price_index.chunks:
+        for chunk in self.price_chunks:
             coverage, quality = fuzzy_match_stats(target, self.price_terms[chunk.chunk_id])
             if coverage < 0.5 or quality < 0.78:
                 continue
             results.append(RetrievedChunk(chunk, 20.0 * coverage + 5.0 * quality))
         return sorted(results, key=lambda item: (-item.score, item.chunk.chunk_id))[:top_k]
 
-    def _fuzzy_process_search(self, query: str, top_k: int) -> list[RetrievedChunk]:
+    def _fuzzy_process_search(
+        self,
+        query: str,
+        top_k: int,
+        chunks: list[Chunk] | None = None,
+    ) -> list[RetrievedChunk]:
         target = meaningful_terms(query)
         if not target:
             return []
         results = []
-        for chunk in self.process_index.chunks:
+        for chunk in chunks if chunks is not None else self.process_index.chunks:
             coverage, quality = fuzzy_match_stats(target, self.process_terms[chunk.chunk_id])
             matched = round(coverage * len(target))
             if coverage < 0.35 or quality < 0.78 or (len(target) > 1 and matched < 2):
@@ -523,6 +654,20 @@ class RAGApplication:
         top = retrieved[0]
         code_match = requested_code
         is_price = is_price_chunk(top.chunk) or (is_price_query(query) and not is_bhyt_policy_query(query))
+
+        # Dense retrieval always returns a nearest neighbour, even for a query
+        # unrelated to the hospital corpus. Do not promote that neighbour into
+        # approximate policy/process evidence without a supported domain anchor.
+        # Named catalog items remain eligible and are checked by the price
+        # matcher below.
+        if not is_price and not has_process_knowledge_anchor(query):
+            return evidence_envelope(
+                request_id=request_id, query=query, route_decision="out_of_scope",
+                status="insufficient", confidence=0.0,
+                reason_codes=["QUERY_NOT_SUPPORTED_BY_CORPUS"], evidence=[],
+                fallback_action="abstain", fallback_message=INSUFFICIENT_RAG_MESSAGE,
+            )
+
         if is_price and code_match:
             exact_code = [
                 item for item in retrieved
@@ -694,6 +839,12 @@ class RAGApplication:
                 return self._bhyt_price_answer(query, retrieved)
             return self._price_answer(query, retrieved)
 
+        # Non-price prose needs a hospital/BHYT/process domain anchor. Purely
+        # lexical collisions such as "tổng thống Mỹ" must not be accepted just
+        # because the larger policy corpus also contains words like "tổng".
+        if not has_process_knowledge_anchor(query):
+            return INSUFFICIENT_RAG_MESSAGE
+
         weak_ambiguous_process_match = (
             not is_price_query(query)
             and len(retrieved) > 1
@@ -805,7 +956,7 @@ class RAGApplication:
             precision = overlap / max(1, len(name_terms))
             exact_phrase = 1.0 if name and name in query_folded else 0.0
             source_preference = (
-                0.6 if (item.chunk.content_type == "bhyt_price_service") == wants_bhyt_reference else 0.0
+                4.0 if (item.chunk.content_type == "bhyt_price_service") == wants_bhyt_reference else 0.0
             )
             combined = 2.5 * exact_phrase + 2.0 * recall + precision + match_quality + source_preference + 0.03 * item.score
             return (-combined, -item.score, item.chunk.chunk_id)
@@ -967,6 +1118,7 @@ STOPWORDS = {
     "luc", "minh", "mot", "nao", "nay", "neu", "nhieu", "nhung", "o", "toi", "trong", "tu", "va", "voi",
     "xin", "tai", "the", "thi", "ve", "dau", "can", "phai", "noi", "thong", "tin", "benh", "vien",
     "ha", "noi", "ai", "bang", "bat", "chua", "den", "dung", "khi", "khong", "mang", "sau", "thay",
+    "khoan",
 }
 PRICE_INTENT_TERMS = ("gia", "chi phi", "vien phi", "bao nhieu tien", "muc thu", "bao nhieu")
 
@@ -1034,6 +1186,22 @@ def process_evidence_terms(chunk: Chunk) -> set[str]:
     return set(tokenize(fold(evidence_text)))
 
 
+def policy_question_similarity(query: str, chunk: Chunk) -> float:
+    variants = (chunk.metadata or {}).get("question_variants", [])
+    query_value = fold(query).strip(" ?.!")
+    if not query_value or not isinstance(variants, list):
+        return 0.0
+    return max(
+        (
+            difflib.SequenceMatcher(None, query_value, fold(str(variant)).strip(" ?.!")).ratio()
+            for variant in variants
+            if str(variant).strip()
+        ),
+        default=0.0,
+    )
+
+
+@lru_cache(maxsize=200_000)
 def fuzzy_term_similarity(left: str, right: str) -> float:
     left, right = fold(left), fold(right)
     if left == right:
@@ -1115,6 +1283,21 @@ def merge_retrieved(*groups: list[RetrievedChunk]) -> list[RetrievedChunk]:
     return sorted(merged.values(), key=lambda item: (-item.score, item.chunk.chunk_id))
 
 
+def reciprocal_rank_fusion(
+    *groups: list[RetrievedChunk],
+    rank_constant: float = 20.0,
+) -> list[RetrievedChunk]:
+    fused: dict[str, tuple[Chunk, float]] = {}
+    for group in groups:
+        for rank, item in enumerate(group, 1):
+            current_chunk, current_score = fused.get(item.chunk.chunk_id, (item.chunk, 0.0))
+            fused[item.chunk.chunk_id] = (current_chunk, current_score + 100.0 / (rank_constant + rank))
+    return sorted(
+        (RetrievedChunk(chunk, score) for chunk, score in fused.values()),
+        key=lambda item: (-item.score, item.chunk.chunk_id),
+    )
+
+
 def build_clarification_options(evidence: list[dict], top_k: int = 5) -> list[dict]:
     options = []
     seen = set()
@@ -1126,7 +1309,11 @@ def build_clarification_options(evidence: list[dict], top_k: int = 5) -> list[di
             name = str(facts.get("service_name", "")).strip() or "Dịch vụ trong bảng giá"
             code = str(facts.get("service_code", "")).strip()
             label = f"{name} (Mã {code})" if code else name
-            selection_query = f"Tra cứu chính xác dịch vụ mã {code}: {name}" if code else name
+            source_scope = " theo BHYT" if content_type == "bhyt_price_service" else ""
+            selection_query = (
+                f"Tra cứu chính xác{source_scope} dịch vụ mã {code}: {name}"
+                if code else f"Tra cứu chính xác{source_scope}: {name}"
+            )
         else:
             step = str(facts.get("process_step", "")).strip()
             heading = " › ".join(chunk.get("heading_path") or [])
@@ -1287,12 +1474,39 @@ def has_process_knowledge_anchor(query: str) -> bool:
         "bhyt", "bao hiem y te", "the bao hiem", "vss id", "cccd",
         "quy trinh", "thu tuc", "don tiep", "tai kham", "lay so", "dat lich",
         "dau hieu sinh ton", "dhst", "huyet ap", "chieu cao", "can nang",
+        "quyen loi", "muc huong", "dong chi tra", "chi tra", "thanh toan",
+        "5 nam lien tuc", "chuyen tuyen", "trai tuyen", "thong tuyen", "dung tuyen",
+        "giay to", "ho so", "cap cuu", "hen kham lai", "tam tru", "luu tru",
+        "chuyen vien", "bhxh", "bang gia", "cap chuyen sau",
+    ))
+
+
+def has_legacy_process_anchor(query: str) -> bool:
+    """Prefer QT.25.01 when the question explicitly targets its workflow."""
+    value = fold(query)
+    return any(term in value for term in (
+        "bhyt giay",
+        "the bao hiem giay",
+        "vss id",
+        "cccd gan chip",
+        "tn1",
+        "tu nguyen 1",
+        "cs1",
+        "don tiep",
+        "lay so",
+        "dat lich",
+        "dau hieu sinh ton",
+        "dhst",
     ))
 
 
 def is_bhyt_policy_query(query: str) -> bool:
     value = fold(query)
-    if not any(marker in value for marker in ("bhyt", "bao hiem y te", "the bao hiem")):
+    has_bhyt_context = any(marker in value for marker in (
+        "bhyt", "bao hiem y te", "the bao hiem", "bhxh",
+    ))
+    has_hospital_context = "benh vien tim ha noi" in value
+    if not has_bhyt_context and not has_hospital_context:
         return False
     return any(marker in value for marker in (
         "muc huong", "quyen loi", "chi tra", "thanh toan", "dong chi tra",
@@ -1302,6 +1516,7 @@ def is_bhyt_policy_query(query: str) -> bool:
         "dich vu theo yeu cau", "dang ky ban dau", "benh hiem", "benh dac biet",
         "chi phi thap", "luong co so", "duoc huong", "phan tram", "the bhyt",
         "100%", "95%", "80%",
+        "cap nao", "cap chuyen sau", "bang gia", "hieu luc",
     ))
 
 

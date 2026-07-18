@@ -428,24 +428,26 @@ func formatIntegerVND(value any) string {
 	if raw == "" {
 		return "Không có dữ liệu"
 	}
-	var digits []byte
-	for index := len(raw) - 1; index >= 0; index-- {
+	digits := make([]byte, 0, len(raw))
+	for index := 0; index < len(raw); index++ {
 		character := raw[index]
 		if character < '0' || character > '9' {
 			continue
 		}
-		if len(digits) > 0 && len(digits)%3 == 0 {
-			digits = append(digits, '.')
-		}
 		digits = append(digits, character)
-	}
-	for left, right := 0, len(digits)-1; left < right; left, right = left+1, right-1 {
-		digits[left], digits[right] = digits[right], digits[left]
 	}
 	if len(digits) == 0 {
 		return raw
 	}
-	return string(digits) + " đồng"
+	firstGroupSize := len(digits) % 3
+	if firstGroupSize == 0 {
+		firstGroupSize = 3
+	}
+	groups := []string{string(digits[:firstGroupSize])}
+	for start := firstGroupSize; start < len(digits); start += 3 {
+		groups = append(groups, string(digits[start:start+3]))
+	}
+	return strings.Join(groups, ".") + " đồng"
 }
 
 func formatExtractedPrice(value string) string {

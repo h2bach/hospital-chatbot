@@ -1,0 +1,7 @@
+{"query":"Thẻ BHYT được hưởng bao nhiêu phần trăm?","expected_source_chunk_ids":["POL_BASE_RATE_001"]}
+{"query":"BHYT chi trả những khoản nào?","expected_source_chunk_ids":["POL_SCOPE_001"]}
+{"query":"100% BHYT có phải là không mất toàn bộ tiền không?","expected_source_chunk_ids":["POL_BASE_RATE_001","POL_COST_FORMULA_001"]}
+{"query":"Đi khám trái tuyến tại Bệnh viện Tim Hà Nội thì BHYT thanh toán thế nào?","expected_source_chunk_ids":["POL_SELF_REFERRAL_OUT_001","POL_SELF_REFERRAL_IN_001"]}
+{"query":"Hồ sơ thủ tục BHYT cần những giấy tờ gì?","expected_source_chunk_ids":["POL_DOCUMENTS_001"]}
+{"query":"Mã 01.0303.0001 theo BHYT có giá bao nhiêu?","expected_source_chunk_ids":["PRICE_TECH_BHYT_0001"]}
+{"query":"Tôi cần giá phẫu thuật van tim theo BHYT","expected_source_chunk_ids":["PRICE_TECH_BHYT_3460","PRICE_TECH_BHYT_3461","PRICE_TECH_BHYT_3435"]}

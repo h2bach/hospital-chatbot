@@ -685,3 +685,16 @@ func TestEmergencyAnswerSurvivesMistakenFPTEvaluatorRejection(t *testing.T) {
 		t.Fatalf("safety answer was suppressed: %#v", result)
 	}
 }
+
+func TestFormatIntegerVNDUsesVietnameseThousandsGrouping(t *testing.T) {
+	tests := map[any]string{
+		18650807: "18.650.807 đồng",
+		58600:    "58.600 đồng",
+		969800:   "969.800 đồng",
+	}
+	for input, want := range tests {
+		if got := formatIntegerVND(input); got != want {
+			t.Fatalf("formatIntegerVND(%v) = %q, want %q", input, got, want)
+		}
+	}
+}

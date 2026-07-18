@@ -1,0 +1,29 @@
+{
+  "schema_version": "heartcare.rag.hybrid-evaluation.v1",
+  "status": "pass",
+  "sample_count": 28,
+  "chunks_sha256": "603f8294a2ecde389a1bb4fd38d9b2aee4ebbf7c65d2bb258798317186ffca8a",
+  "dense_index_id": "bge-m3-603f8294a2ec",
+  "model": "/path/to/local/hf-cache/hub/models--BAAI--bge-m3/snapshots/5617a9f61b028005a4858fdac845db406aefb181",
+  "device": "cuda",
+  "bm25": {
+    "recall_at_1": 0.8214285714285714,
+    "recall_at_3": 0.8214285714285714,
+    "recall_at_5": 0.8214285714285714,
+    "mrr_at_5": 0.8214285714285714
+  },
+  "dense": {
+    "recall_at_1": 0.8928571428571429,
+    "recall_at_3": 0.9285714285714286,
+    "recall_at_5": 0.9642857142857143,
+    "mrr_at_5": 0.911904761904762
+  },
+  "hybrid_rrf": {
+    "recall_at_1": 0.7857142857142857,
+    "recall_at_3": 0.9642857142857143,
+    "recall_at_5": 1.0,
+    "mrr_at_5": 0.8720238095238095
+  },
+  "elapsed_seconds": 71.202,
+  "failures": []
+}

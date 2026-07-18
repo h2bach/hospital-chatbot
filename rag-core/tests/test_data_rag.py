@@ -86,6 +86,16 @@ def test_bound_rag_handles_ambiguity_scope_and_safety():
     assert "không thể chẩn đoán" in emergency.lower()
 
 
+def test_unrelated_query_is_insufficient_in_evidence_contract():
+    app = RAGApplication(ARTIFACT / "chunks.jsonl")
+
+    response = app.retrieve("Ai là tổng thống Mỹ?", top_k=5)
+
+    assert response["answerability"]["status"] == "insufficient"
+    assert response["evidence"] == []
+    assert response["route"]["decision"] == "out_of_scope"
+
+
 def test_unaccented_queries_are_retrievable():
     app = RAGApplication(ARTIFACT / "chunks.jsonl")
     answer = app.answer("gia sieu am tim qua thuc quan cap cuu tai giuong?")
@@ -273,3 +283,10 @@ def test_bhyt_price_lookup_is_grounded_but_does_not_claim_hospital_availability(
     answer = app.answer("Mã 01.0303.0001 theo BHYT có giá bao nhiêu?")
     assert "không tự động xác nhận Bệnh viện Tim Hà Nội đang cung cấp" in answer
     assert "không phải tổng hóa đơn" in answer
+
+    approximate = app.retrieve("Tôi muốn tham khảo chi phí phẫu thuật van tim theo BHYT", top_k=5)
+    assert approximate["answerability"]["status"] == "approximate"
+    assert all(
+        "theo BHYT" in option["selection_query"]
+        for option in approximate["clarification"]["options"]
+    )

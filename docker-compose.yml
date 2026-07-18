@@ -1,10 +1,51 @@
 services:
+  dense-retrieval:
+    image: python:3.13-slim
+    command:
+      - python
+      - -m
+      - rag_core.dense_service
+      - --host
+      - 0.0.0.0
+      - --port
+      - "6690"
+      - --dense-root
+      - /app/rag-core/artifacts/data-rag/dense
+      - --chunks
+      - /app/rag-core/artifacts/data-rag/chunks.jsonl
+      - --model
+      - /models/bge-m3-cache/snapshots/${HEARTCARE_BGE_M3_REVISION:-5617a9f61b028005a4858fdac845db406aefb181}
+      - --device
+      - cuda
+    environment:
+      PYTHONPATH: /app/rag-core:/opt/site-packages
+      TRANSFORMERS_OFFLINE: "1"
+    volumes:
+      - ./rag-core:/app/rag-core:ro
+      - ./.venv-rag-gpu/lib/python3.13/site-packages:/opt/site-packages:ro
+      - ${HEARTCARE_BGE_M3_CACHE_PATH:-/path/to/local/hf-cache/hub/models--BAAI--bge-m3}:/models/bge-m3-cache:ro
+    expose:
+      - "6690"
+    gpus: all
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:6690/health', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      start_period: 90s
+      retries: 12
+
   rag-demo:
     build:
       context: .
       dockerfile: rag-core/Dockerfile.demo
     expose:
       - "6689"
+    environment:
+      DENSE_RETRIEVAL_URL: http://dense-retrieval:6690
+    depends_on:
+      dense-retrieval:
+        condition: service_healthy
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:6689/health', timeout=3)"]
