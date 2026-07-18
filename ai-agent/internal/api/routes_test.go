@@ -17,7 +17,7 @@ func TestStaticFallbackServesRootPublicAsset(t *testing.T) {
 	}
 	t.Setenv("AGENT_STATIC_DIR", staticDir)
 
-	server := &Server{sessionStore: store.NewMockSessionStore()}
+	server := &Server{sessionStore: store.NewMemorySessionStore()}
 	addRoutes(server)
 
 	request := httptest.NewRequest(http.MethodGet, "/bvtim_logo.png", nil)
@@ -39,7 +39,7 @@ func TestAPIRouteTakesPriorityOverStaticFallback(t *testing.T) {
 	}
 	t.Setenv("AGENT_STATIC_DIR", staticDir)
 
-	server := &Server{sessionStore: store.NewMockSessionStore()}
+	server := &Server{sessionStore: store.NewMemorySessionStore()}
 	addRoutes(server)
 
 	request := httptest.NewRequest(http.MethodGet, "/c", nil)

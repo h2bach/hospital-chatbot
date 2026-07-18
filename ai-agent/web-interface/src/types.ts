@@ -1,7 +1,5 @@
 export type MessageRole = "User" | "Assistant" | "System" | "Tool"
 
-
-
 export type DeliveryState = "sending" | "failed"
 
 export interface ChatMessage {

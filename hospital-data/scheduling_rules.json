@@ -1,0 +1,266 @@
+[
+  {
+    "rule_id": "R01",
+    "group": "Phiên bản lịch",
+    "level": "Hard",
+    "rule": "Mỗi lịch phải gắn với cơ sở, khu khám và khoảng ngày hiệu lực (thường Thứ 2-Chủ nhật).",
+    "source_example": "CS1_TN1, tuần bắt đầu 13/07/2026",
+    "confidence": "Cao",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "03_Quy_tac_sinh_lich"
+    }
+  },
+  {
+    "rule_id": "R02",
+    "group": "Chống trùng dữ liệu",
+    "level": "Hard",
+    "rule": "Khóa duy nhất đề xuất: facility_id + area_id + week_start + source_version. Phải loại ảnh/lịch trùng trước khi nhập.",
+    "source_example": "Ba ảnh CS1 tuần 06-12/07/2026 là bản trùng nhau",
+    "confidence": "Cao",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "03_Quy_tac_sinh_lich"
+    }
+  },
+  {
+    "rule_id": "R03",
+    "group": "Khung giờ phòng",
+    "level": "Hard",
+    "rule": "Mỗi phòng có giờ mở cửa mặc định; phân công phải nằm trong giờ mở cửa.",
+    "source_example": "CS1_TN3-PK05 mở 06:30-16:30",
+    "confidence": "Cao",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "03_Quy_tac_sinh_lich"
+    }
+  },
+  {
+    "rule_id": "R04",
+    "group": "Độ hạt ca làm",
+    "level": "Hard",
+    "rule": "Một ô lịch có thể là cả ngày hoặc tách Sáng/Chiều. Không lưu một chuỗi văn bản duy nhất; phải tách thành các assignment.",
+    "source_example": "Sáng: Hoàng Văn; Chiều: Nguyễn Văn Dần",
+    "confidence": "Cao",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "03_Quy_tac_sinh_lich"
+    }
+  },
+  {
+    "rule_id": "R05",
+    "group": "Nhiều bác sĩ cùng ô",
+    "level": "Hard",
+    "rule": "Cho phép nhiều bác sĩ trong cùng phòng/ngày khi họ thuộc các ca khác nhau hoặc cùng ekip.",
+    "source_example": "Một số ô có 2-3 tên",
+    "confidence": "Cao",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "03_Quy_tac_sinh_lich"
+    }
+  },
+  {
+    "rule_id": "R06",
+    "group": "Trạng thái lịch",
+    "level": "Hard",
+    "rule": "Phân biệt rõ WORKING, OFF (Nghỉ), UNASSIGNED (trống), PROCEDURE/TC và AREA_DUTY.",
+    "source_example": "'Nghỉ' khác ô trống; 'TC' không phải tên người",
+    "confidence": "Cao",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "03_Quy_tac_sinh_lich"
+    }
+  },
+  {
+    "rule_id": "R07",
+    "group": "Không xung đột nhân sự",
+    "level": "Hard",
+    "rule": "Một nhân sự không được xếp hai địa điểm/ca chồng thời gian; cần thêm thời gian di chuyển giữa CS1 và CS2.",
+    "source_example": "Nguyễn Thanh Trà có ghi chú chuyển sang CS1 lúc 15h",
+    "confidence": "Cao",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "03_Quy_tac_sinh_lich"
+    }
+  },
+  {
+    "rule_id": "R08",
+    "group": "Đúng chuyên môn",
+    "level": "Hard",
+    "rule": "Nhân sự phải có specialty/qualification phù hợp với phòng chuyên khoa.",
+    "source_example": "RHM, PHCN, TMH, Nhi, Da liễu, Sản-Phụ khoa...",
+    "confidence": "Cao",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "03_Quy_tac_sinh_lich"
+    }
+  },
+  {
+    "rule_id": "R09",
+    "group": "Phòng được phủ ca",
+    "level": "Hard",
+    "rule": "Mỗi phòng đang mở phải có ít nhất một bác sĩ hoặc một mã nguồn lực hợp lệ; nếu không phải ghi OFF/UNASSIGNED có lý do.",
+    "source_example": "Không để ô trống bị hiểu nhầm là Nghỉ",
+    "confidence": "Cao",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "03_Quy_tac_sinh_lich"
+    }
+  },
+  {
+    "rule_id": "R10",
+    "group": "Lịch cuối tuần",
+    "level": "Hard",
+    "rule": "Thứ 7/Chủ nhật không áp dụng một quy tắc chung cho toàn viện; phải cấu hình theo khu/phòng.",
+    "source_example": "CS1_TN1 có Chủ nhật; CS2 đa khoa nghỉ cuối tuần",
+    "confidence": "Cao",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "03_Quy_tac_sinh_lich"
+    }
+  },
+  {
+    "rule_id": "R11",
+    "group": "Trực cấp khu",
+    "level": "Hard",
+    "rule": "Cho phép phân công ở cấp khu thay vì cấp phòng khi một ô được gộp nhiều phòng.",
+    "source_example": "CS2 Tự nguyện: một bác sĩ trực chung Thứ 7",
+    "confidence": "Cao",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "03_Quy_tac_sinh_lich"
+    }
+  },
+  {
+    "rule_id": "R12",
+    "group": "Mẫu lặp tuần",
+    "level": "Soft",
+    "rule": "Ưu tiên giữ các phân công lặp ổn định giữa các tuần trước khi xếp luân phiên.",
+    "source_example": "Vũ Quỳnh Nga cố định phòng 2, Thứ 2-6",
+    "confidence": "Cao",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "03_Quy_tac_sinh_lich"
+    }
+  },
+  {
+    "rule_id": "R13",
+    "group": "Luân phiên",
+    "level": "Soft",
+    "rule": "Các ca Thứ 7, Chủ nhật, SAT, Khám TC nên được cân bằng theo vòng quay và tổng tải.",
+    "source_example": "Phan Thành Nam rồi Lê Thành Nam trực Thứ 7",
+    "confidence": "Trung bình",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "03_Quy_tac_sinh_lich"
+    }
+  },
+  {
+    "rule_id": "R14",
+    "group": "Ngoại lệ tuần",
+    "level": "Hard",
+    "rule": "Cho phép khóa một chuyên khoa nghỉ cả tuần hoặc chỉ một buổi.",
+    "source_example": "TMH nghỉ tuần 06-10/07; PHCN nghỉ chiều Thứ 6",
+    "confidence": "Cao",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "03_Quy_tac_sinh_lich"
+    }
+  },
+  {
+    "rule_id": "R15",
+    "group": "Mẫu cố định CS2-TN",
+    "level": "Soft",
+    "rule": "Thứ 2-6 ưu tiên cố định theo phòng: 306-Lê Thị Hoài Thu; 309-Nguyễn Duy Chinh; 308-Trần Thị Linh Tú; 311-Lê Thúy Ngọc.",
+    "source_example": "Lặp giống nhau trong hai tuần",
+    "confidence": "Cao",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "03_Quy_tac_sinh_lich"
+    }
+  },
+  {
+    "rule_id": "R16",
+    "group": "Mẫu cố định CS2-Đa khoa",
+    "level": "Soft",
+    "rule": "Các chuyên khoa đa khoa chủ yếu có một bác sĩ chính cố định Thứ 2-6; chỉ thay đổi do nghỉ hoặc ca nửa ngày.",
+    "source_example": "Nhi, Da liễu, YHCT, CXK, Mắt",
+    "confidence": "Cao",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "03_Quy_tac_sinh_lich"
+    }
+  },
+  {
+    "rule_id": "R17",
+    "group": "Mẫu ổn định CS1-TN1",
+    "level": "Soft",
+    "rule": "Một số phòng có pattern theo thứ: Phòng 3 thường Bùi Thị Thanh Hà vào Thứ 2/4/6, Nguyễn Xuân Tuấn Thứ 3, Đinh Quang Huy Thứ 5.",
+    "source_example": "Lặp trong hai tuần quan sát",
+    "confidence": "Cao",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "03_Quy_tac_sinh_lich"
+    }
+  },
+  {
+    "rule_id": "R18",
+    "group": "Ca sáng/chiều CS1",
+    "level": "Soft",
+    "rule": "Phòng 4 CS1_TN1 có xu hướng Hoàng Văn ca sáng vào Thứ 2/4/6; ca chiều luân phiên; Thứ 3/5 Hà Mai Hương.",
+    "source_example": "Lặp trong hai tuần quan sát",
+    "confidence": "Trung bình",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "03_Quy_tac_sinh_lich"
+    }
+  },
+  {
+    "rule_id": "R19",
+    "group": "Giới hạn suy luận",
+    "level": "Hard",
+    "rule": "Không tự suy ra giờ bắt đầu/kết thúc của 'Sáng' và 'Chiều' khi nguồn không nêu. Phải cấu hình sau khi bệnh viện xác nhận.",
+    "source_example": "Nguồn chỉ ghi Sáng/Chiều",
+    "confidence": "Cao",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "03_Quy_tac_sinh_lich"
+    }
+  },
+  {
+    "rule_id": "R20",
+    "group": "Chuẩn hóa chức danh",
+    "level": "Hard",
+    "rule": "Lưu cả credential_raw và credential_normalized vì nguồn có nhiều cách viết: BS.CKII, BS CKII, BSCKII, Ths.Bs, ThS.BS.",
+    "source_example": "Tránh tạo trùng một người do khác cách viết",
+    "confidence": "Cao",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "03_Quy_tac_sinh_lich"
+    }
+  },
+  {
+    "rule_id": "R21",
+    "group": "Định danh nhân sự",
+    "level": "Hard",
+    "rule": "Tên không được dùng làm khóa chính. Cần staff_id nội bộ và bảng alias để xử lý lỗi chính tả/đổi chức danh.",
+    "source_example": "Một số ảnh có kiểu viết khác nhau",
+    "confidence": "Cao",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "03_Quy_tac_sinh_lich"
+    }
+  },
+  {
+    "rule_id": "R22",
+    "group": "Phê duyệt thủ công",
+    "level": "Hard",
+    "rule": "Lịch sinh tự động phải ở trạng thái DRAFT và chỉ PUBLISH sau khi người quản lý kiểm tra xung đột, nghỉ phép và trực cuối tuần.",
+    "source_example": "Hạn chế sai do dữ liệu ảnh chưa hoàn chỉnh",
+    "confidence": "Cao",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "03_Quy_tac_sinh_lich"
+    }
+  }
+]

@@ -1,0 +1,502 @@
+[
+  {
+    "id": "BGD",
+    "name": "Ban Giám đốc",
+    "unit_type": "LEADERSHIP",
+    "block": null,
+    "parent_id": null,
+    "source": {
+      "file": "docs/so_do_bo_may.md"
+    }
+  },
+  {
+    "id": "HC",
+    "name": "Khối Hành chính",
+    "unit_type": "BLOCK",
+    "block": "HÀNH CHÍNH",
+    "parent_id": "BGD",
+    "source": {
+      "file": "docs/so_do_bo_may.md"
+    }
+  },
+  {
+    "id": "HC01",
+    "name": "Phòng Kế hoạch tổng hợp",
+    "unit_type": "DEPARTMENT",
+    "block": "HÀNH CHÍNH",
+    "parent_id": "HC",
+    "source": {
+      "file": "docs/so_do_bo_may.md"
+    }
+  },
+  {
+    "id": "HC02",
+    "name": "Phòng Hành chính quản trị",
+    "unit_type": "DEPARTMENT",
+    "block": "HÀNH CHÍNH",
+    "parent_id": "HC",
+    "source": {
+      "file": "docs/so_do_bo_may.md"
+    }
+  },
+  {
+    "id": "HC03",
+    "name": "Phòng Vật tư",
+    "unit_type": "DEPARTMENT",
+    "block": "HÀNH CHÍNH",
+    "parent_id": "HC",
+    "source": {
+      "file": "docs/so_do_bo_may.md"
+    }
+  },
+  {
+    "id": "HC04",
+    "name": "Phòng Quản lý chất lượng",
+    "unit_type": "DEPARTMENT",
+    "block": "HÀNH CHÍNH",
+    "parent_id": "HC",
+    "source": {
+      "file": "docs/so_do_bo_may.md"
+    }
+  },
+  {
+    "id": "HC05",
+    "name": "Phòng Công nghệ thông tin",
+    "unit_type": "DEPARTMENT",
+    "block": "HÀNH CHÍNH",
+    "parent_id": "HC",
+    "source": {
+      "file": "docs/so_do_bo_may.md"
+    }
+  },
+  {
+    "id": "HC06",
+    "name": "Phòng Tổ chức cán bộ",
+    "unit_type": "DEPARTMENT",
+    "block": "HÀNH CHÍNH",
+    "parent_id": "HC",
+    "source": {
+      "file": "docs/so_do_bo_may.md"
+    }
+  },
+  {
+    "id": "HC07",
+    "name": "Phòng Tài chính kế toán",
+    "unit_type": "DEPARTMENT",
+    "block": "HÀNH CHÍNH",
+    "parent_id": "HC",
+    "source": {
+      "file": "docs/so_do_bo_may.md"
+    }
+  },
+  {
+    "id": "HC08",
+    "name": "Phòng Điều dưỡng",
+    "unit_type": "DEPARTMENT",
+    "block": "HÀNH CHÍNH",
+    "parent_id": "HC",
+    "source": {
+      "file": "docs/so_do_bo_may.md"
+    }
+  },
+  {
+    "id": "HC09",
+    "name": "Phòng Công tác xã hội",
+    "unit_type": "DEPARTMENT",
+    "block": "HÀNH CHÍNH",
+    "parent_id": "HC",
+    "source": {
+      "file": "docs/so_do_bo_may.md"
+    }
+  },
+  {
+    "id": "HC10",
+    "name": "Trung tâm Đào tạo và Chỉ đạo tuyến",
+    "unit_type": "CENTER",
+    "block": "HÀNH CHÍNH",
+    "parent_id": "HC",
+    "source": {
+      "file": "docs/so_do_bo_may.md"
+    }
+  },
+  {
+    "id": "HC101",
+    "name": "Phòng Đào tạo",
+    "unit_type": "DEPARTMENT",
+    "block": "HÀNH CHÍNH",
+    "parent_id": "HC10",
+    "source": {
+      "file": "docs/so_do_bo_may.md"
+    }
+  },
+  {
+    "id": "HC102",
+    "name": "Phòng Nghiên cứu khoa học",
+    "unit_type": "DEPARTMENT",
+    "block": "HÀNH CHÍNH",
+    "parent_id": "HC10",
+    "source": {
+      "file": "docs/so_do_bo_may.md"
+    }
+  },
+  {
+    "id": "HC103",
+    "name": "Phòng Chỉ đạo tuyến và Luân phiên cán bộ",
+    "unit_type": "DEPARTMENT",
+    "block": "HÀNH CHÍNH",
+    "parent_id": "HC10",
+    "source": {
+      "file": "docs/so_do_bo_may.md"
+    }
+  },
+  {
+    "id": "LS",
+    "name": "Khối Lâm sàng",
+    "unit_type": "BLOCK",
+    "block": "LÂM SÀNG",
+    "parent_id": "BGD",
+    "source": {
+      "file": "docs/so_do_bo_may.md"
+    }
+  },
+  {
+    "id": "LS01",
+    "name": "Khoa Khám bệnh",
+    "unit_type": "DEPARTMENT",
+    "block": "LÂM SÀNG",
+    "parent_id": "LS",
+    "source": {
+      "file": "docs/so_do_bo_may.md"
+    }
+  },
+  {
+    "id": "LS02",
+    "name": "Khoa Khám bệnh tự nguyện",
+    "unit_type": "DEPARTMENT",
+    "block": "LÂM SÀNG",
+    "parent_id": "LS",
+    "source": {
+      "file": "docs/so_do_bo_may.md"
+    }
+  },
+  {
+    "id": "LS03",
+    "name": "Khoa Quốc tế",
+    "unit_type": "DEPARTMENT",
+    "block": "LÂM SÀNG",
+    "parent_id": "LS",
+    "source": {
+      "file": "docs/so_do_bo_may.md"
+    }
+  },
+  {
+    "id": "LS04",
+    "name": "Khoa Nội",
+    "unit_type": "DEPARTMENT",
+    "block": "LÂM SÀNG",
+    "parent_id": "LS",
+    "source": {
+      "file": "docs/so_do_bo_may.md"
+    }
+  },
+  {
+    "id": "LS05",
+    "name": "Khoa Điều trị ban ngày",
+    "unit_type": "DEPARTMENT",
+    "block": "LÂM SÀNG",
+    "parent_id": "LS",
+    "source": {
+      "file": "docs/so_do_bo_may.md"
+    }
+  },
+  {
+    "id": "LS06",
+    "name": "Khoa Tim mạch chuyển hóa",
+    "unit_type": "DEPARTMENT",
+    "block": "LÂM SÀNG",
+    "parent_id": "LS",
+    "source": {
+      "file": "docs/so_do_bo_may.md"
+    }
+  },
+  {
+    "id": "LS07",
+    "name": "Khoa Các bệnh mạch máu",
+    "unit_type": "DEPARTMENT",
+    "block": "LÂM SÀNG",
+    "parent_id": "LS",
+    "source": {
+      "file": "docs/so_do_bo_may.md"
+    }
+  },
+  {
+    "id": "LS08",
+    "name": "Khoa Dinh dưỡng",
+    "unit_type": "DEPARTMENT",
+    "block": "LÂM SÀNG",
+    "parent_id": "LS",
+    "source": {
+      "file": "docs/so_do_bo_may.md"
+    }
+  },
+  {
+    "id": "LS09",
+    "name": "Phòng Khám đa khoa",
+    "unit_type": "CLINIC",
+    "block": "LÂM SÀNG",
+    "parent_id": "LS",
+    "source": {
+      "file": "docs/so_do_bo_may.md"
+    }
+  },
+  {
+    "id": "LS10",
+    "name": "Trung tâm Phẫu thuật tim mạch",
+    "unit_type": "CENTER",
+    "block": "LÂM SÀNG",
+    "parent_id": "LS",
+    "source": {
+      "file": "docs/so_do_bo_may.md"
+    }
+  },
+  {
+    "id": "LS101",
+    "name": "Khoa Phẫu thuật tim người lớn",
+    "unit_type": "DEPARTMENT",
+    "block": "LÂM SÀNG",
+    "parent_id": "LS10",
+    "source": {
+      "file": "docs/so_do_bo_may.md"
+    }
+  },
+  {
+    "id": "LS102",
+    "name": "Khoa Phẫu thuật mạch máu",
+    "unit_type": "DEPARTMENT",
+    "block": "LÂM SÀNG",
+    "parent_id": "LS10",
+    "source": {
+      "file": "docs/so_do_bo_may.md"
+    }
+  },
+  {
+    "id": "LS103",
+    "name": "Khoa Gây mê hồi sức – Phòng mổ",
+    "unit_type": "DEPARTMENT",
+    "block": "LÂM SÀNG",
+    "parent_id": "LS10",
+    "source": {
+      "file": "docs/so_do_bo_may.md"
+    }
+  },
+  {
+    "id": "LS104",
+    "name": "Đơn nguyên Phẫu thuật tim mạch ít xâm lấn",
+    "unit_type": "UNIT",
+    "block": "LÂM SÀNG",
+    "parent_id": "LS10",
+    "source": {
+      "file": "docs/so_do_bo_may.md"
+    }
+  },
+  {
+    "id": "LS11",
+    "name": "Trung tâm Cấp cứu và Can thiệp tim mạch",
+    "unit_type": "CENTER",
+    "block": "LÂM SÀNG",
+    "parent_id": "LS",
+    "source": {
+      "file": "docs/so_do_bo_may.md"
+    }
+  },
+  {
+    "id": "LS111",
+    "name": "Khoa Tim mạch can thiệp",
+    "unit_type": "DEPARTMENT",
+    "block": "LÂM SÀNG",
+    "parent_id": "LS11",
+    "source": {
+      "file": "docs/so_do_bo_may.md"
+    }
+  },
+  {
+    "id": "LS112",
+    "name": "Khoa Can thiệp tĩnh mạch",
+    "unit_type": "DEPARTMENT",
+    "block": "LÂM SÀNG",
+    "parent_id": "LS11",
+    "source": {
+      "file": "docs/so_do_bo_may.md"
+    }
+  },
+  {
+    "id": "LS113",
+    "name": "Khoa Thăm dò điện sinh lý và rối loạn nhịp",
+    "unit_type": "DEPARTMENT",
+    "block": "LÂM SÀNG",
+    "parent_id": "LS11",
+    "source": {
+      "file": "docs/so_do_bo_may.md"
+    }
+  },
+  {
+    "id": "LS114",
+    "name": "Khoa Cấp cứu",
+    "unit_type": "DEPARTMENT",
+    "block": "LÂM SÀNG",
+    "parent_id": "LS11",
+    "source": {
+      "file": "docs/so_do_bo_may.md"
+    }
+  },
+  {
+    "id": "LS115",
+    "name": "Đơn nguyên Tim mạch can thiệp Cơ sở 2",
+    "unit_type": "UNIT",
+    "block": "LÂM SÀNG",
+    "parent_id": "LS11",
+    "source": {
+      "file": "docs/so_do_bo_may.md"
+    }
+  },
+  {
+    "id": "LS12",
+    "name": "Trung tâm Hồi sức tích cực",
+    "unit_type": "CENTER",
+    "block": "LÂM SÀNG",
+    "parent_id": "LS",
+    "source": {
+      "file": "docs/so_do_bo_may.md"
+    }
+  },
+  {
+    "id": "LS121",
+    "name": "Khoa Hồi sức tích cực",
+    "unit_type": "DEPARTMENT",
+    "block": "LÂM SÀNG",
+    "parent_id": "LS12",
+    "source": {
+      "file": "docs/so_do_bo_may.md"
+    }
+  },
+  {
+    "id": "LS122",
+    "name": "Khoa Gây mê hồi sức – Bộ phận hồi sức",
+    "unit_type": "DEPARTMENT",
+    "block": "LÂM SÀNG",
+    "parent_id": "LS12",
+    "source": {
+      "file": "docs/so_do_bo_may.md"
+    }
+  },
+  {
+    "id": "LS13",
+    "name": "Trung tâm Tim mạch Nhi",
+    "unit_type": "CENTER",
+    "block": "LÂM SÀNG",
+    "parent_id": "LS",
+    "source": {
+      "file": "docs/so_do_bo_may.md"
+    }
+  },
+  {
+    "id": "LS131",
+    "name": "Khoa Phẫu thuật tim trẻ em",
+    "unit_type": "DEPARTMENT",
+    "block": "LÂM SÀNG",
+    "parent_id": "LS13",
+    "source": {
+      "file": "docs/so_do_bo_may.md"
+    }
+  },
+  {
+    "id": "LS132",
+    "name": "Khoa Hồi sức tích cực Nhi",
+    "unit_type": "DEPARTMENT",
+    "block": "LÂM SÀNG",
+    "parent_id": "LS13",
+    "source": {
+      "file": "docs/so_do_bo_may.md"
+    }
+  },
+  {
+    "id": "LS133",
+    "name": "Khoa Nội Nhi",
+    "unit_type": "DEPARTMENT",
+    "block": "LÂM SÀNG",
+    "parent_id": "LS13",
+    "source": {
+      "file": "docs/so_do_bo_may.md"
+    }
+  },
+  {
+    "id": "LS134",
+    "name": "Khoa Can thiệp tim mạch trẻ em",
+    "unit_type": "DEPARTMENT",
+    "block": "LÂM SÀNG",
+    "parent_id": "LS13",
+    "source": {
+      "file": "docs/so_do_bo_may.md"
+    }
+  },
+  {
+    "id": "CLS",
+    "name": "Khối Cận lâm sàng",
+    "unit_type": "BLOCK",
+    "block": "CẬN LÂM SÀNG",
+    "parent_id": "BGD",
+    "source": {
+      "file": "docs/so_do_bo_may.md"
+    }
+  },
+  {
+    "id": "CLS01",
+    "name": "Khoa Xét nghiệm",
+    "unit_type": "DEPARTMENT",
+    "block": "CẬN LÂM SÀNG",
+    "parent_id": "CLS",
+    "source": {
+      "file": "docs/so_do_bo_may.md"
+    }
+  },
+  {
+    "id": "CLS02",
+    "name": "Khoa Kiểm soát nhiễm khuẩn",
+    "unit_type": "DEPARTMENT",
+    "block": "CẬN LÂM SÀNG",
+    "parent_id": "CLS",
+    "source": {
+      "file": "docs/so_do_bo_may.md"
+    }
+  },
+  {
+    "id": "CLS03",
+    "name": "Khoa Dược",
+    "unit_type": "DEPARTMENT",
+    "block": "CẬN LÂM SÀNG",
+    "parent_id": "CLS",
+    "source": {
+      "file": "docs/so_do_bo_may.md"
+    }
+  },
+  {
+    "id": "CLS04",
+    "name": "Khoa Chẩn đoán hình ảnh",
+    "unit_type": "DEPARTMENT",
+    "block": "CẬN LÂM SÀNG",
+    "parent_id": "CLS",
+    "source": {
+      "file": "docs/so_do_bo_may.md"
+    }
+  },
+  {
+    "id": "CLS05",
+    "name": "Đơn nguyên Chẩn đoán hình ảnh kỹ thuật cao",
+    "unit_type": "UNIT",
+    "block": "CẬN LÂM SÀNG",
+    "parent_id": "CLS",
+    "source": {
+      "file": "docs/so_do_bo_may.md"
+    }
+  }
+]

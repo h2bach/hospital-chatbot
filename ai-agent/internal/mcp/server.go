@@ -8,8 +8,8 @@ import (
 
 func NewMCPServer() http.Handler {
 	impl := mcp_sdk.Implementation{
-		Name: "mcp-server",
-		Version: "v1.0",
+		Name:    "hanoi-heart-hospital-public-info-mcp",
+		Version: "v2.0",
 	}
 	server := mcp_sdk.NewServer(&impl, nil)
 

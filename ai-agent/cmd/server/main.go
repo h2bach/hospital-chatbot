@@ -41,7 +41,7 @@ func main() {
 	server := api.NewServer(
 		ctx,
 		":"+*port,
-		store.NewMockSessionStore(),
+		store.NewMemorySessionStore(),
 		model,
 		transcriber,
 	)

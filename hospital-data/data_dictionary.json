@@ -1,0 +1,128 @@
+[
+  {
+    "field": "facility_id",
+    "meaning": "Mã cơ sở",
+    "type": "string",
+    "example": "CS1, CS2",
+    "rule": "Bắt buộc"
+  },
+  {
+    "field": "area_id",
+    "meaning": "Mã khu/phòng khám",
+    "type": "string",
+    "example": "CS1_TN1, CS2_DK",
+    "rule": "Bắt buộc"
+  },
+  {
+    "field": "room_id",
+    "meaning": "Mã phòng hoặc service-room",
+    "type": "string",
+    "example": "TN1-PK03, P403-SPK",
+    "rule": "Bắt buộc"
+  },
+  {
+    "field": "staff_id",
+    "meaning": "Mã nhân sự nội bộ",
+    "type": "string",
+    "example": "NV001",
+    "rule": "Bắt buộc với phân công cá nhân"
+  },
+  {
+    "field": "staff_name",
+    "meaning": "Tên hiển thị",
+    "type": "string",
+    "example": "Vũ Quỳnh Nga",
+    "rule": "Không dùng làm khóa"
+  },
+  {
+    "field": "credential_raw",
+    "meaning": "Chức danh đúng như nguồn",
+    "type": "string",
+    "example": "BS CKII",
+    "rule": "Giữ để truy vết"
+  },
+  {
+    "field": "credential_normalized",
+    "meaning": "Chức danh chuẩn hóa",
+    "type": "enum",
+    "example": "BSCKII",
+    "rule": "Dùng báo cáo"
+  },
+  {
+    "field": "week_start",
+    "meaning": "Ngày bắt đầu tuần",
+    "type": "date",
+    "example": "2026-07-13",
+    "rule": "Bắt buộc"
+  },
+  {
+    "field": "schedule_date",
+    "meaning": "Ngày phân công",
+    "type": "date",
+    "example": "2026-07-15",
+    "rule": "Bắt buộc"
+  },
+  {
+    "field": "shift_code",
+    "meaning": "Mã ca",
+    "type": "enum",
+    "example": "FULL_DAY, AM, PM",
+    "rule": "Cần bệnh viện xác nhận giờ"
+  },
+  {
+    "field": "start_time",
+    "meaning": "Giờ bắt đầu thực tế",
+    "type": "time",
+    "example": "07:30",
+    "rule": "Không suy diễn nếu nguồn chỉ ghi Sáng"
+  },
+  {
+    "field": "end_time",
+    "meaning": "Giờ kết thúc thực tế",
+    "type": "time",
+    "example": "16:30",
+    "rule": "Không suy diễn nếu nguồn chỉ ghi Chiều"
+  },
+  {
+    "field": "assignment_scope",
+    "meaning": "Cấp phân công",
+    "type": "enum",
+    "example": "ROOM, AREA",
+    "rule": "AREA dùng cho trực chung"
+  },
+  {
+    "field": "assignment_status",
+    "meaning": "Trạng thái",
+    "type": "enum",
+    "example": "WORKING, OFF, UNASSIGNED, PROCEDURE, AREA_DUTY",
+    "rule": "Bắt buộc"
+  },
+  {
+    "field": "source_version",
+    "meaning": "Phiên bản nguồn",
+    "type": "string",
+    "example": "CS2_TN_2026-07-13_v1",
+    "rule": "Bắt buộc"
+  },
+  {
+    "field": "source_image",
+    "meaning": "Tên ảnh nguồn",
+    "type": "string",
+    "example": "7b8c7d7b-....png",
+    "rule": "Để kiểm toán"
+  },
+  {
+    "field": "note",
+    "meaning": "Ghi chú",
+    "type": "string",
+    "example": "Khám tại CS1 lúc 15h",
+    "rule": "Tùy chọn"
+  },
+  {
+    "field": "published_status",
+    "meaning": "Trạng thái xuất bản",
+    "type": "enum",
+    "example": "DRAFT, APPROVED, PUBLISHED",
+    "rule": "Bắt buộc"
+  }
+]

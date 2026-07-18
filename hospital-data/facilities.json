@@ -1,0 +1,22 @@
+[
+  {
+    "facility_id": "CS1",
+    "name": "Bệnh viện Tim Hà Nội - Cơ sở 1",
+    "address": "92 Trần Hưng Đạo, Hoàn Kiếm, Hà Nội",
+    "timezone": "Asia/Ho_Chi_Minh",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "01_Co_so_Phong_kham"
+    }
+  },
+  {
+    "facility_id": "CS2",
+    "name": "Bệnh viện Tim Hà Nội - Cơ sở 2",
+    "address": "695 Lạc Long Quân, Tây Hồ, Hà Nội",
+    "timezone": "Asia/Ho_Chi_Minh",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "01_Co_so_Phong_kham"
+    }
+  }
+]

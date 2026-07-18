@@ -9,7 +9,7 @@ import (
 )
 
 func TestTranscribeAudioWithoutConfigurationReturnsNotImplemented(t *testing.T) {
-	server := &Server{sessionStore: store.NewMockSessionStore()}
+	server := &Server{sessionStore: store.NewMemorySessionStore()}
 	request := httptest.NewRequest(http.MethodPost, "/api/stt", nil)
 	response := httptest.NewRecorder()
 

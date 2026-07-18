@@ -88,7 +88,10 @@ export function App() {
   const [activeSession, setActiveSession] = useState<ChatSession | null>(null)
   const [sessionQuery, setSessionQuery] = useState("")
   const [composerValue, setComposerValue] = useState("")
+<<<<<<< HEAD
   const [composerImages, setComposerImages] = useState<ChatImage[]>([])
+=======
+>>>>>>> hospital-dashboard
   const [serverStatus, setServerStatus] = useState<ServerStatus>("checking")
   const [loadingSessions, setLoadingSessions] = useState(true)
   const [loadingActive, setLoadingActive] = useState(false)
@@ -330,7 +333,11 @@ export function App() {
     })
 
     try {
+<<<<<<< HEAD
       const answer = await sendMessage(currentId, message, images)
+=======
+      const answer = await sendMessage(currentId, message)
+>>>>>>> hospital-dashboard
       setActiveSession((current) => {
         if (!current || current.id !== currentId) return current
         const messages = current.messages.map((item, index) =>

@@ -1,0 +1,74 @@
+[
+  {
+    "source_id": "SRC01",
+    "file_name": "e1906d7b-b846-4179-a39e-9fc7dbb946ff.png",
+    "facility_id": "CS1",
+    "area": "Khu khám bệnh Tự nguyện 1 và 3",
+    "displayed_week": "13-19/07/2026",
+    "status": "Bản duy nhất",
+    "notes": null
+  },
+  {
+    "source_id": "SRC02",
+    "file_name": "d1804018-1487-490c-8738-a685c4dcef96.png",
+    "facility_id": "CS1",
+    "area": "Khu khám bệnh Tự nguyện 1 và 3",
+    "displayed_week": "06-12/07/2026",
+    "status": "Bản gốc trong nhóm trùng",
+    "notes": null
+  },
+  {
+    "source_id": "SRC03",
+    "file_name": "a2f365fb-6840-43dc-b786-2ace7a0cb166.png",
+    "facility_id": "CS1",
+    "area": "Khu khám bệnh Tự nguyện 1 và 3",
+    "displayed_week": "06-12/07/2026",
+    "status": "Trùng SRC02",
+    "notes": "Không nhập lặp"
+  },
+  {
+    "source_id": "SRC04",
+    "file_name": "a2f365fb-6840-43dc-b786-2ace7a0cb166(1).png",
+    "facility_id": "CS1",
+    "area": "Khu khám bệnh Tự nguyện 1 và 3",
+    "displayed_week": "06-12/07/2026",
+    "status": "Trùng SRC02",
+    "notes": "Không nhập lặp"
+  },
+  {
+    "source_id": "SRC05",
+    "file_name": "7b8c7d7b-17ea-41cb-b408-f911944aac9a.png",
+    "facility_id": "CS2",
+    "area": "Khu khám bệnh Tự nguyện",
+    "displayed_week": "13-19/07/2026",
+    "status": "Bản duy nhất",
+    "notes": null
+  },
+  {
+    "source_id": "SRC06",
+    "file_name": "5f840527-42df-4a02-8e44-84720edff077.png",
+    "facility_id": "CS2",
+    "area": "Khu khám bệnh Tự nguyện",
+    "displayed_week": "06-12/07/2026",
+    "status": "Bản duy nhất",
+    "notes": null
+  },
+  {
+    "source_id": "SRC07",
+    "file_name": "eaf0cbc5-66c8-489b-b42e-7ac26a494f33.png",
+    "facility_id": "CS2",
+    "area": "Phòng khám đa khoa",
+    "displayed_week": "13-19/07/2026",
+    "status": "Bản duy nhất",
+    "notes": null
+  },
+  {
+    "source_id": "SRC08",
+    "file_name": "2a9c6936-8f78-4aa4-b69e-5e04fa0c04a5.png",
+    "facility_id": "CS2",
+    "area": "Phòng khám đa khoa",
+    "displayed_week": "06-10/07/2026 (tiêu đề) / bảng có Thứ 7-CN",
+    "status": "Bản duy nhất",
+    "notes": "Cần xác minh ngày kết thúc tuần"
+  }
+]

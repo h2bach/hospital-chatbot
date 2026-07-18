@@ -74,7 +74,7 @@ describe("sendMessage", () => {
     } as Response)
 
     await expect(
-      sendMessage("session-1", "Tôi muốn đặt lịch khám", "PATIENT"),
+      sendMessage("session-1", "Lịch bác sĩ tuần này", "GUEST"),
     ).resolves.toBe("Đã nhận yêu cầu.")
 
     expect(fetchMock).toHaveBeenCalledWith(
@@ -83,7 +83,7 @@ describe("sendMessage", () => {
         method: "POST",
         headers: expect.objectContaining({
           "Content-Type": "application/json",
-          Role: "PATIENT",
+          Role: "GUEST",
         }),
       }),
     )
