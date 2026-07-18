@@ -93,8 +93,11 @@ export function App() {
   const [loadingSessions, setLoadingSessions] = useState(true)
   const [loadingActive, setLoadingActive] = useState(false)
   const [creating, setCreating] = useState(false)
-  const [sending, setSending] = useState(false)
+  const [sendingSessionId, setSendingSessionId] = useState<string | null>(null)
   const [deleting, setDeleting] = useState(false)
+
+  const isSending = sendingSessionId !== null
+  const isSendingCurrentSession = Boolean(selectedId && sendingSessionId === selectedId)
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
   const [emergencyOpen, setEmergencyOpen] = useState(false)
   const [embedded] = useState(initialEmbeddedMode)
@@ -296,7 +299,7 @@ export function App() {
   }
 
   async function handleSend(message: string, images: ChatImage[] = []) {
-    if (sending) return
+    if (isSending) return
     setComposerValue("")
     setComposerImages([])
     setMessageError(null)
@@ -314,7 +317,7 @@ export function App() {
 
     const optimisticMessage = { role: "User" as const, content: message, images, delivery: "sending" as const }
     const currentId = sessionId
-    setSending(true)
+    setSendingSessionId(currentId)
     setActiveError(null)
     setActiveSession((current) => {
       if (!current || current.id !== currentId) {
@@ -372,7 +375,7 @@ export function App() {
       setMessageError(errorMessage(error))
       if (error instanceof ApiError && error.status === 0) setServerStatus("offline")
     } finally {
-      setSending(false)
+      setSendingSessionId(null)
     }
   }
 
@@ -497,7 +500,7 @@ export function App() {
           <MessageThread
             messages={activeSession?.messages ?? []}
             loading={loadingActive}
-            sending={sending}
+            sending={isSendingCurrentSession}
             error={activeError}
             onRetry={() => selectedId && void loadActiveSession(selectedId)}
             onRetryMessage={(msg, imgs) => void handleSend(msg, imgs)}
@@ -508,7 +511,7 @@ export function App() {
         <Composer
           value={composerValue}
           images={composerImages}
-          sending={sending || creating}
+          sending={isSending || creating}
           error={messageError}
           onChange={setComposerValue}
           onImagesChange={setComposerImages}
