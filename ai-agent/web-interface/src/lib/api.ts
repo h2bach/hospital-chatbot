@@ -194,3 +194,15 @@ export async function deleteSession(id: string): Promise<void> {
     method: "DELETE",
   })
 }
+
+export async function transcribeAudio(audio: Blob, filename = "voice.wav"): Promise<string> {
+  const form = new FormData()
+  form.append("audio", audio, filename)
+  const response = asRecord(await requestJson<unknown>("/api/stt", {
+    method: "POST",
+    body: form,
+  }))
+  const text = asString(response.text)
+  if (!text) throw new ApiError("Không nhận được nội dung từ giọng nói.")
+  return text
+}

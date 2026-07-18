@@ -6,7 +6,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"mime/multipart"
 	"net/http"
+	"os"
 	"strings"
 	"sync/atomic"
 
@@ -22,6 +24,104 @@ type FPTClient struct {
 	keys    []string
 	nextKey atomic.Uint64
 	http    *http.Client
+}
+
+type FPTSpeechToText struct {
+	BaseURL string
+	Model   string
+	keys    []string
+	http    *http.Client
+}
+
+func NewFPTSpeechToTextFromEnvironment() (*FPTSpeechToText, error) {
+	model := strings.TrimSpace(os.Getenv("FPT_STT_MODEL"))
+	if model == "" {
+		return nil, nil
+	}
+	keys := parseAPIKeys(os.Getenv("FPT_API_KEYS"))
+	if len(keys) == 0 {
+		keys = parseAPIKeys(os.Getenv("FPT_API_KEY"))
+	}
+	if len(keys) == 0 {
+		return nil, fmt.Errorf("FPT_STT_MODEL is configured but no FPT API key is configured")
+	}
+	baseURL := strings.TrimRight(strings.TrimSpace(os.Getenv("FPT_BASE_URL")), "/")
+	if baseURL == "" {
+		baseURL = defaultFPTBaseURL
+	}
+	return &FPTSpeechToText{BaseURL: baseURL, Model: model, keys: keys, http: &http.Client{}}, nil
+}
+
+func (client *FPTSpeechToText) Transcribe(ctx context.Context, filename, contentType string, audio []byte) (string, error) {
+	var lastErr error
+	for _, key := range client.keys {
+		text, err := client.transcribeWithKey(ctx, key, filename, contentType, audio)
+		if err == nil {
+			return text, nil
+		}
+		lastErr = err
+	}
+	return "", fmt.Errorf("all FPT STT API keys failed: %w", lastErr)
+}
+
+func (client *FPTSpeechToText) transcribeWithKey(ctx context.Context, key, filename, contentType string, audio []byte) (string, error) {
+	var body bytes.Buffer
+	writer := multipart.NewWriter(&body)
+	part, err := writer.CreateFormFile("file", filename)
+	if err != nil {
+		return "", fmt.Errorf("create audio form: %w", err)
+	}
+	if _, err := part.Write(audio); err != nil {
+		return "", fmt.Errorf("encode audio form: %w", err)
+	}
+	_ = writer.WriteField("model", client.Model)
+	_ = writer.WriteField("response_format", "json")
+	_ = writer.WriteField("language", "vi")
+	if err := writer.Close(); err != nil {
+		return "", fmt.Errorf("close audio form: %w", err)
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, client.BaseURL+"/audio/transcriptions", &body)
+	if err != nil {
+		return "", fmt.Errorf("create FPT STT request: %w", err)
+	}
+	req.Header.Set("Authorization", "Bearer "+key)
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+	if contentType != "" {
+		req.Header.Set("X-Audio-Content-Type", contentType)
+	}
+	resp, err := client.http.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("call FPT STT: %w", err)
+	}
+	defer resp.Body.Close()
+	responseBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("read FPT STT response: %w", err)
+	}
+	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
+		return "", fmt.Errorf("FPT STT returned HTTP %d: %s", resp.StatusCode, strings.TrimSpace(string(responseBody)))
+	}
+	var response struct {
+		Text       string `json:"text"`
+		Transcript string `json:"transcript"`
+		Hypotheses []struct {
+			Utterance string `json:"utterance"`
+		} `json:"hypotheses"`
+	}
+	if err := json.Unmarshal(responseBody, &response); err != nil {
+		return "", fmt.Errorf("decode FPT STT response: %w", err)
+	}
+	text := strings.TrimSpace(response.Text)
+	if text == "" {
+		text = strings.TrimSpace(response.Transcript)
+	}
+	if text == "" && len(response.Hypotheses) > 0 {
+		text = strings.TrimSpace(response.Hypotheses[0].Utterance)
+	}
+	if text == "" {
+		return "", fmt.Errorf("FPT STT returned empty text")
+	}
+	return text, nil
 }
 
 func NewFPTClient(apiKeys, model, baseURL string) (*FPTClient, error) {

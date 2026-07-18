@@ -14,29 +14,34 @@ import (
 )
 
 type Server struct {
-	addr 				string
-	httpServer 			http.Server
+	addr       string
+	httpServer http.Server
 
-	agent				*agent.Agent
-	sessionStore 		application.SessionStore
-	userStore			application.UserStore
-	jwtService			application.JWTService
+	agent        *agent.Agent
+	sessionStore application.SessionStore
+	userStore    application.UserStore
+	jwtService   application.JWTService
+	speechToText application.SpeechToText
 }
 
 func NewServer(
-	ctx				context.Context,
-	addr 			string,
-	sessionStore	application.SessionStore,
-	llm				agent.LLMClient,
+	ctx context.Context,
+	addr string,
+	sessionStore application.SessionStore,
+	llm agent.LLMClient,
+	transcribers ...application.SpeechToText,
 ) *Server {
 	server := Server{
-		addr: addr,
+		addr:         addr,
 		sessionStore: sessionStore,
-		userStore: nil,
-		jwtService: nil,
+		userStore:    nil,
+		jwtService:   nil,
+	}
+	if len(transcribers) > 0 {
+		server.speechToText = transcribers[0]
 	}
 
-	mcpClient, _ := mcp.NewMCPClient(ctx, "http://localhost" + addr + "/mcp")
+	mcpClient, _ := mcp.NewMCPClient(ctx, "http://localhost"+addr+"/mcp")
 	server.agent = agent.NewAgent(llm, mcpClient)
 	server.httpServer.Addr = addr
 	addRoutes(&server)
@@ -57,13 +62,13 @@ func (server *Server) Run(ctx context.Context) {
 
 	var wg sync.WaitGroup
 	wg.Add(1)
-	go func(){
+	go func() {
 		defer wg.Done()
 		<-ctx.Done()
 		shutdownCtx := context.Background()
-		shutdownCtx, cancel := context.WithTimeout(shutdownCtx, time.Second * 10)
+		shutdownCtx, cancel := context.WithTimeout(shutdownCtx, time.Second*10)
 		defer cancel()
-		
+
 		go server.Shutdown()
 		err := server.httpServer.Shutdown(shutdownCtx)
 		if err != nil {

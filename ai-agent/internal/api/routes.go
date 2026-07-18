@@ -25,6 +25,7 @@ func addRoutes(server *Server) {
 	mux.HandleFunc("POST /c", server.PostNewSession)
 	mux.HandleFunc("POST /c/{id}", server.PostMessage)
 	mux.HandleFunc("DELETE /c/{id}", server.DeleteSession)
+	mux.HandleFunc("POST /api/stt", server.TranscribeAudio)
 
 	// Keep the API and MCP routes above more specific than this static fallback.
 	// Serving the complete directory also exposes Vite public assets at the root.

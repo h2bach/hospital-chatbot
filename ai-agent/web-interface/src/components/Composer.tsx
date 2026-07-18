@@ -7,6 +7,45 @@ import {
   ShieldCheck,
 } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
+import { transcribeAudio } from "../lib/api"
+
+async function convertToWav(audio: Blob): Promise<Blob> {
+  const context = new AudioContext()
+  try {
+    const decoded = await context.decodeAudioData(await audio.arrayBuffer())
+    const channels = decoded.numberOfChannels
+    const samples = decoded.length
+    const bytesPerSample = 2
+    const buffer = new ArrayBuffer(44 + samples * channels * bytesPerSample)
+    const view = new DataView(buffer)
+    const write = (offset: number, value: string) => [...value].forEach((char, index) => view.setUint8(offset + index, char.charCodeAt(0)))
+    write(0, "RIFF")
+    view.setUint32(4, 36 + samples * channels * bytesPerSample, true)
+    write(8, "WAVE")
+    write(12, "fmt ")
+    view.setUint32(16, 16, true)
+    view.setUint16(20, 1, true)
+    view.setUint16(22, channels, true)
+    view.setUint32(24, decoded.sampleRate, true)
+    view.setUint32(28, decoded.sampleRate * channels * bytesPerSample, true)
+    view.setUint16(32, channels * bytesPerSample, true)
+    view.setUint16(34, 16, true)
+    write(36, "data")
+    view.setUint32(40, samples * channels * bytesPerSample, true)
+    const channelData = Array.from({ length: channels }, (_, index) => decoded.getChannelData(index))
+    let offset = 44
+    for (let sample = 0; sample < samples; sample += 1) {
+      for (let channel = 0; channel < channels; channel += 1) {
+        const value = Math.max(-1, Math.min(1, channelData[channel][sample]))
+        view.setInt16(offset, value < 0 ? value * 0x8000 : value * 0x7fff, true)
+        offset += 2
+      }
+    }
+    return new Blob([buffer], { type: "audio/wav" })
+  } finally {
+    await context.close()
+  }
+}
 
 interface ComposerProps {
   value: string
@@ -15,36 +54,6 @@ interface ComposerProps {
   onChange: (value: string) => void
   onSend: (value: string) => void
   onReload: () => void
-}
-
-interface SpeechRecognitionEventLike {
-  results: {
-    length: number
-    [index: number]: {
-      [index: number]: { transcript: string }
-    }
-  }
-}
-
-interface SpeechRecognitionLike {
-  lang: string
-  continuous: boolean
-  interimResults: boolean
-  onresult: ((event: SpeechRecognitionEventLike) => void) | null
-  onerror: (() => void) | null
-  onend: (() => void) | null
-  start: () => void
-  abort: () => void
-}
-
-type SpeechRecognitionConstructor = new () => SpeechRecognitionLike
-
-function speechRecognitionConstructor() {
-  const speechWindow = window as typeof window & {
-    SpeechRecognition?: SpeechRecognitionConstructor
-    webkitSpeechRecognition?: SpeechRecognitionConstructor
-  }
-  return speechWindow.SpeechRecognition ?? speechWindow.webkitSpeechRecognition
 }
 
 export function Composer({
@@ -56,8 +65,9 @@ export function Composer({
   onReload,
 }: ComposerProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null)
-  const recognitionRef = useRef<SpeechRecognitionLike | null>(null)
-  const [speechSupported] = useState(() => Boolean(speechRecognitionConstructor()))
+  const recorderRef = useRef<MediaRecorder | null>(null)
+  const chunksRef = useRef<Blob[]>([])
+  const [speechSupported] = useState(() => typeof MediaRecorder !== "undefined" && Boolean(navigator.mediaDevices?.getUserMedia))
   const [listening, setListening] = useState(false)
   const [voiceError, setVoiceError] = useState<string | null>(null)
 
@@ -71,12 +81,12 @@ export function Composer({
   }, [value])
 
   useEffect(() => {
-    if (sending && recognitionRef.current) recognitionRef.current.abort()
+    if (sending && recorderRef.current) recorderRef.current.stop()
   }, [sending])
 
   useEffect(
     () => () => {
-      recognitionRef.current?.abort()
+      recorderRef.current?.stop()
     },
     [],
   )
@@ -84,46 +94,50 @@ export function Composer({
   function submit() {
     const message = value.trim()
     if (!message || sending) return
-    recognitionRef.current?.abort()
+    recorderRef.current?.stop()
     onSend(message)
   }
 
-  function toggleVoiceInput() {
+  async function toggleVoiceInput() {
     setVoiceError(null)
     if (listening) {
-      recognitionRef.current?.abort()
+      recorderRef.current?.stop()
       return
     }
 
-    const Recognition = speechRecognitionConstructor()
-    if (!Recognition) return
-
-    const recognition = new Recognition()
-    recognition.lang = "vi-VN"
-    recognition.continuous = false
-    recognition.interimResults = false
-    recognition.onresult = (event) => {
-      const lastResult = event.results[event.results.length - 1]
-      const transcript = lastResult?.[0]?.transcript.trim()
-      if (transcript) onChange([value.trim(), transcript].filter(Boolean).join(" "))
-    }
-    recognition.onerror = () => {
-      setVoiceError("Chưa nhận được giọng nói. Anh/Chị có thể thử lại hoặc nhập câu hỏi.")
-      setListening(false)
-    }
-    recognition.onend = () => {
-      recognitionRef.current = null
-      setListening(false)
-    }
-
-    recognitionRef.current = recognition
-    setListening(true)
     try {
-      recognition.start()
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+        ? "audio/webm;codecs=opus"
+        : "audio/webm"
+      const recorder = new MediaRecorder(stream, { mimeType })
+      chunksRef.current = []
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) chunksRef.current.push(event.data)
+      }
+      recorder.onerror = () => {
+        stream.getTracks().forEach((track) => track.stop())
+        setListening(false)
+        setVoiceError("Không thể ghi âm. Anh/Chị vui lòng thử lại.")
+      }
+      recorder.onstop = async () => {
+        stream.getTracks().forEach((track) => track.stop())
+        recorderRef.current = null
+        setListening(false)
+        try {
+          const wav = await convertToWav(new Blob(chunksRef.current, { type: mimeType }))
+          const transcript = await transcribeAudio(wav)
+          if (transcript) onChange([value.trim(), transcript].filter(Boolean).join(" "))
+        } catch (error) {
+          setVoiceError(error instanceof Error ? error.message : "Chưa nhận dạng được giọng nói.")
+        }
+      }
+      recorderRef.current = recorder
+      setListening(true)
+      recorder.start()
     } catch {
-      recognitionRef.current = null
       setListening(false)
-      setVoiceError("Trình duyệt chưa thể bắt đầu nhận giọng nói.")
+      setVoiceError("Không thể truy cập microphone. Anh/Chị vui lòng cấp quyền rồi thử lại.")
     }
   }
 

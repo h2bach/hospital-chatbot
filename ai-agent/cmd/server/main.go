@@ -33,12 +33,17 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to initialize LLM providers: %s", err)
 	}
+	transcriber, err := llm.NewFPTSpeechToTextFromEnvironment()
+	if err != nil {
+		log.Printf("Speech-to-text disabled: %s", err)
+	}
 
 	server := api.NewServer(
 		ctx,
 		":"+*port,
 		store.NewMockSessionStore(),
 		model,
+		transcriber,
 	)
 	server.Run(ctx)
 }

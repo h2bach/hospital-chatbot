@@ -2,6 +2,7 @@ package application
 
 import (
 	"agent/internal/domain"
+	"context"
 	"errors"
 )
 
@@ -28,4 +29,8 @@ type UserStore interface {
 	GetByID(id string) (domain.User, error)
 	Save(user domain.User) error
 	DeleteByID(id string) error
+}
+
+type SpeechToText interface {
+	Transcribe(ctx context.Context, filename, contentType string, audio []byte) (string, error)
 }
