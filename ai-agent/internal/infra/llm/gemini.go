@@ -104,7 +104,11 @@ func (client *GeminiClient) Chat(ctx context.Context, agentContext domain.Contex
 			pendingToolName = ""
 			pendingToolID = ""
 		default:
-			contents = append(contents, &genai.Content{Role: "user", Parts: []*genai.Part{{Text: message.Content}}})
+			parts := []*genai.Part{{Text: message.Content}}
+			for _, image := range message.Images {
+				parts = append(parts, &genai.Part{InlineData: &genai.Blob{MIMEType: image.MIMEType, Data: image.Data}})
+			}
+			contents = append(contents, &genai.Content{Role: "user", Parts: parts})
 		}
 	}
 

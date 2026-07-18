@@ -40,7 +40,7 @@ func NewFromEnvironment(ctx context.Context) (agent.LLMClient, error) {
 			if keys == "" {
 				keys = os.Getenv("FPT_API_KEY")
 			}
-			client, err := NewFPTClient(keys, os.Getenv("FPT_MODEL"), os.Getenv("FPT_BASE_URL"))
+			client, err := NewFPTClientWithVLM(keys, os.Getenv("FPT_MODEL"), os.Getenv("FPT_VLM_MODEL"), os.Getenv("FPT_BASE_URL"))
 			if err != nil {
 				return nil, fmt.Errorf("configure FPT: %w", err)
 			}

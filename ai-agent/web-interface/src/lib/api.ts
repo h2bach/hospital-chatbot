@@ -4,6 +4,7 @@ import type {
   ChatSession,
   MessageRole,
   SessionSummary,
+  ChatImage,
 } from "../types"
 
 const API_BASE = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, "")
@@ -51,9 +52,20 @@ function normalizeRole(value: unknown): MessageRole {
 function normalizeMessage(value: unknown): ChatMessage | null {
   if (!isRecord(value)) return null
   const content = asString(pick(value, "Content", "content"))
+  const rawImages = pick(value, "Images", "images")
+  const images = Array.isArray(rawImages)
+    ? rawImages.flatMap((image) => {
+        if (!isRecord(image)) return []
+        const mimeType = asString(pick(image, "MIMEType", "mime_type"))
+        const data = asString(pick(image, "Data", "data"))
+        if (!mimeType || !data) return []
+        return [{ mimeType: mimeType as "image/jpeg" | "image/png", data }]
+      })
+    : []
   return {
     role: normalizeRole(pick(value, "Role", "role")),
     content,
+    images,
   }
 }
 
@@ -171,6 +183,7 @@ export async function sendMessage(
   id: string,
   message: string,
   role: AccessRole = "GUEST",
+  images: ChatImage[] = [],
 ): Promise<string> {
   const response = asRecord(
     await requestJson<unknown>(`/c/${encodeURIComponent(id)}`, {
@@ -179,7 +192,10 @@ export async function sendMessage(
         "Content-Type": "application/json",
         Role: role,
       },
-      body: JSON.stringify({ message }),
+      body: JSON.stringify({
+        message,
+        images: images.map(({ mimeType, data }) => ({ mime_type: mimeType, data })),
+      }),
     }),
   )
   const answer = asString(pick(response, "response", "Response"))

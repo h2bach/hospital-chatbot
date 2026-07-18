@@ -3,6 +3,7 @@ package llm
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -17,14 +18,19 @@ import (
 const defaultFPTBaseURL = "https://mkp-api.fptcloud.com"
 
 type FPTClient struct {
-	BaseURL string
-	Model   string
-	keys    []string
-	nextKey atomic.Uint64
-	http    *http.Client
+	BaseURL  string
+	Model    string
+	VLMModel string
+	keys     []string
+	nextKey  atomic.Uint64
+	http     *http.Client
 }
 
 func NewFPTClient(apiKeys, model, baseURL string) (*FPTClient, error) {
+	return NewFPTClientWithVLM(apiKeys, model, "", baseURL)
+}
+
+func NewFPTClientWithVLM(apiKeys, model, vlmModel, baseURL string) (*FPTClient, error) {
 	keys := parseAPIKeys(apiKeys)
 	if len(keys) == 0 {
 		return nil, fmt.Errorf("no FPT API keys configured")
@@ -37,10 +43,11 @@ func NewFPTClient(apiKeys, model, baseURL string) (*FPTClient, error) {
 		baseURL = defaultFPTBaseURL
 	}
 	return &FPTClient{
-		BaseURL: baseURL,
-		Model:   model,
-		keys:    keys,
-		http:    &http.Client{},
+		BaseURL:  baseURL,
+		Model:    model,
+		VLMModel: strings.TrimSpace(vlmModel),
+		keys:     keys,
+		http:     &http.Client{},
 	}, nil
 }
 
@@ -49,11 +56,12 @@ type fptChatRequest struct {
 	Messages    []fptMessage     `json:"messages"`
 	Temperature float32          `json:"temperature,omitempty"`
 	Tools       []fptToolWrapper `json:"tools,omitempty"`
+	ToolChoice  string           `json:"tool_choice,omitempty"`
 }
 
 type fptMessage struct {
 	Role       string        `json:"role"`
-	Content    string        `json:"content"`
+	Content    any           `json:"content"`
 	ToolCalls  []fptToolCall `json:"tool_calls,omitempty"`
 	ToolCallID string        `json:"tool_call_id,omitempty"`
 }
@@ -88,11 +96,36 @@ type fptChatResponse struct {
 
 func (client *FPTClient) Chat(ctx context.Context, agentContext domain.Context) (*agent.LLMOutput, error) {
 	messages := make([]fptMessage, 0, len(agentContext.Messages))
+	requestModel := client.Model
 	pendingToolCallID := ""
 	toolCallNumber := 0
 	for _, message := range agentContext.Messages {
 		role := strings.ToLower(string(message.Role))
 		content := message.Content
+		var messageContent any = content
+		if len(message.Images) > 0 {
+			if client.VLMModel == "" {
+				return nil, fmt.Errorf("FPT_VLM_MODEL is required for image messages; FPT_MODEL %q is text-only", client.Model)
+			}
+			requestModel = client.VLMModel
+			if len(message.Images) > 2 {
+				return nil, fmt.Errorf("FPT VLM supports at most 2 images")
+			}
+			parts := make([]fptContentPart, 0, len(message.Images)+1)
+			if strings.TrimSpace(content) != "" {
+				parts = append(parts, fptContentPart{Type: "text", Text: content})
+			}
+			for _, image := range message.Images {
+				if image.MIMEType != "image/jpeg" && image.MIMEType != "image/png" {
+					return nil, fmt.Errorf("FPT VLM supports only JPEG and PNG images")
+				}
+				parts = append(parts, fptContentPart{
+					Type:     "image_url",
+					ImageURL: &fptImageURL{URL: "data:" + image.MIMEType + ";base64," + base64.StdEncoding.EncodeToString(image.Data)},
+				})
+			}
+			messageContent = parts
+		}
 		switch message.Role {
 		case domain.SystemRole:
 			role = "system"
@@ -125,7 +158,7 @@ func (client *FPTClient) Chat(ctx context.Context, agentContext domain.Context) 
 				continue
 			}
 		}
-		messages = append(messages, fptMessage{Role: role, Content: content})
+		messages = append(messages, fptMessage{Role: role, Content: messageContent})
 	}
 
 	tools := make([]fptToolWrapper, 0, len(agentContext.Tools))
@@ -140,10 +173,16 @@ func (client *FPTClient) Chat(ctx context.Context, agentContext domain.Context) 
 		})
 	}
 	requestBody := fptChatRequest{
-		Model:       client.Model,
+		Model:       requestModel,
 		Messages:    messages,
 		Temperature: 0.3,
 		Tools:       tools,
+	}
+	if len(tools) > 0 {
+		// FPT's hosted vLLM endpoint rejects the default auto mode unless its
+		// server is started with an auto-tool parser. Explicitly disable tool
+		// selection so ordinary text/VLM requests remain usable.
+		requestBody.ToolChoice = "none"
 	}
 	body, err := json.Marshal(requestBody)
 	if err != nil {
@@ -161,6 +200,16 @@ func (client *FPTClient) Chat(ctx context.Context, agentContext domain.Context) 
 		lastErr = err
 	}
 	return nil, fmt.Errorf("all FPT API keys failed: %w", lastErr)
+}
+
+type fptContentPart struct {
+	Type     string       `json:"type"`
+	Text     string       `json:"text,omitempty"`
+	ImageURL *fptImageURL `json:"image_url,omitempty"`
+}
+
+type fptImageURL struct {
+	URL string `json:"url"`
 }
 
 func parseToolCallMessage(content string) (string, string) {
@@ -214,10 +263,11 @@ func (client *FPTClient) request(ctx context.Context, key string, body []byte) (
 		}
 		return &agent.LLMOutput{ToolName: call.Function.Name, Args: args}, nil
 	}
-	if strings.TrimSpace(message.Content) == "" {
+	text, ok := message.Content.(string)
+	if !ok || strings.TrimSpace(text) == "" {
 		return nil, fmt.Errorf("FPT returned an empty answer")
 	}
-	return &agent.LLMOutput{Text: message.Content}, nil
+	return &agent.LLMOutput{Text: text}, nil
 }
 
 var _ agent.LLMClient = (*FPTClient)(nil)

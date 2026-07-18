@@ -60,11 +60,13 @@ func TestSystemPromptsAreDistinctForAccessRoles(t *testing.T) {
 func TestSystemPromptExpandsEnvironmentVariables(t *testing.T) {
 	t.Setenv("HOTLINE", "1900 1082")
 	t.Setenv("EMERGENCY_ADDRESS", "Khoa Cấp cứu, Bệnh viện Tim Hà Nội")
+	t.Setenv("ZALO_APP_NAME", "Bệnh viện Tim Hà Nội")
+	t.Setenv("ZALO_APP_LINK", "https://zalo.me/s/heart-hanoi")
 	prompt := GetSystemPromptForRole("GUEST")
-	if !strings.Contains(prompt, "1900 1082") || !strings.Contains(prompt, "Khoa Cấp cứu, Bệnh viện Tim Hà Nội") {
+	if !strings.Contains(prompt, "1900 1082") || !strings.Contains(prompt, "Khoa Cấp cứu, Bệnh viện Tim Hà Nội") || !strings.Contains(prompt, "https://zalo.me/s/heart-hanoi") {
 		t.Fatal("expected configured prompt values to be expanded")
 	}
-	if strings.Contains(prompt, "{{HOTLINE}}") || strings.Contains(prompt, "{{EMERGENCY_ADDRESS}}") {
+	if strings.Contains(prompt, "{{HOTLINE}}") || strings.Contains(prompt, "{{EMERGENCY_ADDRESS}}") || strings.Contains(prompt, "{{ZALO_APP_LINK}}") {
 		t.Fatal("configured placeholders should not remain in the prompt")
 	}
 }

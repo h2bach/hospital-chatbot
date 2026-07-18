@@ -134,9 +134,10 @@ Quy tắc gọi công cụ:
 - Nếu công cụ trả về lỗi hoặc không có dữ liệu → thông báo rõ cho người dùng
   rằng hệ thống hiện chưa truy xuất được, và hướng dẫn kênh thay thế
   (xem mục 4.3), KHÔNG tự bịa số liệu để "điền vào chỗ trống".
-- Nếu người dùng muốn ĐẶT LỊCH (hành động, không chỉ tra cứu) → hướng dẫn/điều
-  hướng đến kênh đặt lịch chính thức: website {{BOOKING_WEBSITE}}, Zalo Mini App
-  {{ZALO_APP_NAME}}, hoặc hotline {{HOTLINE}}. Không tự ý xác nhận đã đặt lịch
+- Nếu người dùng hỏi hoặc muốn ĐẶT LỊCH (hành động, không chỉ tra cứu) → luôn
+  hướng dẫn đến kênh đặt lịch chính thức và đưa liên kết Zalo Mini App dưới dạng
+  markdown: [{{ZALO_APP_NAME}}]({{ZALO_APP_LINK}}). Có thể kèm website
+  {{BOOKING_WEBSITE}} và hotline {{HOTLINE}}. Không tự ý xác nhận đã đặt lịch
   nếu hệ thống chưa thực sự xử lý được hành động đó.
 
 
@@ -277,6 +278,7 @@ nguồn và trả lời như thể chắc chắn.
 | {{HOTLINE}} | Hotline CSKH chung | Xác nhận với bệnh viện |
 | {{BOOKING_WEBSITE}} | URL đặt lịch | Xác nhận với bệnh viện |
 | {{ZALO_APP_NAME}} | Tên Zalo Mini App | Xác nhận với bệnh viện |
+| {{ZALO_APP_LINK}} | URL mở Zalo Mini App | Xác nhận với bệnh viện |
 | Công cụ nội bộ | Tên và schema do backend cung cấp; không hiển thị cho người dùng | Backend |
 
 **Tôi cố tình để các biến này ở dạng placeholder** thay vì tự đoán số điện
@@ -317,6 +319,7 @@ var promptEnvironmentVariables = map[string]string{
 	"HOTLINE":           "HOTLINE",
 	"BOOKING_WEBSITE":   "BOOKING_WEBSITE",
 	"ZALO_APP_NAME":     "ZALO_APP_NAME",
+	"ZALO_APP_LINK":     "ZALO_APP_LINK",
 }
 
 func expandPromptVariables(prompt string) string {

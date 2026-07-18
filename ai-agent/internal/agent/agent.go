@@ -23,6 +23,10 @@ func NewAgent(llm LLMClient, mcpClient *mcp.MCPClient) *Agent {
 }
 
 func (a *Agent) Call(ctx context.Context, input string, agentContext *domain.Context) (string, error) {
+	return a.CallWithImages(ctx, input, nil, agentContext)
+}
+
+func (a *Agent) CallWithImages(ctx context.Context, input string, images []domain.Image, agentContext *domain.Context) (string, error) {
 	tools, _ := a.MCPClient.Tools(ctx)
 	if agentContext.Role == "" {
 		if agentContext.UserRole != "" {
@@ -43,6 +47,7 @@ func (a *Agent) Call(ctx context.Context, input string, agentContext *domain.Con
 	agentContext.Messages = append(agentContext.Messages, domain.Message{
 		Role:    domain.UserRole,
 		Content: input,
+		Images:  images,
 	})
 
 	for turn := 0; turn < maxModelTurns; turn++ {

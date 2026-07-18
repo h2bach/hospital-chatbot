@@ -16,7 +16,7 @@ import {
   getSessions,
   sendMessage,
 } from "./lib/api"
-import type { AccessRole, ChatSession, ServerStatus, SessionSummary } from "./types"
+import type { AccessRole, ChatImage, ChatSession, ServerStatus, SessionSummary } from "./types"
 
 const THEME_STORAGE_KEY = "bvtim-chat-theme"
 const APP_TITLE = "Trợ lý Tim Hà Nội - Hỗ trợ thông tin"
@@ -226,7 +226,7 @@ export function App() {
     setMessageError(null)
   }
 
-  async function handleSend(message: string) {
+  async function handleSend(message: string, images: ChatImage[] = []) {
     if (sending) return
     setComposerValue("")
     setMessageError(null)
@@ -241,7 +241,7 @@ export function App() {
       }
     }
 
-    const optimisticMessage = { role: "User" as const, content: message, delivery: "sending" as const }
+    const optimisticMessage = { role: "User" as const, content: message, images, delivery: "sending" as const }
     const currentId = sessionId
     setSending(true)
     setActiveError(null)
@@ -259,7 +259,7 @@ export function App() {
     })
 
     try {
-      const answer = await sendMessage(currentId, message, accessRole)
+      const answer = await sendMessage(currentId, message, accessRole, images)
       setActiveSession((current) => {
         if (!current || current.id !== currentId) return current
         const messages = current.messages.map((item, index) =>
@@ -442,7 +442,7 @@ export function App() {
           sending={sending || creating}
           error={messageError}
           onChange={setComposerValue}
-          onSend={(message) => void handleSend(message)}
+          onSend={(message, images) => void handleSend(message, images)}
           onReload={() => selectedId && void loadActiveSession(selectedId)}
         />
       </main>
