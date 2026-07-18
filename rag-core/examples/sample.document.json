@@ -1,0 +1,13 @@
+{
+  "document_id": "doc_bhyt_sample",
+  "title": "Hướng dẫn khám bảo hiểm y tế",
+  "source_file": "sample.md",
+  "source_uri": "/knowledge/examples/sample.md",
+  "document_type": "patient_guideline",
+  "department_id": "dept_bhyt",
+  "authority_level": 3,
+  "access_level": "public",
+  "effective_from": "2026-01-01",
+  "version_number": 1
+}
+
