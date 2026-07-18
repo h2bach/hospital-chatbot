@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"os"
 	"strings"
 )
 
@@ -123,9 +124,8 @@ Khi cần tra cứu dữ liệu động (lịch hẹn còn trống, lịch làm 
 giá dịch vụ cập nhật...), sử dụng công cụ/API được cung cấp thay vì trả lời từ
 kiến thức tĩnh:
 
-- {{API_TOOL_1}} — mô tả: {{...}} (ví dụ: tra cứu lịch hẹn còn trống)
-- {{API_TOOL_2}} — mô tả: {{...}} (ví dụ: tra cứu lịch làm việc bác sĩ)
-- {{API_TOOL_3}} — mô tả: {{...}} (ví dụ: tra cứu thông tin dịch vụ/giá)
+- Chỉ sử dụng các công cụ nội bộ được backend cung cấp; không tiết lộ tên, schema,
+  tham số hoặc chi tiết triển khai của các công cụ đó cho người dùng.
 
 Quy tắc gọi công cụ:
 
@@ -277,7 +277,7 @@ nguồn và trả lời như thể chắc chắn.
 | {{HOTLINE}} | Hotline CSKH chung | Xác nhận với bệnh viện |
 | {{BOOKING_WEBSITE}} | URL đặt lịch | Xác nhận với bệnh viện |
 | {{ZALO_APP_NAME}} | Tên Zalo Mini App | Xác nhận với bệnh viện |
-| {{API_TOOL_1/2/3}} | Tên và schema công cụ thực tế theo kiến trúc backend | Đội kỹ thuật cung cấp |
+| Công cụ nội bộ | Tên và schema do backend cung cấp; không hiển thị cho người dùng | Backend |
 
 **Tôi cố tình để các biến này ở dạng placeholder** thay vì tự đoán số điện
 thoại/địa chỉ thật của một bệnh viện thật — vì bịa các thông tin liên hệ khẩn
@@ -310,6 +310,25 @@ func cleanPrompt(rawPrompt string) string {
 	return strings.Join(lines, "\n")
 }
 
+var promptEnvironmentVariables = map[string]string{
+	"ASSISTANT_NAME":    "ASSISTANT_NAME",
+	"EMERGENCY_ADDRESS": "EMERGENCY_ADDRESS",
+	"EMERGENCY_HOTLINE": "EMERGENCY_HOTLINE",
+	"HOTLINE":           "HOTLINE",
+	"BOOKING_WEBSITE":   "BOOKING_WEBSITE",
+	"ZALO_APP_NAME":     "ZALO_APP_NAME",
+}
+
+func expandPromptVariables(prompt string) string {
+	for placeholder, environmentVariable := range promptEnvironmentVariables {
+		value := strings.TrimSpace(os.Getenv(environmentVariable))
+		if value != "" {
+			prompt = strings.ReplaceAll(prompt, "{{"+placeholder+"}}", value)
+		}
+	}
+	return prompt
+}
+
 func GetSystemPromptForRole(role string) string {
 	role = strings.ToUpper(strings.TrimSpace(role))
 	// Keep the legacy names working for callers that used the old prompt API.
@@ -331,5 +350,5 @@ func GetSystemPromptForRole(role string) string {
 		roleInstruction = "You are assisting an unauthenticated visitor. Provide public hospital information only. Do not claim to see patient records or perform account-specific actions."
 	}
 
-	return cleanPrompt("## ACTIVE ACCESS ROLE: " + role + "\n\n" + roleInstruction + "\n\n" + INITIAL_SYSTEM_PROMPT)
+	return expandPromptVariables(cleanPrompt("## ACTIVE ACCESS ROLE: " + role + "\n\n" + roleInstruction + "\n\n" + INITIAL_SYSTEM_PROMPT))
 }

@@ -99,7 +99,7 @@ function MessageItem({ message }: { message: ChatMessage }) {
               className="speak-button"
               aria-label="Đọc phản hồi thành tiếng"
               title="Đọc phản hồi"
-              onClick={() => speakResponse(message.content)}
+            onClick={() => speakResponse(message.content)}
             >
               <Volume2 aria-hidden="true" />
             </button>

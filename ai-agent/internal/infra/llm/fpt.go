@@ -52,9 +52,10 @@ type fptChatRequest struct {
 }
 
 type fptMessage struct {
-	Role      string        `json:"role"`
-	Content   string        `json:"content"`
-	ToolCalls []fptToolCall `json:"tool_calls,omitempty"`
+	Role       string        `json:"role"`
+	Content    string        `json:"content"`
+	ToolCalls  []fptToolCall `json:"tool_calls,omitempty"`
+	ToolCallID string        `json:"tool_call_id,omitempty"`
 }
 
 type fptToolWrapper struct {
@@ -87,6 +88,8 @@ type fptChatResponse struct {
 
 func (client *FPTClient) Chat(ctx context.Context, agentContext domain.Context) (*agent.LLMOutput, error) {
 	messages := make([]fptMessage, 0, len(agentContext.Messages))
+	pendingToolCallID := ""
+	toolCallNumber := 0
 	for _, message := range agentContext.Messages {
 		role := strings.ToLower(string(message.Role))
 		content := message.Content
@@ -97,11 +100,30 @@ func (client *FPTClient) Chat(ctx context.Context, agentContext domain.Context) 
 			role = "user"
 		case domain.AgentRole:
 			role = "assistant"
+			if strings.HasPrefix(message.Content, "Tool Call: ") {
+				name, args := parseToolCallMessage(message.Content)
+				toolCallNumber++
+				pendingToolCallID = fmt.Sprintf("tool-call-%d", toolCallNumber)
+				messages = append(messages, fptMessage{
+					Role: "assistant",
+					ToolCalls: []fptToolCall{{
+						ID:   pendingToolCallID,
+						Type: "function",
+						Function: fptToolCallFn{
+							Name:      name,
+							Arguments: args,
+						},
+					}},
+				})
+				continue
+			}
 		case domain.ToolRole:
-			// The domain context does not retain tool_call_id, so use a user
-			// message instead of sending an invalid OpenAI tool message.
-			role = "user"
-			content = "Tool output: " + content
+			role = "tool"
+			if pendingToolCallID != "" {
+				messages = append(messages, fptMessage{Role: role, Content: content, ToolCallID: pendingToolCallID})
+				pendingToolCallID = ""
+				continue
+			}
 		}
 		messages = append(messages, fptMessage{Role: role, Content: content})
 	}
@@ -139,6 +161,19 @@ func (client *FPTClient) Chat(ctx context.Context, agentContext domain.Context) 
 		lastErr = err
 	}
 	return nil, fmt.Errorf("all FPT API keys failed: %w", lastErr)
+}
+
+func parseToolCallMessage(content string) (string, string) {
+	lines := strings.SplitN(content, "\n", 2)
+	name := strings.TrimSpace(strings.TrimPrefix(lines[0], "Tool Call: "))
+	args := "{}"
+	if len(lines) == 2 {
+		args = strings.TrimSpace(strings.TrimPrefix(lines[1], "Args: "))
+	}
+	if args == "" {
+		args = "{}"
+	}
+	return name, args
 }
 
 func (client *FPTClient) request(ctx context.Context, key string, body []byte) (*agent.LLMOutput, error) {

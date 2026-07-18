@@ -2,6 +2,7 @@ package llm
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"sync/atomic"
@@ -71,22 +72,40 @@ func NewGeminiClientWithModel(ctx context.Context, apiKeys, model string) (*Gemi
 
 func (client *GeminiClient) Chat(ctx context.Context, agentContext domain.Context) (*agent.LLMOutput, error) {
 	contents := []*genai.Content{}
+	var systemInstruction *genai.Content
+	pendingToolName := ""
+	pendingToolID := ""
+	toolCallNumber := 0
 	for _, message := range agentContext.Messages {
-		// Gemini does not have role "tool", so switch role to "user",
-		// and indicates that the text is tool output
-		if message.Role == domain.ToolRole {
-			message.Role = domain.UserRole
-			message.Content = "Tool output: " + message.Content
+		switch message.Role {
+		case domain.SystemRole:
+			systemInstruction = &genai.Content{Parts: []*genai.Part{{Text: message.Content}}}
+		case domain.AgentRole:
+			if strings.HasPrefix(message.Content, "Tool Call: ") {
+				name, args := parseGeminiToolCall(message.Content)
+				toolCallNumber++
+				pendingToolName = name
+				pendingToolID = fmt.Sprintf("tool-call-%d", toolCallNumber)
+				contents = append(contents, &genai.Content{
+					Role:  "model",
+					Parts: []*genai.Part{{FunctionCall: &genai.FunctionCall{ID: pendingToolID, Name: name, Args: args}}},
+				})
+				continue
+			}
+			contents = append(contents, &genai.Content{Role: "model", Parts: []*genai.Part{{Text: message.Content}}})
+		case domain.ToolRole:
+			response := map[string]any{"output": message.Content}
+			contents = append(contents, &genai.Content{
+				Role: "user",
+				Parts: []*genai.Part{{FunctionResponse: &genai.FunctionResponse{
+					ID: pendingToolID, Name: pendingToolName, Response: response,
+				}}},
+			})
+			pendingToolName = ""
+			pendingToolID = ""
+		default:
+			contents = append(contents, &genai.Content{Role: "user", Parts: []*genai.Part{{Text: message.Content}}})
 		}
-		contents = append(
-			contents,
-			&genai.Content{
-				Role: string(message.Role),
-				Parts: []*genai.Part{
-					{Text: message.Content},
-				},
-			},
-		)
 	}
 
 	start := client.nextKey.Add(1) - 1
@@ -94,7 +113,8 @@ func (client *GeminiClient) Chat(ctx context.Context, agentContext domain.Contex
 	for offset := range client.clients {
 		index := (start + uint64(offset)) % uint64(len(client.clients))
 		chatResult, err := client.clients[index].Models.GenerateContent(ctx, client.Model, contents, &genai.GenerateContentConfig{
-			Tools: toolListAdapter(agentContext.Tools),
+			Tools:             toolListAdapter(agentContext.Tools),
+			SystemInstruction: systemInstruction,
 		})
 		if err != nil {
 			lastErr = err
@@ -117,6 +137,17 @@ func (client *GeminiClient) Chat(ctx context.Context, agentContext domain.Contex
 		return &result, nil
 	}
 	return nil, fmt.Errorf("all Gemini API keys failed: %w", lastErr)
+}
+
+func parseGeminiToolCall(content string) (string, map[string]any) {
+	lines := strings.SplitN(content, "\n", 2)
+	name := strings.TrimSpace(strings.TrimPrefix(lines[0], "Tool Call: "))
+	args := map[string]any{}
+	if len(lines) == 2 {
+		encoded := strings.TrimSpace(strings.TrimPrefix(lines[1], "Args: "))
+		_ = json.Unmarshal([]byte(encoded), &args)
+	}
+	return name, args
 }
 
 func toolListAdapter(tools []mcp_sdk.Tool) []*genai.Tool {

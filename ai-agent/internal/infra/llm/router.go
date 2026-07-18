@@ -15,6 +15,7 @@ import (
 type Router struct {
 	providers []agent.LLMClient
 	next      atomic.Uint64
+	active    atomic.Uint64 // provider index + 1 for the current tool cycle
 }
 
 func NewRouter(providers ...agent.LLMClient) (*Router, error) {
@@ -25,12 +26,19 @@ func NewRouter(providers ...agent.LLMClient) (*Router, error) {
 }
 
 func (r *Router) Chat(ctx context.Context, context domain.Context) (*agent.LLMOutput, error) {
+	continuingToolCycle := len(context.Messages) > 0 && context.Messages[len(context.Messages)-1].Role == domain.ToolRole
 	start := r.next.Add(1) - 1
+	if continuingToolCycle {
+		if active := r.active.Load(); active > 0 {
+			start = active - 1
+		}
+	}
 	var lastErr error
 	for offset := range r.providers {
 		index := (start + uint64(offset)) % uint64(len(r.providers))
 		output, err := r.providers[index].Chat(ctx, context)
 		if err == nil {
+			r.active.Store(index + 1)
 			return output, nil
 		}
 		lastErr = err

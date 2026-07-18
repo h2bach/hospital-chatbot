@@ -57,6 +57,18 @@ func TestSystemPromptsAreDistinctForAccessRoles(t *testing.T) {
 	}
 }
 
+func TestSystemPromptExpandsEnvironmentVariables(t *testing.T) {
+	t.Setenv("HOTLINE", "1900 1082")
+	t.Setenv("EMERGENCY_ADDRESS", "Khoa Cấp cứu, Bệnh viện Tim Hà Nội")
+	prompt := GetSystemPromptForRole("GUEST")
+	if !strings.Contains(prompt, "1900 1082") || !strings.Contains(prompt, "Khoa Cấp cứu, Bệnh viện Tim Hà Nội") {
+		t.Fatal("expected configured prompt values to be expanded")
+	}
+	if strings.Contains(prompt, "{{HOTLINE}}") || strings.Contains(prompt, "{{EMERGENCY_ADDRESS}}") {
+		t.Fatal("configured placeholders should not remain in the prompt")
+	}
+}
+
 func TestSyncSystemPromptRemovesDuplicateSystemMessages(t *testing.T) {
 	context := domain.Context{
 		UserRole: "admin",

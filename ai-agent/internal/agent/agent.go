@@ -4,6 +4,7 @@ import (
 	"agent/internal/domain"
 	"agent/internal/mcp"
 	"context"
+	"encoding/json"
 	"fmt"
 )
 
@@ -12,7 +13,7 @@ type Agent struct {
 	MCPClient *mcp.MCPClient
 }
 
-const maxModelTurns = 8
+const maxModelTurns = 30
 
 func NewAgent(llm LLMClient, mcpClient *mcp.MCPClient) *Agent {
 	return &Agent{
@@ -61,7 +62,7 @@ func (a *Agent) Call(ctx context.Context, input string, agentContext *domain.Con
 			toolOutput, err := a.MCPClient.CallTool(ctx, chatOutput.ToolName, chatOutput.Args)
 			agentContext.Messages = append(agentContext.Messages, domain.Message{
 				Role:    domain.AgentRole,
-				Content: fmt.Sprintf("Tool Call: %s\nArgs: %s", chatOutput.ToolName, chatOutput.Args),
+				Content: fmt.Sprintf("Tool Call: %s\nArgs: %s", chatOutput.ToolName, marshalToolArgs(chatOutput.Args)),
 			})
 			toolMessage := domain.Message{
 				Role: domain.ToolRole,
@@ -85,6 +86,14 @@ func (a *Agent) Call(ctx context.Context, input string, agentContext *domain.Con
 	}
 
 	return "", fmt.Errorf("model did not return a user-visible answer after %d turns", maxModelTurns)
+}
+
+func marshalToolArgs(args map[string]any) string {
+	encoded, err := json.Marshal(args)
+	if err != nil {
+		return "{}"
+	}
+	return string(encoded)
 }
 
 // syncSystemPrompt makes the role-specific prompt authoritative for every LLM

@@ -292,7 +292,14 @@ export function App() {
         if (!current || current.id !== currentId) return current
         const last = current.messages.at(-1)
         if (last?.delivery === "sending" && last.content === message) {
-          return { ...current, messages: current.messages.slice(0, -1) }
+          return {
+            ...current,
+            messages: current.messages.map((item, index) =>
+              index === current.messages.length - 1
+                ? { ...item, delivery: "failed" as const }
+                : item,
+            ),
+          }
         }
         return current
       })
