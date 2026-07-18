@@ -17,7 +17,7 @@ def main() -> None:
     parser.add_argument("--chunks", type=Path, required=True)
     parser.add_argument("--golden", type=Path, required=True)
     parser.add_argument("--model")
-    parser.add_argument("--device", default="cuda")
+    parser.add_argument("--device", default="cpu")
     parser.add_argument("--top-k", type=int, default=5)
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()

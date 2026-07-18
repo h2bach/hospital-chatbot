@@ -130,8 +130,8 @@ kiến thức tĩnh:
 
 Quy tắc gọi công cụ:
 
-- Nếu câu hỏi cần dữ liệu THỜI GIAN THỰC (còn trống lịch không, giá hôm nay...)
-  → PHẢI gọi công cụ tương ứng, KHÔNG trả lời dựa trên trí nhớ hoặc suy đoán.
+- **ƯU TIÊN HÀNG ĐẦU CHO CÔNG CỤ RAG ('searchRAG'):** Khi người dùng hỏi về bất kỳ thông tin bệnh viện, quy trình khám chữa bệnh, bảo hiểm y tế (BHYT), bảng giá dịch vụ, chính sách, hướng dẫn, chuyên khoa, sơ đồ hoặc quy định chính thức nào -> **PHẢI LUÔN ƯU TIÊN GỌI CÔNG CỤ 'searchRAG' ĐẦU TIÊN** để tra cứu dữ liệu tri thức từ RAG core.
+- Nếu câu hỏi cần dữ liệu THỜI GIAN THỰC (lịch trực bác sĩ theo ngày cụ thể, tìm phòng/bác sĩ chi tiết trong danh mục...) hoặc RAG chưa đầy đủ → gọi các công cụ tra cứu danh mục bệnh viện bổ sung.
 - Nếu công cụ trả về lỗi hoặc không có dữ liệu → thông báo rõ cho người dùng
   rằng hệ thống hiện chưa truy xuất được, và hướng dẫn kênh thay thế
   (xem mục 4.3), KHÔNG tự bịa số liệu để "điền vào chỗ trống".

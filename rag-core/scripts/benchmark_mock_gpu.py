@@ -104,7 +104,7 @@ def main() -> None:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--embedding-model", default="BAAI/bge-m3")
     parser.add_argument("--reranker-model", default="BAAI/bge-reranker-v2-m3")
-    parser.add_argument("--device", default="cuda")
+    parser.add_argument("--device", default="cpu")
     args = parser.parse_args()
     ensure_device(args.device)
     chunks, samples = load_canonical(args.chunks, args.golden) if args.golden else load_mock_chunks(args.chunks)

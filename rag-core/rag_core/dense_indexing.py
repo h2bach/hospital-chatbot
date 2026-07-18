@@ -80,7 +80,7 @@ def build_dense_index(
     chunks_path: Path,
     output_root: Path,
     model_name_or_path: str = DEFAULT_MODEL,
-    device: str = "cuda",
+    device: str = "cpu",
     batch_size: int = 64,
     shard_size: int = 2048,
     max_sequence_length: int = DEFAULT_MAX_SEQUENCE_LENGTH,
@@ -203,7 +203,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--chunks", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--model", default=os.getenv("RAG_EMBEDDING_MODEL", DEFAULT_MODEL))
-    parser.add_argument("--device", default=os.getenv("RAG_EMBEDDING_DEVICE", "cuda"))
+    parser.add_argument("--device", default=os.getenv("RAG_EMBEDDING_DEVICE", "cpu"))
     parser.add_argument("--batch-size", type=int, default=64)
     parser.add_argument("--shard-size", type=int, default=2048)
     parser.add_argument("--max-sequence-length", type=int, default=DEFAULT_MAX_SEQUENCE_LENGTH)

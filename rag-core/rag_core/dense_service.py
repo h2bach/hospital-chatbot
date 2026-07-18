@@ -12,7 +12,7 @@ from pathlib import Path
 
 
 class DenseIndex:
-    def __init__(self, dense_root: Path, chunks_path: Path, model_path: str, device: str = "cuda"):
+    def __init__(self, dense_root: Path, chunks_path: Path, model_path: str, device: str = "cpu"):
         import numpy as np
         import torch
         from sentence_transformers import SentenceTransformer
@@ -158,7 +158,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--dense-root", type=Path, required=True)
     parser.add_argument("--chunks", type=Path, required=True)
     parser.add_argument("--model", default=os.getenv("RAG_EMBEDDING_MODEL"), required=not os.getenv("RAG_EMBEDDING_MODEL"))
-    parser.add_argument("--device", default=os.getenv("RAG_EMBEDDING_DEVICE", "cuda"))
+    parser.add_argument("--device", default=os.getenv("RAG_EMBEDDING_DEVICE", "cpu"))
     return parser.parse_args()
 
 
