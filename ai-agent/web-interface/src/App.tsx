@@ -1,6 +1,6 @@
 import * as Dialog from "@radix-ui/react-dialog"
 import { CircleCheckBig, Menu, Siren, WifiOff, X } from "lucide-react"
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { Composer } from "./components/Composer"
 import { ConfirmDeleteDialog } from "./components/ConfirmDeleteDialog"
 import { EmergencyDialog } from "./components/EmergencyDialog"
@@ -19,6 +19,7 @@ import {
 import type { AccessRole, ChatSession, ServerStatus, SessionSummary } from "./types"
 
 const THEME_STORAGE_KEY = "bvtim-chat-theme"
+const APP_TITLE = "Trợ lý Tim Hà Nội - Hỗ trợ thông tin"
 
 function initialTheme(): Theme {
   const requestedTheme = new URLSearchParams(window.location.search).get("theme")
@@ -43,10 +44,6 @@ function initialSessionId() {
 
 function errorMessage(error: unknown) {
   return error instanceof ApiError ? error.message : "Đã xảy ra lỗi không mong đợi."
-}
-
-function fallbackTitle(title?: string) {
-  return title?.trim() || "Cuộc trò chuyện mới"
 }
 
 export function App() {
@@ -75,11 +72,7 @@ export function App() {
   const activeRequest = useRef(0)
   const skipNextActiveLoad = useRef<string | null>(null)
 
-  const selectedSummary = useMemo(
-    () => sessions.find((session) => session.id === selectedId),
-    [sessions, selectedId],
-  )
-  const pageTitle = fallbackTitle(activeSession?.title || selectedSummary?.title)
+  const pageTitle = APP_TITLE
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme

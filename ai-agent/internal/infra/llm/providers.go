@@ -18,7 +18,7 @@ func NewFromEnvironment(ctx context.Context) (agent.LLMClient, error) {
 		providerList = os.Getenv("LLM_PROVIDER")
 	}
 	if strings.TrimSpace(providerList) == "" {
-		providerList = "gemini"
+		providerList = "fpt"
 	}
 
 	providers := configuredProviders(providerList)
