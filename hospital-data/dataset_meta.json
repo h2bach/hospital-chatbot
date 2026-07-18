@@ -1,0 +1,23 @@
+{
+  "dataset_name": "Bệnh viện Tim Hà Nội - dữ liệu lịch khám đã số hóa",
+  "data_nature": "REAL_OBSERVED_WITH_MOCK_DELIVERY",
+  "source_workbook": "docs/so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+  "organization_source": "docs/so_do_bo_may.md",
+  "observed_date_range": "2026-07-06/2026-07-19",
+  "timezone": "Asia/Ho_Chi_Minh",
+  "limitations": [
+    "Dữ liệu nguồn là sơ bộ và cần bệnh viện xác minh trước khi vận hành chính thức.",
+    "Không tự suy ra giờ cho ca Sáng/Chiều khi nguồn không nêu.",
+    "TC và BS TMCH là mã/nguồn lực chưa định danh, không phải hồ sơ bác sĩ.",
+    "Lịch rảnh chỉ lấy từ current_schedule.json do script nhập tuần hiện hành."
+  ],
+  "counts": {
+    "facilities": 2,
+    "rooms": 35,
+    "doctors": 60,
+    "scheduling_rules": 22,
+    "assignment_patterns": 27,
+    "organization_units": 50,
+    "source_images": 8
+  }
+}

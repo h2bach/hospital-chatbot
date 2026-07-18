@@ -1,0 +1,1091 @@
+[
+  {
+    "staff_id": "NV001",
+    "full_name": "Phạm Như Hùng",
+    "credential_raw": "TS.BS",
+    "credential_normalized": "TS.BS",
+    "observed_facilities": [
+      "CS1"
+    ],
+    "observed_areas": [
+      "Tự nguyện 1"
+    ],
+    "notes": null,
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "02_Nhan_su"
+    }
+  },
+  {
+    "staff_id": "NV002",
+    "full_name": "Nguyễn Thị Thu Thủy",
+    "credential_raw": "TS.BS",
+    "credential_normalized": "TS.BS",
+    "observed_facilities": [
+      "CS1"
+    ],
+    "observed_areas": [
+      "Tự nguyện 1"
+    ],
+    "notes": null,
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "02_Nhan_su"
+    }
+  },
+  {
+    "staff_id": "NV003",
+    "full_name": "Nguyễn Văn Thực",
+    "credential_raw": "BSCKII",
+    "credential_normalized": "BSCKII",
+    "observed_facilities": [
+      "CS1"
+    ],
+    "observed_areas": [
+      "Tự nguyện 1",
+      "Tự nguyện 3"
+    ],
+    "notes": null,
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "02_Nhan_su"
+    }
+  },
+  {
+    "staff_id": "NV004",
+    "full_name": "Nguyễn Đăng Dương",
+    "credential_raw": "ThS.BS",
+    "credential_normalized": "ThS.BS",
+    "observed_facilities": [
+      "CS1"
+    ],
+    "observed_areas": [
+      "Tự nguyện 1"
+    ],
+    "notes": "Có lịch Chủ nhật",
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "02_Nhan_su"
+    }
+  },
+  {
+    "staff_id": "NV005",
+    "full_name": "Vũ Quỳnh Nga",
+    "credential_raw": "TS.BS",
+    "credential_normalized": "TS.BS",
+    "observed_facilities": [
+      "CS1"
+    ],
+    "observed_areas": [
+      "Tự nguyện 1"
+    ],
+    "notes": "Lịch ổn định Phòng 2, Thứ 2-6",
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "02_Nhan_su"
+    }
+  },
+  {
+    "staff_id": "NV006",
+    "full_name": "Nguyễn Mai Hương",
+    "credential_raw": "ThS.BS",
+    "credential_normalized": "ThS.BS",
+    "observed_facilities": [
+      "CS1"
+    ],
+    "observed_areas": [
+      "Tự nguyện 1",
+      "Tự nguyện 3"
+    ],
+    "notes": "Có lịch SAT/luân phiên",
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "02_Nhan_su"
+    }
+  },
+  {
+    "staff_id": "NV007",
+    "full_name": "Bùi Thị Thanh Hà",
+    "credential_raw": "TS.BS",
+    "credential_normalized": "TS.BS",
+    "observed_facilities": [
+      "CS1"
+    ],
+    "observed_areas": [
+      "Tự nguyện 1"
+    ],
+    "notes": null,
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "02_Nhan_su"
+    }
+  },
+  {
+    "staff_id": "NV008",
+    "full_name": "Nguyễn Xuân Tuấn",
+    "credential_raw": "TS.BS",
+    "credential_normalized": "TS.BS",
+    "observed_facilities": [
+      "CS1"
+    ],
+    "observed_areas": [
+      "Tự nguyện 1",
+      "Tự nguyện 3"
+    ],
+    "notes": null,
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "02_Nhan_su"
+    }
+  },
+  {
+    "staff_id": "NV009",
+    "full_name": "Đinh Quang Huy",
+    "credential_raw": "TS.BS",
+    "credential_normalized": "TS.BS",
+    "observed_facilities": [
+      "CS1"
+    ],
+    "observed_areas": [
+      "Tự nguyện 1"
+    ],
+    "notes": null,
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "02_Nhan_su"
+    }
+  },
+  {
+    "staff_id": "NV010",
+    "full_name": "Hoàng Văn",
+    "credential_raw": "TS.BS",
+    "credential_normalized": "TS.BS",
+    "observed_facilities": [
+      "CS1"
+    ],
+    "observed_areas": [
+      "Tự nguyện 1"
+    ],
+    "notes": "Thường xuất hiện ca sáng",
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "02_Nhan_su"
+    }
+  },
+  {
+    "staff_id": "NV011",
+    "full_name": "Nguyễn Văn Dần",
+    "credential_raw": "BSCKII",
+    "credential_normalized": "BSCKII",
+    "observed_facilities": [
+      "CS1"
+    ],
+    "observed_areas": [
+      "Tự nguyện 1",
+      "Tự nguyện 3"
+    ],
+    "notes": null,
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "02_Nhan_su"
+    }
+  },
+  {
+    "staff_id": "NV012",
+    "full_name": "Hà Mai Hương",
+    "credential_raw": "TS.BS",
+    "credential_normalized": "TS.BS",
+    "observed_facilities": [
+      "CS1"
+    ],
+    "observed_areas": [
+      "Tự nguyện 1"
+    ],
+    "notes": null,
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "02_Nhan_su"
+    }
+  },
+  {
+    "staff_id": "NV013",
+    "full_name": "Nguyễn Thị Quỳnh Trang",
+    "credential_raw": "ThS.BS",
+    "credential_normalized": "ThS.BS",
+    "observed_facilities": [
+      "CS1"
+    ],
+    "observed_areas": [
+      "Tự nguyện 1",
+      "Tự nguyện 3"
+    ],
+    "notes": null,
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "02_Nhan_su"
+    }
+  },
+  {
+    "staff_id": "NV014",
+    "full_name": "Trần Thị Ngọc Lan",
+    "credential_raw": "TS.BS",
+    "credential_normalized": "TS.BS",
+    "observed_facilities": [
+      "CS1"
+    ],
+    "observed_areas": [
+      "Tự nguyện 1"
+    ],
+    "notes": null,
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "02_Nhan_su"
+    }
+  },
+  {
+    "staff_id": "NV015",
+    "full_name": "Nguyễn Xuân Tú",
+    "credential_raw": "ThS.BS",
+    "credential_normalized": "ThS.BS",
+    "observed_facilities": [
+      "CS1"
+    ],
+    "observed_areas": [
+      "Tự nguyện 1",
+      "Tự nguyện 3"
+    ],
+    "notes": null,
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "02_Nhan_su"
+    }
+  },
+  {
+    "staff_id": "NV016",
+    "full_name": "Nguyễn Thị Việt Nga",
+    "credential_raw": "ThS.BS",
+    "credential_normalized": "ThS.BS",
+    "observed_facilities": [
+      "CS1"
+    ],
+    "observed_areas": [
+      "Tự nguyện 1"
+    ],
+    "notes": null,
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "02_Nhan_su"
+    }
+  },
+  {
+    "staff_id": "NV017",
+    "full_name": "Ngô Văn Thanh",
+    "credential_raw": "TS.BS",
+    "credential_normalized": "TS.BS",
+    "observed_facilities": [
+      "CS1"
+    ],
+    "observed_areas": [
+      "Tự nguyện 1"
+    ],
+    "notes": null,
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "02_Nhan_su"
+    }
+  },
+  {
+    "staff_id": "NV018",
+    "full_name": "Phạm Thị An",
+    "credential_raw": "BSCKII",
+    "credential_normalized": "BSCKII",
+    "observed_facilities": [
+      "CS1"
+    ],
+    "observed_areas": [
+      "Tự nguyện 1",
+      "Tự nguyện 3"
+    ],
+    "notes": null,
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "02_Nhan_su"
+    }
+  },
+  {
+    "staff_id": "NV019",
+    "full_name": "Vũ Thị Trang",
+    "credential_raw": "BSCKII",
+    "credential_normalized": "BSCKII",
+    "observed_facilities": [
+      "CS1"
+    ],
+    "observed_areas": [
+      "Tự nguyện 1",
+      "Tự nguyện 3"
+    ],
+    "notes": null,
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "02_Nhan_su"
+    }
+  },
+  {
+    "staff_id": "NV020",
+    "full_name": "Trần Thị An",
+    "credential_raw": "TS.BS",
+    "credential_normalized": "TS.BS",
+    "observed_facilities": [
+      "CS1"
+    ],
+    "observed_areas": [
+      "Tự nguyện 1"
+    ],
+    "notes": null,
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "02_Nhan_su"
+    }
+  },
+  {
+    "staff_id": "NV021",
+    "full_name": "Phạm Quang Huy",
+    "credential_raw": "BS CKII",
+    "credential_normalized": "BSCKII",
+    "observed_facilities": [
+      "CS1"
+    ],
+    "observed_areas": [
+      "Tự nguyện 1",
+      "Tự nguyện 3"
+    ],
+    "notes": null,
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "02_Nhan_su"
+    }
+  },
+  {
+    "staff_id": "NV022",
+    "full_name": "Vũ Thị Ngọc Anh",
+    "credential_raw": "ThS.BS",
+    "credential_normalized": "ThS.BS",
+    "observed_facilities": [
+      "CS1"
+    ],
+    "observed_areas": [
+      "Tự nguyện 3"
+    ],
+    "notes": null,
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "02_Nhan_su"
+    }
+  },
+  {
+    "staff_id": "NV023",
+    "full_name": "Nguyễn Danh Sen",
+    "credential_raw": "ThS.BS",
+    "credential_normalized": "ThS.BS",
+    "observed_facilities": [
+      "CS1"
+    ],
+    "observed_areas": [
+      "Tự nguyện 3"
+    ],
+    "notes": null,
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "02_Nhan_su"
+    }
+  },
+  {
+    "staff_id": "NV024",
+    "full_name": "Trần Thị Thanh Hà",
+    "credential_raw": "BSCKII",
+    "credential_normalized": "BSCKII",
+    "observed_facilities": [
+      "CS1"
+    ],
+    "observed_areas": [
+      "Tự nguyện 3"
+    ],
+    "notes": null,
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "02_Nhan_su"
+    }
+  },
+  {
+    "staff_id": "NV025",
+    "full_name": "Nguyễn Đình Hồng Phúc",
+    "credential_raw": "ThS.BS",
+    "credential_normalized": "ThS.BS",
+    "observed_facilities": [
+      "CS1"
+    ],
+    "observed_areas": [
+      "Tự nguyện 3"
+    ],
+    "notes": null,
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "02_Nhan_su"
+    }
+  },
+  {
+    "staff_id": "NV026",
+    "full_name": "Trần Sinh Cường",
+    "credential_raw": "ThS.BS",
+    "credential_normalized": "ThS.BS",
+    "observed_facilities": [
+      "CS1"
+    ],
+    "observed_areas": [
+      "Tự nguyện 3"
+    ],
+    "notes": null,
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "02_Nhan_su"
+    }
+  },
+  {
+    "staff_id": "NV027",
+    "full_name": "Phạm Đăng Anh",
+    "credential_raw": "ThS.BS",
+    "credential_normalized": "ThS.BS",
+    "observed_facilities": [
+      "CS1"
+    ],
+    "observed_areas": [
+      "Tự nguyện 3"
+    ],
+    "notes": null,
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "02_Nhan_su"
+    }
+  },
+  {
+    "staff_id": "NV028",
+    "full_name": "Nguyễn Trung Hiếu",
+    "credential_raw": "BSCKII",
+    "credential_normalized": "BSCKII",
+    "observed_facilities": [
+      "CS1"
+    ],
+    "observed_areas": [
+      "Tự nguyện 3"
+    ],
+    "notes": null,
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "02_Nhan_su"
+    }
+  },
+  {
+    "staff_id": "NV029",
+    "full_name": "Nguyễn Thị Minh Nguyệt",
+    "credential_raw": "ThS.BS",
+    "credential_normalized": "ThS.BS",
+    "observed_facilities": [
+      "CS1"
+    ],
+    "observed_areas": [
+      "Tự nguyện 3"
+    ],
+    "notes": null,
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "02_Nhan_su"
+    }
+  },
+  {
+    "staff_id": "NV030",
+    "full_name": "Trần Thanh Hoa",
+    "credential_raw": "BS",
+    "credential_normalized": "BS",
+    "observed_facilities": [
+      "CS1"
+    ],
+    "observed_areas": [
+      "Tự nguyện 3"
+    ],
+    "notes": null,
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "02_Nhan_su"
+    }
+  },
+  {
+    "staff_id": "NV031",
+    "full_name": "Phạm Văn Tùng",
+    "credential_raw": "ThS.BS",
+    "credential_normalized": "ThS.BS",
+    "observed_facilities": [
+      "CS1"
+    ],
+    "observed_areas": [
+      "Tự nguyện 3"
+    ],
+    "notes": null,
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "02_Nhan_su"
+    }
+  },
+  {
+    "staff_id": "NV032",
+    "full_name": "Nguyễn Toàn Thắng",
+    "credential_raw": "ThS.BS",
+    "credential_normalized": "ThS.BS",
+    "observed_facilities": [
+      "CS1"
+    ],
+    "observed_areas": [
+      "Tự nguyện 3"
+    ],
+    "notes": null,
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "02_Nhan_su"
+    }
+  },
+  {
+    "staff_id": "NV033",
+    "full_name": "Trần Đức Long",
+    "credential_raw": "ThS.BS",
+    "credential_normalized": "ThS.BS",
+    "observed_facilities": [
+      "CS1"
+    ],
+    "observed_areas": [
+      "Tự nguyện 3"
+    ],
+    "notes": null,
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "02_Nhan_su"
+    }
+  },
+  {
+    "staff_id": "NV034",
+    "full_name": "Nguyễn Quốc Hùng",
+    "credential_raw": "ThS.BS",
+    "credential_normalized": "ThS.BS",
+    "observed_facilities": [
+      "CS1"
+    ],
+    "observed_areas": [
+      "Tự nguyện 3"
+    ],
+    "notes": null,
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "02_Nhan_su"
+    }
+  },
+  {
+    "staff_id": "NV035",
+    "full_name": "Đào Thị Thu Hà",
+    "credential_raw": "BSCKII",
+    "credential_normalized": "BSCKII",
+    "observed_facilities": [
+      "CS1"
+    ],
+    "observed_areas": [
+      "Tự nguyện 3"
+    ],
+    "notes": null,
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "02_Nhan_su"
+    }
+  },
+  {
+    "staff_id": "NV036",
+    "full_name": "Nguyễn Phương Liên",
+    "credential_raw": "ThS.BS",
+    "credential_normalized": "ThS.BS",
+    "observed_facilities": [
+      "CS1"
+    ],
+    "observed_areas": [
+      "Tự nguyện 3"
+    ],
+    "notes": "Có lịch SAT/luân phiên",
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "02_Nhan_su"
+    }
+  },
+  {
+    "staff_id": "NV037",
+    "full_name": "Lê Quang Huy",
+    "credential_raw": "ThS.BS",
+    "credential_normalized": "ThS.BS",
+    "observed_facilities": [
+      "CS1"
+    ],
+    "observed_areas": [
+      "Tự nguyện 3"
+    ],
+    "notes": null,
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "02_Nhan_su"
+    }
+  },
+  {
+    "staff_id": "NV038",
+    "full_name": "Lê Thị Thảo",
+    "credential_raw": "ThS.BS",
+    "credential_normalized": "ThS.BS",
+    "observed_facilities": [
+      "CS1"
+    ],
+    "observed_areas": [
+      "Tự nguyện 3"
+    ],
+    "notes": null,
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "02_Nhan_su"
+    }
+  },
+  {
+    "staff_id": "NV039",
+    "full_name": "Hoàng Minh Lợi",
+    "credential_raw": "ThS.BS",
+    "credential_normalized": "ThS.BS",
+    "observed_facilities": [
+      "CS1"
+    ],
+    "observed_areas": [
+      "Tự nguyện 3"
+    ],
+    "notes": null,
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "02_Nhan_su"
+    }
+  },
+  {
+    "staff_id": "NV040",
+    "full_name": "Nguyễn Thế Nam Huy",
+    "credential_raw": "ThS.BS",
+    "credential_normalized": "ThS.BS",
+    "observed_facilities": [
+      "CS1"
+    ],
+    "observed_areas": [
+      "Tự nguyện 3"
+    ],
+    "notes": null,
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "02_Nhan_su"
+    }
+  },
+  {
+    "staff_id": "NV041",
+    "full_name": "Nguyễn Ngọc Tân",
+    "credential_raw": "BS",
+    "credential_normalized": "BS",
+    "observed_facilities": [
+      "CS1"
+    ],
+    "observed_areas": [
+      "Tự nguyện 3"
+    ],
+    "notes": null,
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "02_Nhan_su"
+    }
+  },
+  {
+    "staff_id": "NV042",
+    "full_name": "Đỗ Thị Vân Anh",
+    "credential_raw": "ThS.BS",
+    "credential_normalized": "ThS.BS",
+    "observed_facilities": [
+      "CS1"
+    ],
+    "observed_areas": [
+      "Tự nguyện 3"
+    ],
+    "notes": null,
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "02_Nhan_su"
+    }
+  },
+  {
+    "staff_id": "NV043",
+    "full_name": "Lê Thế Kiên",
+    "credential_raw": "ThS.BS",
+    "credential_normalized": "ThS.BS",
+    "observed_facilities": [
+      "CS1"
+    ],
+    "observed_areas": [
+      "Tự nguyện 3"
+    ],
+    "notes": null,
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "02_Nhan_su"
+    }
+  },
+  {
+    "staff_id": "NV044",
+    "full_name": "Đinh Hải Nam",
+    "credential_raw": "BS",
+    "credential_normalized": "BS",
+    "observed_facilities": [
+      "CS1"
+    ],
+    "observed_areas": [
+      "Tự nguyện 3"
+    ],
+    "notes": null,
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "02_Nhan_su"
+    }
+  },
+  {
+    "staff_id": "NV045",
+    "full_name": "Lê Thị Hoài Thu",
+    "credential_raw": "BS.CKII",
+    "credential_normalized": "BSCKII",
+    "observed_facilities": [
+      "CS2"
+    ],
+    "observed_areas": [
+      "Tự nguyện"
+    ],
+    "notes": "Phòng 306, Thứ 2-6",
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "02_Nhan_su"
+    }
+  },
+  {
+    "staff_id": "NV046",
+    "full_name": "Nguyễn Duy Chinh",
+    "credential_raw": "ThS.BS",
+    "credential_normalized": "ThS.BS",
+    "observed_facilities": [
+      "CS2"
+    ],
+    "observed_areas": [
+      "Tự nguyện"
+    ],
+    "notes": "Phòng 309, Thứ 2-6",
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "02_Nhan_su"
+    }
+  },
+  {
+    "staff_id": "NV047",
+    "full_name": "Trần Thị Linh Tú",
+    "credential_raw": "ThS.BS",
+    "credential_normalized": "ThS.BS",
+    "observed_facilities": [
+      "CS2"
+    ],
+    "observed_areas": [
+      "Tự nguyện"
+    ],
+    "notes": "Phòng 308, Thứ 2-6",
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "02_Nhan_su"
+    }
+  },
+  {
+    "staff_id": "NV048",
+    "full_name": "Lê Thúy Ngọc",
+    "credential_raw": "ThS.BS",
+    "credential_normalized": "ThS.BS",
+    "observed_facilities": [
+      "CS2"
+    ],
+    "observed_areas": [
+      "Tự nguyện"
+    ],
+    "notes": "Phòng 311, Thứ 2-6",
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "02_Nhan_su"
+    }
+  },
+  {
+    "staff_id": "NV049",
+    "full_name": "Phan Thành Nam",
+    "credential_raw": "BS",
+    "credential_normalized": "BS",
+    "observed_facilities": [
+      "CS2"
+    ],
+    "observed_areas": [
+      "Tự nguyện"
+    ],
+    "notes": "Trực Thứ 7 tuần 06-12/07/2026",
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "02_Nhan_su"
+    }
+  },
+  {
+    "staff_id": "NV050",
+    "full_name": "Lê Thành Nam",
+    "credential_raw": "BS",
+    "credential_normalized": "BS",
+    "observed_facilities": [
+      "CS2"
+    ],
+    "observed_areas": [
+      "Tự nguyện"
+    ],
+    "notes": "Trực Thứ 7 tuần 13-19/07/2026",
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "02_Nhan_su"
+    }
+  },
+  {
+    "staff_id": "NV051",
+    "full_name": "Nguyễn Thanh Trà",
+    "credential_raw": "BS",
+    "credential_normalized": "BS",
+    "observed_facilities": [
+      "CS2"
+    ],
+    "observed_areas": [
+      "Đa khoa - RHM"
+    ],
+    "notes": "Có ghi chú khám tại CS1 lúc 15h vào Thứ 3/Thứ 5",
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "02_Nhan_su"
+    }
+  },
+  {
+    "staff_id": "NV052",
+    "full_name": "Trần Thị Quỳnh Nga",
+    "credential_raw": "BSNT",
+    "credential_normalized": "BSNT",
+    "observed_facilities": [
+      "CS2"
+    ],
+    "observed_areas": [
+      "Đa khoa - PHCN"
+    ],
+    "notes": "Thứ 6 chỉ làm buổi sáng",
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "02_Nhan_su"
+    }
+  },
+  {
+    "staff_id": "NV053",
+    "full_name": "Linh Thế Cường",
+    "credential_raw": "ThS.BS",
+    "credential_normalized": "ThS.BS",
+    "observed_facilities": [
+      "CS2"
+    ],
+    "observed_areas": [
+      "Đa khoa - TMH"
+    ],
+    "notes": "Tuần 06-10/07 nghỉ; tuần 13-19/07 làm Thứ 2-6",
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "02_Nhan_su"
+    }
+  },
+  {
+    "staff_id": "NV054",
+    "full_name": "Dương Thị Thúy Nga",
+    "credential_raw": "ThS.BS",
+    "credential_normalized": "ThS.BS",
+    "observed_facilities": [
+      "CS2"
+    ],
+    "observed_areas": [
+      "Đa khoa - Nhi"
+    ],
+    "notes": null,
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "02_Nhan_su"
+    }
+  },
+  {
+    "staff_id": "NV055",
+    "full_name": "Nguyễn Thị Minh Hoa",
+    "credential_raw": "ThS.BS",
+    "credential_normalized": "ThS.BS",
+    "observed_facilities": [
+      "CS2"
+    ],
+    "observed_areas": [
+      "Đa khoa - Da liễu"
+    ],
+    "notes": null,
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "02_Nhan_su"
+    }
+  },
+  {
+    "staff_id": "NV056",
+    "full_name": "Nguyễn Thị Tuyết Mai",
+    "credential_raw": "BSCKII",
+    "credential_normalized": "BSCKII",
+    "observed_facilities": [
+      "CS2"
+    ],
+    "observed_areas": [
+      "Đa khoa - Sản/Phụ khoa"
+    ],
+    "notes": "Chủ yếu ca sáng",
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "02_Nhan_su"
+    }
+  },
+  {
+    "staff_id": "NV057",
+    "full_name": "Nguyễn Thị Thuận",
+    "credential_raw": "BSNT",
+    "credential_normalized": "BSNT",
+    "observed_facilities": [
+      "CS2"
+    ],
+    "observed_areas": [
+      "Đa khoa - YHCT"
+    ],
+    "notes": null,
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "02_Nhan_su"
+    }
+  },
+  {
+    "staff_id": "NV058",
+    "full_name": "Lại Thị Bạch Yến",
+    "credential_raw": "ThS.BS",
+    "credential_normalized": "ThS.BS",
+    "observed_facilities": [
+      "CS2"
+    ],
+    "observed_areas": [
+      "Đa khoa - Nội chung/Hô hấp"
+    ],
+    "notes": null,
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "02_Nhan_su"
+    }
+  },
+  {
+    "staff_id": "NV059",
+    "full_name": "Phạm Thị Oanh",
+    "credential_raw": "ThS.BSNT",
+    "credential_normalized": "ThS.BSNT",
+    "observed_facilities": [
+      "CS2"
+    ],
+    "observed_areas": [
+      "Đa khoa - Nội chung/CXK"
+    ],
+    "notes": null,
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "02_Nhan_su"
+    }
+  },
+  {
+    "staff_id": "NV060",
+    "full_name": "Nguyễn Thị Huyền",
+    "credential_raw": "BSCKI",
+    "credential_normalized": "BSCKI",
+    "observed_facilities": [
+      "CS2"
+    ],
+    "observed_areas": [
+      "Đa khoa - Mắt"
+    ],
+    "notes": null,
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "02_Nhan_su"
+    }
+  }
+]

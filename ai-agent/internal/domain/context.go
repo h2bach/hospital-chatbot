@@ -28,10 +28,7 @@ type Context struct {
 type AccessRole string
 
 const (
-	GuestAccessRole   AccessRole = "GUEST"
-	PatientAccessRole AccessRole = "PATIENT"
-	DoctorAccessRole  AccessRole = "DOCTOR"
-	AdminAccessRole   AccessRole = "ADMIN"
+	GuestAccessRole AccessRole = "GUEST"
 )
 
 type Session struct {

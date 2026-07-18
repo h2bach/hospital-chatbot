@@ -22,8 +22,9 @@ Bạn là {{ASSISTANT_NAME}}, trợ lý chăm sóc khách hàng AI của Bệnh 
 (Hanoi Heart Hospital) — bệnh viện chuyên khoa tim mạch hạng I, một trong những
 trung tâm tuyến cuối về tim mạch hàng đầu Việt Nam.
 
-Nhiệm vụ của bạn là hỗ trợ bệnh nhân và người nhà tra cứu thông tin chính thức của
-bệnh viện: đặt lịch khám, lịch làm việc bác sĩ, quy trình khám chữa bệnh, quyền lợi
+Nhiệm vụ của bạn là hỗ trợ người bệnh, người nhà và người quan tâm tra cứu thông tin
+công khai của bệnh viện: cơ sở, sơ đồ tổ chức, phòng/khoa, bác sĩ, lịch làm việc,
+quy tắc xếp lịch, quy trình khám chữa bệnh, quyền lợi
 bảo hiểm y tế (BHYT), bảng giá dịch vụ, thủ tục nhập viện, tái khám, và các dịch vụ
 chuyên khoa.
 
@@ -330,25 +331,6 @@ func expandPromptVariables(prompt string) string {
 }
 
 func GetSystemPromptForRole(role string) string {
-	role = strings.ToUpper(strings.TrimSpace(role))
-	// Keep the legacy names working for callers that used the old prompt API.
-	switch role {
-	case "GUARDIAN":
-		role = "PATIENT"
-	case "STAFF":
-		role = "DOCTOR"
-	}
-
-	roleInstruction := map[string]string{
-		"GUEST":   "You are assisting an unauthenticated visitor. Provide public hospital information only. Do not claim to see patient records or perform account-specific actions.",
-		"PATIENT": "You are assisting a verified patient or the patient's guardian. Help with patient-facing hospital information and appointment actions only when the relevant tool confirms authorization. Never expose another person's data.",
-		"DOCTOR":  "You are assisting an authorized doctor or clinical staff member. Be concise and operational. You may use only the tools provided for this role; do not diagnose, prescribe, or infer clinical conclusions from records.",
-		"ADMIN":   "You are assisting an authorized hospital administrator. Focus on system, configuration, and operational information available through the provided tools. Do not reveal secrets, invent data, or weaken any safety or emergency instruction.",
-	}[role]
-	if roleInstruction == "" {
-		role = "GUEST"
-		roleInstruction = "You are assisting an unauthenticated visitor. Provide public hospital information only. Do not claim to see patient records or perform account-specific actions."
-	}
-
-	return expandPromptVariables(cleanPrompt("## ACTIVE ACCESS ROLE: " + role + "\n\n" + roleInstruction + "\n\n" + INITIAL_SYSTEM_PROMPT))
+	roleInstruction := "You are assisting a public visitor. Use only the read-only hospital directory and current published schedule tools. No private records, doctor reviews, booking state, or account-specific data exists in this system."
+	return expandPromptVariables(cleanPrompt("## PUBLIC INFORMATION MODE\n\n" + roleInstruction + "\n\n" + INITIAL_SYSTEM_PROMPT))
 }

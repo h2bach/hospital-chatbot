@@ -7,9 +7,9 @@ import (
 	"agent/internal/domain"
 )
 
-func TestSyncSystemPromptUsesCurrentRole(t *testing.T) {
+func TestSyncSystemPromptUsesPublicMode(t *testing.T) {
 	context := domain.Context{
-		Role: domain.PatientAccessRole,
+		Role: domain.GuestAccessRole,
 		Messages: []domain.Message{
 			{Role: domain.SystemRole, Content: "old prompt"},
 			{Role: domain.UserRole, Content: "previous question"},
@@ -17,12 +17,10 @@ func TestSyncSystemPromptUsesCurrentRole(t *testing.T) {
 	}
 
 	syncSystemPrompt(&context)
-	guardianPrompt := context.Messages[0].Content
-	if guardianPrompt == "old prompt" || !strings.Contains(guardianPrompt, "PATIENT") {
-		t.Fatalf("expected patient-specific system prompt, got %q", guardianPrompt)
+	publicPrompt := context.Messages[0].Content
+	if publicPrompt == "old prompt" || !strings.Contains(publicPrompt, "PUBLIC INFORMATION MODE") {
+		t.Fatalf("expected public system prompt, got %q", publicPrompt)
 	}
-
-	context.Role = domain.DoctorAccessRole
 	syncSystemPrompt(&context)
 
 	if len(context.Messages) != 2 {
@@ -31,29 +29,18 @@ func TestSyncSystemPromptUsesCurrentRole(t *testing.T) {
 	if context.Messages[0].Role != domain.SystemRole {
 		t.Fatalf("expected system message first, got %q", context.Messages[0].Role)
 	}
-	if context.Messages[0].Content == guardianPrompt || !strings.Contains(context.Messages[0].Content, "DOCTOR") {
-		t.Fatalf("expected doctor-specific system prompt after role switch, got %q", context.Messages[0].Content)
+	if context.Messages[0].Content != publicPrompt {
+		t.Fatalf("public prompt should remain stable, got %q", context.Messages[0].Content)
 	}
 	if context.Messages[1].Content != "previous question" {
 		t.Fatalf("role switch should preserve conversation history, got %q", context.Messages[1].Content)
 	}
 }
 
-func TestSystemPromptsAreDistinctForAccessRoles(t *testing.T) {
-	roles := []domain.AccessRole{
-		domain.GuestAccessRole,
-		domain.PatientAccessRole,
-		domain.DoctorAccessRole,
-		domain.AdminAccessRole,
-	}
-	for _, role := range roles {
-		prompt := GetSystemPromptForRole(string(role))
-		if !strings.Contains(prompt, "ACTIVE ACCESS ROLE: "+string(role)) {
-			t.Errorf("prompt for %s does not identify the active role", role)
-		}
-	}
-	if GetSystemPromptForRole("GUEST") == GetSystemPromptForRole("PATIENT") {
-		t.Fatal("guest and patient prompts must differ")
+func TestSystemPromptIsPublicOnly(t *testing.T) {
+	prompt := GetSystemPromptForRole("GUEST")
+	if !strings.Contains(prompt, "PUBLIC INFORMATION MODE") {
+		t.Fatal("prompt must identify public information mode")
 	}
 }
 

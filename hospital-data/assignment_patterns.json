@@ -1,0 +1,434 @@
+[
+  {
+    "pattern_id": "P01",
+    "area_id": "CS2_TN",
+    "room_or_scope": "306",
+    "applies_on": "Thứ 2-Thứ 6",
+    "shift": "Cả ngày",
+    "staff_or_resource": "Lê Thị Hoài Thu",
+    "pattern_type": "FIXED",
+    "notes": "Lặp cả hai tuần",
+    "confidence": "Cao",
+    "staff_id": "NV045",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "04_Mau_phan_cong"
+    }
+  },
+  {
+    "pattern_id": "P02",
+    "area_id": "CS2_TN",
+    "room_or_scope": "309",
+    "applies_on": "Thứ 2-Thứ 6",
+    "shift": "Cả ngày",
+    "staff_or_resource": "Nguyễn Duy Chinh",
+    "pattern_type": "FIXED",
+    "notes": "Lặp cả hai tuần",
+    "confidence": "Cao",
+    "staff_id": "NV046",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "04_Mau_phan_cong"
+    }
+  },
+  {
+    "pattern_id": "P03",
+    "area_id": "CS2_TN",
+    "room_or_scope": "308",
+    "applies_on": "Thứ 2-Thứ 6",
+    "shift": "Cả ngày",
+    "staff_or_resource": "Trần Thị Linh Tú",
+    "pattern_type": "FIXED",
+    "notes": "Lặp cả hai tuần",
+    "confidence": "Cao",
+    "staff_id": "NV047",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "04_Mau_phan_cong"
+    }
+  },
+  {
+    "pattern_id": "P04",
+    "area_id": "CS2_TN",
+    "room_or_scope": "310",
+    "applies_on": "Thứ 2-Thứ 6",
+    "shift": "Cả ngày",
+    "staff_or_resource": "TC",
+    "pattern_type": "RESOURCE_CODE",
+    "notes": "Cần xác minh TC là gì",
+    "confidence": "Cao",
+    "staff_id": null,
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "04_Mau_phan_cong"
+    }
+  },
+  {
+    "pattern_id": "P05",
+    "area_id": "CS2_TN",
+    "room_or_scope": "311",
+    "applies_on": "Thứ 2-Thứ 6",
+    "shift": "Cả ngày",
+    "staff_or_resource": "Lê Thúy Ngọc",
+    "pattern_type": "FIXED",
+    "notes": "Lặp cả hai tuần",
+    "confidence": "Cao",
+    "staff_id": "NV048",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "04_Mau_phan_cong"
+    }
+  },
+  {
+    "pattern_id": "P06",
+    "area_id": "CS2_TN",
+    "room_or_scope": "Toàn khu",
+    "applies_on": "Thứ 7",
+    "shift": "Cả ngày",
+    "staff_or_resource": "Bác sĩ trực luân phiên",
+    "pattern_type": "ROTATION",
+    "notes": "Phan Thành Nam -> Lê Thành Nam",
+    "confidence": "Cao",
+    "staff_id": null,
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "04_Mau_phan_cong"
+    }
+  },
+  {
+    "pattern_id": "P07",
+    "area_id": "CS2_TN",
+    "room_or_scope": "Toàn khu",
+    "applies_on": "Chủ nhật",
+    "shift": "Cả ngày",
+    "staff_or_resource": "Nghỉ",
+    "pattern_type": "OFF",
+    "notes": null,
+    "confidence": "Cao",
+    "staff_id": null,
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "04_Mau_phan_cong"
+    }
+  },
+  {
+    "pattern_id": "P08",
+    "area_id": "CS2_DK",
+    "room_or_scope": "P401-RHM",
+    "applies_on": "Thứ 2-Thứ 6",
+    "shift": "Cả ngày",
+    "staff_or_resource": "Nguyễn Thanh Trà",
+    "pattern_type": "FIXED_WITH_EXCEPTION",
+    "notes": "Thứ 3/5 có ghi chú sang CS1 lúc 15h",
+    "confidence": "Cao",
+    "staff_id": "NV051",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "04_Mau_phan_cong"
+    }
+  },
+  {
+    "pattern_id": "P09",
+    "area_id": "CS2_DK",
+    "room_or_scope": "P401-PHCN",
+    "applies_on": "Thứ 2-Thứ 5",
+    "shift": "Cả ngày",
+    "staff_or_resource": "Trần Thị Quỳnh Nga",
+    "pattern_type": "FIXED",
+    "notes": null,
+    "confidence": "Cao",
+    "staff_id": "NV052",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "04_Mau_phan_cong"
+    }
+  },
+  {
+    "pattern_id": "P10",
+    "area_id": "CS2_DK",
+    "room_or_scope": "P401-PHCN",
+    "applies_on": "Thứ 6",
+    "shift": "Sáng",
+    "staff_or_resource": "Trần Thị Quỳnh Nga",
+    "pattern_type": "PARTIAL_DAY",
+    "notes": "Chiều nghỉ",
+    "confidence": "Cao",
+    "staff_id": "NV052",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "04_Mau_phan_cong"
+    }
+  },
+  {
+    "pattern_id": "P11",
+    "area_id": "CS2_DK",
+    "room_or_scope": "P402-TMH",
+    "applies_on": "Theo tuần",
+    "shift": "Cả ngày",
+    "staff_or_resource": "Linh Thế Cường hoặc Nghỉ",
+    "pattern_type": "WEEKLY_EXCEPTION",
+    "notes": "Một tuần nghỉ, tuần sau làm Thứ 2-6",
+    "confidence": "Cao",
+    "staff_id": null,
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "04_Mau_phan_cong"
+    }
+  },
+  {
+    "pattern_id": "P12",
+    "area_id": "CS2_DK",
+    "room_or_scope": "P402-NHI",
+    "applies_on": "Thứ 2-Thứ 6",
+    "shift": "Cả ngày",
+    "staff_or_resource": "Dương Thị Thúy Nga",
+    "pattern_type": "FIXED",
+    "notes": null,
+    "confidence": "Cao",
+    "staff_id": "NV054",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "04_Mau_phan_cong"
+    }
+  },
+  {
+    "pattern_id": "P13",
+    "area_id": "CS2_DK",
+    "room_or_scope": "P403-DL",
+    "applies_on": "Thứ 2-Thứ 6",
+    "shift": "Cả ngày",
+    "staff_or_resource": "Nguyễn Thị Minh Hoa",
+    "pattern_type": "FIXED",
+    "notes": null,
+    "confidence": "Cao",
+    "staff_id": "NV055",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "04_Mau_phan_cong"
+    }
+  },
+  {
+    "pattern_id": "P14",
+    "area_id": "CS2_DK",
+    "room_or_scope": "P403-SPK",
+    "applies_on": "Thứ 2-Thứ 5/6",
+    "shift": "Sáng",
+    "staff_or_resource": "Nguyễn Thị Tuyết Mai",
+    "pattern_type": "PARTIAL_DAY",
+    "notes": "Chiều nghỉ; Thứ 6 thay đổi theo tuần",
+    "confidence": "Cao",
+    "staff_id": "NV056",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "04_Mau_phan_cong"
+    }
+  },
+  {
+    "pattern_id": "P15",
+    "area_id": "CS2_DK",
+    "room_or_scope": "P404-YHCT",
+    "applies_on": "Thứ 2-Thứ 6",
+    "shift": "Cả ngày",
+    "staff_or_resource": "Nguyễn Thị Thuận",
+    "pattern_type": "FIXED",
+    "notes": null,
+    "confidence": "Cao",
+    "staff_id": "NV057",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "04_Mau_phan_cong"
+    }
+  },
+  {
+    "pattern_id": "P16",
+    "area_id": "CS2_DK",
+    "room_or_scope": "P405A-HH",
+    "applies_on": "Thứ 2-Thứ 5/6",
+    "shift": "Cả ngày",
+    "staff_or_resource": "Lại Thị Bạch Yến",
+    "pattern_type": "FIXED_WITH_EXCEPTION",
+    "notes": "Thứ 6 có thể nghỉ",
+    "confidence": "Cao",
+    "staff_id": "NV058",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "04_Mau_phan_cong"
+    }
+  },
+  {
+    "pattern_id": "P17",
+    "area_id": "CS2_DK",
+    "room_or_scope": "P405B-CXK",
+    "applies_on": "Thứ 2-Thứ 6",
+    "shift": "Cả ngày",
+    "staff_or_resource": "Phạm Thị Oanh",
+    "pattern_type": "FIXED",
+    "notes": null,
+    "confidence": "Cao",
+    "staff_id": "NV059",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "04_Mau_phan_cong"
+    }
+  },
+  {
+    "pattern_id": "P18",
+    "area_id": "CS2_DK",
+    "room_or_scope": "P405C-NTMNT",
+    "applies_on": "Thứ 2-Thứ 6",
+    "shift": "Cả ngày",
+    "staff_or_resource": "BS TMCH",
+    "pattern_type": "RESOURCE_CODE",
+    "notes": "Chưa có tên cá nhân",
+    "confidence": "Cao",
+    "staff_id": null,
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "04_Mau_phan_cong"
+    }
+  },
+  {
+    "pattern_id": "P19",
+    "area_id": "CS2_DK",
+    "room_or_scope": "P405D-MAT",
+    "applies_on": "Thứ 2-Thứ 6",
+    "shift": "Cả ngày",
+    "staff_or_resource": "Nguyễn Thị Huyền",
+    "pattern_type": "FIXED",
+    "notes": null,
+    "confidence": "Cao",
+    "staff_id": "NV060",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "04_Mau_phan_cong"
+    }
+  },
+  {
+    "pattern_id": "P20",
+    "area_id": "CS1_TN1",
+    "room_or_scope": "TN1-PK02",
+    "applies_on": "Thứ 2-Thứ 6",
+    "shift": "Cả ngày",
+    "staff_or_resource": "Vũ Quỳnh Nga",
+    "pattern_type": "FIXED",
+    "notes": "Ổn định trong hai tuần",
+    "confidence": "Cao",
+    "staff_id": "NV005",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "04_Mau_phan_cong"
+    }
+  },
+  {
+    "pattern_id": "P21",
+    "area_id": "CS1_TN1",
+    "room_or_scope": "TN1-PK03",
+    "applies_on": "Thứ 2/4/6",
+    "shift": "Cả ngày",
+    "staff_or_resource": "Bùi Thị Thanh Hà",
+    "pattern_type": "DAY_OF_WEEK_PATTERN",
+    "notes": "Ổn định trong hai tuần",
+    "confidence": "Cao",
+    "staff_id": "NV007",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "04_Mau_phan_cong"
+    }
+  },
+  {
+    "pattern_id": "P22",
+    "area_id": "CS1_TN1",
+    "room_or_scope": "TN1-PK03",
+    "applies_on": "Thứ 3",
+    "shift": "Cả ngày",
+    "staff_or_resource": "Nguyễn Xuân Tuấn",
+    "pattern_type": "DAY_OF_WEEK_PATTERN",
+    "notes": "Ổn định trong hai tuần",
+    "confidence": "Cao",
+    "staff_id": "NV008",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "04_Mau_phan_cong"
+    }
+  },
+  {
+    "pattern_id": "P23",
+    "area_id": "CS1_TN1",
+    "room_or_scope": "TN1-PK03",
+    "applies_on": "Thứ 5",
+    "shift": "Cả ngày",
+    "staff_or_resource": "Đinh Quang Huy",
+    "pattern_type": "DAY_OF_WEEK_PATTERN",
+    "notes": "Ổn định trong hai tuần",
+    "confidence": "Cao",
+    "staff_id": "NV009",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "04_Mau_phan_cong"
+    }
+  },
+  {
+    "pattern_id": "P24",
+    "area_id": "CS1_TN1",
+    "room_or_scope": "TN1-PK04",
+    "applies_on": "Thứ 2/4/6",
+    "shift": "Sáng",
+    "staff_or_resource": "Hoàng Văn",
+    "pattern_type": "DAY_OF_WEEK_PATTERN",
+    "notes": "Ca chiều luân phiên",
+    "confidence": "Trung bình",
+    "staff_id": "NV010",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "04_Mau_phan_cong"
+    }
+  },
+  {
+    "pattern_id": "P25",
+    "area_id": "CS1_TN1",
+    "room_or_scope": "TN1-PK04",
+    "applies_on": "Thứ 3/5",
+    "shift": "Cả ngày",
+    "staff_or_resource": "Hà Mai Hương",
+    "pattern_type": "DAY_OF_WEEK_PATTERN",
+    "notes": "Ổn định trong hai tuần",
+    "confidence": "Cao",
+    "staff_id": "NV012",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "04_Mau_phan_cong"
+    }
+  },
+  {
+    "pattern_id": "P26",
+    "area_id": "CS1_TN1",
+    "room_or_scope": "TN1-PK05",
+    "applies_on": "Thứ 2-Thứ 6",
+    "shift": "Theo ngày",
+    "staff_or_resource": "Nhóm cố định theo thứ",
+    "pattern_type": "DAY_OF_WEEK_PATTERN",
+    "notes": "Ít biến động giữa hai tuần",
+    "confidence": "Trung bình",
+    "staff_id": null,
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "04_Mau_phan_cong"
+    }
+  },
+  {
+    "pattern_id": "P27",
+    "area_id": "CS1_TN3",
+    "room_or_scope": "Nhiều phòng",
+    "applies_on": "Thứ 2-Thứ 6",
+    "shift": "Cả ngày/Sáng/Chiều",
+    "staff_or_resource": "Luân phiên nhiều bác sĩ",
+    "pattern_type": "ROTATION",
+    "notes": "Không đủ dữ liệu để kết luận chu kỳ dài hạn",
+    "confidence": "Trung bình",
+    "staff_id": null,
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "04_Mau_phan_cong"
+    }
+  }
+]

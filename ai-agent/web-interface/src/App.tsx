@@ -5,7 +5,6 @@ import { Composer } from "./components/Composer"
 import { ConfirmDeleteDialog } from "./components/ConfirmDeleteDialog"
 import { EmergencyDialog } from "./components/EmergencyDialog"
 import { MessageThread } from "./components/MessageThread"
-import { RoleSwitcher } from "./components/RoleSwitcher"
 import { Sidebar } from "./components/Sidebar"
 import { ThemeToggle, type Theme } from "./components/ThemeToggle"
 import {
@@ -16,7 +15,7 @@ import {
   getSessions,
   sendMessage,
 } from "./lib/api"
-import type { AccessRole, ChatSession, ServerStatus, SessionSummary } from "./types"
+import type { ChatSession, ServerStatus, SessionSummary } from "./types"
 
 const THEME_STORAGE_KEY = "bvtim-chat-theme"
 const APP_TITLE = "Trợ lý Tim Hà Nội - Hỗ trợ thông tin"
@@ -53,7 +52,6 @@ export function App() {
   const [activeSession, setActiveSession] = useState<ChatSession | null>(null)
   const [sessionQuery, setSessionQuery] = useState("")
   const [composerValue, setComposerValue] = useState("")
-  const [accessRole, setAccessRole] = useState<AccessRole>("GUEST")
   const [serverStatus, setServerStatus] = useState<ServerStatus>("checking")
   const [loadingSessions, setLoadingSessions] = useState(true)
   const [loadingActive, setLoadingActive] = useState(false)
@@ -259,7 +257,7 @@ export function App() {
     })
 
     try {
-      const answer = await sendMessage(currentId, message, accessRole)
+      const answer = await sendMessage(currentId, message)
       setActiveSession((current) => {
         if (!current || current.id !== currentId) return current
         const messages = current.messages.map((item, index) =>
@@ -390,11 +388,6 @@ export function App() {
             </div>
           </div>
           <div className="header-actions">
-            <RoleSwitcher
-              value={accessRole}
-              disabled={sending || creating}
-              onChange={setAccessRole}
-            />
             <button
               type="button"
               className="emergency-button"

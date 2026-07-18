@@ -1,0 +1,667 @@
+[
+  {
+    "facility_id": "CS1",
+    "facility_name": "Bệnh viện Tim Hà Nội - Cơ sở 1",
+    "address": "92 Trần Hưng Đạo, Hoàn Kiếm, Hà Nội",
+    "area_id": "CS1_TN1",
+    "area_name": "Khu khám bệnh Tự nguyện 1",
+    "specialty": null,
+    "room_id": "TN1-PK01",
+    "display_name": "Phòng khám số 1",
+    "opens_at": "07:30",
+    "closes_at": "16:30",
+    "weekend_pattern": "Thứ 2-6; Chủ nhật có lịch luân phiên; Thứ 7 nghỉ",
+    "observation_period": "06-12/07/2026; 13-19/07/2026",
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "01_Co_so_Phong_kham"
+    }
+  },
+  {
+    "facility_id": "CS1",
+    "facility_name": "Bệnh viện Tim Hà Nội - Cơ sở 1",
+    "address": "92 Trần Hưng Đạo, Hoàn Kiếm, Hà Nội",
+    "area_id": "CS1_TN1",
+    "area_name": "Khu khám bệnh Tự nguyện 1",
+    "specialty": null,
+    "room_id": "TN1-PK02",
+    "display_name": "Phòng khám số 2",
+    "opens_at": "07:30",
+    "closes_at": "16:30",
+    "weekend_pattern": "Thứ 2-6; Chủ nhật có lịch SAT luân phiên; Thứ 7 nghỉ",
+    "observation_period": "06-12/07/2026; 13-19/07/2026",
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "01_Co_so_Phong_kham"
+    }
+  },
+  {
+    "facility_id": "CS1",
+    "facility_name": "Bệnh viện Tim Hà Nội - Cơ sở 1",
+    "address": "92 Trần Hưng Đạo, Hoàn Kiếm, Hà Nội",
+    "area_id": "CS1_TN1",
+    "area_name": "Khu khám bệnh Tự nguyện 1",
+    "specialty": null,
+    "room_id": "TN1-PK03",
+    "display_name": "Phòng khám số 3",
+    "opens_at": "07:00",
+    "closes_at": "16:30",
+    "weekend_pattern": "Thứ 2-6; cuối tuần nghỉ",
+    "observation_period": "06-12/07/2026; 13-19/07/2026",
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "01_Co_so_Phong_kham"
+    }
+  },
+  {
+    "facility_id": "CS1",
+    "facility_name": "Bệnh viện Tim Hà Nội - Cơ sở 1",
+    "address": "92 Trần Hưng Đạo, Hoàn Kiếm, Hà Nội",
+    "area_id": "CS1_TN1",
+    "area_name": "Khu khám bệnh Tự nguyện 1",
+    "specialty": null,
+    "room_id": "TN1-PK04",
+    "display_name": "Phòng khám số 4",
+    "opens_at": "07:30",
+    "closes_at": "16:30",
+    "weekend_pattern": "Thứ 2-6; cuối tuần nghỉ",
+    "observation_period": "06-12/07/2026; 13-19/07/2026",
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "01_Co_so_Phong_kham"
+    }
+  },
+  {
+    "facility_id": "CS1",
+    "facility_name": "Bệnh viện Tim Hà Nội - Cơ sở 1",
+    "address": "92 Trần Hưng Đạo, Hoàn Kiếm, Hà Nội",
+    "area_id": "CS1_TN1",
+    "area_name": "Khu khám bệnh Tự nguyện 1",
+    "specialty": null,
+    "room_id": "TN1-PK05",
+    "display_name": "Phòng khám số 5",
+    "opens_at": "07:00",
+    "closes_at": "16:30",
+    "weekend_pattern": "Thứ 2-6; cuối tuần nghỉ",
+    "observation_period": "06-12/07/2026; 13-19/07/2026",
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "01_Co_so_Phong_kham"
+    }
+  },
+  {
+    "facility_id": "CS1",
+    "facility_name": "Bệnh viện Tim Hà Nội - Cơ sở 1",
+    "address": "92 Trần Hưng Đạo, Hoàn Kiếm, Hà Nội",
+    "area_id": "CS1_TN1",
+    "area_name": "Khu khám bệnh Tự nguyện 1",
+    "specialty": null,
+    "room_id": "TN1-PK06",
+    "display_name": "Phòng khám số 6",
+    "opens_at": "07:30",
+    "closes_at": "16:30",
+    "weekend_pattern": "Thứ 2-6; cuối tuần nghỉ",
+    "observation_period": "06-12/07/2026; 13-19/07/2026",
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "01_Co_so_Phong_kham"
+    }
+  },
+  {
+    "facility_id": "CS1",
+    "facility_name": "Bệnh viện Tim Hà Nội - Cơ sở 1",
+    "address": "92 Trần Hưng Đạo, Hoàn Kiếm, Hà Nội",
+    "area_id": "CS1_TN1",
+    "area_name": "Khu khám bệnh Tự nguyện 1",
+    "specialty": null,
+    "room_id": "TN1-PK07",
+    "display_name": "Phòng khám số 7",
+    "opens_at": "07:00",
+    "closes_at": "16:00",
+    "weekend_pattern": "Thứ 2-6; cuối tuần nghỉ",
+    "observation_period": "06-12/07/2026; 13-19/07/2026",
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "01_Co_so_Phong_kham"
+    }
+  },
+  {
+    "facility_id": "CS1",
+    "facility_name": "Bệnh viện Tim Hà Nội - Cơ sở 1",
+    "address": "92 Trần Hưng Đạo, Hoàn Kiếm, Hà Nội",
+    "area_id": "CS1_TN1",
+    "area_name": "Khu khám bệnh Tự nguyện 1",
+    "specialty": null,
+    "room_id": "TN1-PK08",
+    "display_name": "Phòng khám số 8",
+    "opens_at": "07:00",
+    "closes_at": "16:00",
+    "weekend_pattern": "Thứ 2-6; cuối tuần nghỉ",
+    "observation_period": "06-12/07/2026; 13-19/07/2026",
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "01_Co_so_Phong_kham"
+    }
+  },
+  {
+    "facility_id": "CS1",
+    "facility_name": "Bệnh viện Tim Hà Nội - Cơ sở 1",
+    "address": "92 Trần Hưng Đạo, Hoàn Kiếm, Hà Nội",
+    "area_id": "CS1_TN3",
+    "area_name": "Khu khám bệnh Tự nguyện 3",
+    "specialty": null,
+    "room_id": "TN3-PK01",
+    "display_name": "Phòng khám số 1",
+    "opens_at": "07:30",
+    "closes_at": "16:30",
+    "weekend_pattern": "Thứ 2-7; Chủ nhật nghỉ",
+    "observation_period": "06-12/07/2026; 13-19/07/2026",
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "01_Co_so_Phong_kham"
+    }
+  },
+  {
+    "facility_id": "CS1",
+    "facility_name": "Bệnh viện Tim Hà Nội - Cơ sở 1",
+    "address": "92 Trần Hưng Đạo, Hoàn Kiếm, Hà Nội",
+    "area_id": "CS1_TN3",
+    "area_name": "Khu khám bệnh Tự nguyện 3",
+    "specialty": null,
+    "room_id": "TN3-PK02",
+    "display_name": "Phòng khám số 2",
+    "opens_at": "07:30",
+    "closes_at": "16:30",
+    "weekend_pattern": "Thứ 2-7; Chủ nhật nghỉ",
+    "observation_period": "06-12/07/2026; 13-19/07/2026",
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "01_Co_so_Phong_kham"
+    }
+  },
+  {
+    "facility_id": "CS1",
+    "facility_name": "Bệnh viện Tim Hà Nội - Cơ sở 1",
+    "address": "92 Trần Hưng Đạo, Hoàn Kiếm, Hà Nội",
+    "area_id": "CS1_TN3",
+    "area_name": "Khu khám bệnh Tự nguyện 3",
+    "specialty": null,
+    "room_id": "TN3-PK03",
+    "display_name": "Phòng khám số 3",
+    "opens_at": "07:30",
+    "closes_at": "16:30",
+    "weekend_pattern": "Thứ 2-7; Chủ nhật nghỉ",
+    "observation_period": "06-12/07/2026; 13-19/07/2026",
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "01_Co_so_Phong_kham"
+    }
+  },
+  {
+    "facility_id": "CS1",
+    "facility_name": "Bệnh viện Tim Hà Nội - Cơ sở 1",
+    "address": "92 Trần Hưng Đạo, Hoàn Kiếm, Hà Nội",
+    "area_id": "CS1_TN3",
+    "area_name": "Khu khám bệnh Tự nguyện 3",
+    "specialty": null,
+    "room_id": "TN3-PK04",
+    "display_name": "Phòng khám số 4",
+    "opens_at": "07:30",
+    "closes_at": "16:30",
+    "weekend_pattern": "Thứ 2-7; Chủ nhật nghỉ",
+    "observation_period": "06-12/07/2026; 13-19/07/2026",
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "01_Co_so_Phong_kham"
+    }
+  },
+  {
+    "facility_id": "CS1",
+    "facility_name": "Bệnh viện Tim Hà Nội - Cơ sở 1",
+    "address": "92 Trần Hưng Đạo, Hoàn Kiếm, Hà Nội",
+    "area_id": "CS1_TN3",
+    "area_name": "Khu khám bệnh Tự nguyện 3",
+    "specialty": null,
+    "room_id": "TN3-PK05",
+    "display_name": "Phòng khám số 5",
+    "opens_at": "06:30",
+    "closes_at": "16:30",
+    "weekend_pattern": "Thứ 2-6; cuối tuần nghỉ",
+    "observation_period": "06-12/07/2026; 13-19/07/2026",
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "01_Co_so_Phong_kham"
+    }
+  },
+  {
+    "facility_id": "CS1",
+    "facility_name": "Bệnh viện Tim Hà Nội - Cơ sở 1",
+    "address": "92 Trần Hưng Đạo, Hoàn Kiếm, Hà Nội",
+    "area_id": "CS1_TN3",
+    "area_name": "Khu khám bệnh Tự nguyện 3",
+    "specialty": null,
+    "room_id": "TN3-PK06",
+    "display_name": "Phòng khám số 6",
+    "opens_at": "06:30",
+    "closes_at": "16:30",
+    "weekend_pattern": "Thứ 2-6; cuối tuần nghỉ",
+    "observation_period": "06-12/07/2026; 13-19/07/2026",
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "01_Co_so_Phong_kham"
+    }
+  },
+  {
+    "facility_id": "CS1",
+    "facility_name": "Bệnh viện Tim Hà Nội - Cơ sở 1",
+    "address": "92 Trần Hưng Đạo, Hoàn Kiếm, Hà Nội",
+    "area_id": "CS1_TN3",
+    "area_name": "Khu khám bệnh Tự nguyện 3",
+    "specialty": null,
+    "room_id": "TN3-PK07",
+    "display_name": "Phòng khám số 7",
+    "opens_at": "06:30",
+    "closes_at": "16:30",
+    "weekend_pattern": "Thứ 2-6; cuối tuần nghỉ",
+    "observation_period": "06-12/07/2026; 13-19/07/2026",
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "01_Co_so_Phong_kham"
+    }
+  },
+  {
+    "facility_id": "CS1",
+    "facility_name": "Bệnh viện Tim Hà Nội - Cơ sở 1",
+    "address": "92 Trần Hưng Đạo, Hoàn Kiếm, Hà Nội",
+    "area_id": "CS1_TN3",
+    "area_name": "Khu khám bệnh Tự nguyện 3",
+    "specialty": null,
+    "room_id": "TN3-PK08",
+    "display_name": "Phòng khám số 8",
+    "opens_at": "07:30",
+    "closes_at": "16:30",
+    "weekend_pattern": "Thứ 2-6; cuối tuần nghỉ",
+    "observation_period": "06-12/07/2026; 13-19/07/2026",
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "01_Co_so_Phong_kham"
+    }
+  },
+  {
+    "facility_id": "CS1",
+    "facility_name": "Bệnh viện Tim Hà Nội - Cơ sở 1",
+    "address": "92 Trần Hưng Đạo, Hoàn Kiếm, Hà Nội",
+    "area_id": "CS1_TN3",
+    "area_name": "Khu khám bệnh Tự nguyện 3",
+    "specialty": null,
+    "room_id": "TN3-PK09",
+    "display_name": "Phòng khám số 9",
+    "opens_at": "07:30",
+    "closes_at": "16:30",
+    "weekend_pattern": "Thứ 2-6; cuối tuần nghỉ",
+    "observation_period": "06-12/07/2026; 13-19/07/2026",
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "01_Co_so_Phong_kham"
+    }
+  },
+  {
+    "facility_id": "CS1",
+    "facility_name": "Bệnh viện Tim Hà Nội - Cơ sở 1",
+    "address": "92 Trần Hưng Đạo, Hoàn Kiếm, Hà Nội",
+    "area_id": "CS1_TN3",
+    "area_name": "Khu khám bệnh Tự nguyện 3",
+    "specialty": null,
+    "room_id": "TN3-TC01",
+    "display_name": "Phòng khám tăng cường 1 (HC)",
+    "opens_at": "07:30",
+    "closes_at": "16:30",
+    "weekend_pattern": "Thứ 2-6; cuối tuần nghỉ",
+    "observation_period": "06-12/07/2026; 13-19/07/2026",
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "01_Co_so_Phong_kham"
+    }
+  },
+  {
+    "facility_id": "CS1",
+    "facility_name": "Bệnh viện Tim Hà Nội - Cơ sở 1",
+    "address": "92 Trần Hưng Đạo, Hoàn Kiếm, Hà Nội",
+    "area_id": "CS1_TN3",
+    "area_name": "Khu khám bệnh Tự nguyện 3",
+    "specialty": null,
+    "room_id": "TN3-TC02",
+    "display_name": "Phòng khám tăng cường 2 (PK4)",
+    "opens_at": "07:30",
+    "closes_at": "16:30",
+    "weekend_pattern": "Lịch không đều; Thứ 5-6 có thể mở; cuối tuần nghỉ",
+    "observation_period": "06-12/07/2026; 13-19/07/2026",
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "01_Co_so_Phong_kham"
+    }
+  },
+  {
+    "facility_id": "CS2",
+    "facility_name": "Bệnh viện Tim Hà Nội - Cơ sở 2",
+    "address": "695 Lạc Long Quân, Tây Hồ, Hà Nội",
+    "area_id": "CS2_TN",
+    "area_name": "Khu khám bệnh Tự nguyện",
+    "specialty": null,
+    "room_id": "306",
+    "display_name": "Phòng khám số 306",
+    "opens_at": "07:00",
+    "closes_at": "16:30",
+    "weekend_pattern": "Thứ 2-6; Thứ 7 trực chung toàn khu; Chủ nhật nghỉ",
+    "observation_period": "06-12/07/2026; 13-19/07/2026",
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "01_Co_so_Phong_kham"
+    }
+  },
+  {
+    "facility_id": "CS2",
+    "facility_name": "Bệnh viện Tim Hà Nội - Cơ sở 2",
+    "address": "695 Lạc Long Quân, Tây Hồ, Hà Nội",
+    "area_id": "CS2_TN",
+    "area_name": "Khu khám bệnh Tự nguyện",
+    "specialty": null,
+    "room_id": "309",
+    "display_name": "Phòng khám số 309",
+    "opens_at": "07:00",
+    "closes_at": "16:30",
+    "weekend_pattern": "Thứ 2-6; Thứ 7 trực chung toàn khu; Chủ nhật nghỉ",
+    "observation_period": "06-12/07/2026; 13-19/07/2026",
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "01_Co_so_Phong_kham"
+    }
+  },
+  {
+    "facility_id": "CS2",
+    "facility_name": "Bệnh viện Tim Hà Nội - Cơ sở 2",
+    "address": "695 Lạc Long Quân, Tây Hồ, Hà Nội",
+    "area_id": "CS2_TN",
+    "area_name": "Khu khám bệnh Tự nguyện",
+    "specialty": null,
+    "room_id": "308",
+    "display_name": "Phòng khám số 308",
+    "opens_at": "07:00",
+    "closes_at": "16:30",
+    "weekend_pattern": "Thứ 2-6; Thứ 7 trực chung toàn khu; Chủ nhật nghỉ",
+    "observation_period": "06-12/07/2026; 13-19/07/2026",
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "01_Co_so_Phong_kham"
+    }
+  },
+  {
+    "facility_id": "CS2",
+    "facility_name": "Bệnh viện Tim Hà Nội - Cơ sở 2",
+    "address": "695 Lạc Long Quân, Tây Hồ, Hà Nội",
+    "area_id": "CS2_TN",
+    "area_name": "Khu khám bệnh Tự nguyện",
+    "specialty": "Thủ thuật/chưa xác định",
+    "room_id": "310",
+    "display_name": "Phòng khám số 310",
+    "opens_at": "07:00",
+    "closes_at": "16:30",
+    "weekend_pattern": "Thứ 2-6 hiển thị 'TC'; Thứ 7 trực chung toàn khu; Chủ nhật nghỉ",
+    "observation_period": "06-12/07/2026; 13-19/07/2026",
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "01_Co_so_Phong_kham"
+    }
+  },
+  {
+    "facility_id": "CS2",
+    "facility_name": "Bệnh viện Tim Hà Nội - Cơ sở 2",
+    "address": "695 Lạc Long Quân, Tây Hồ, Hà Nội",
+    "area_id": "CS2_TN",
+    "area_name": "Khu khám bệnh Tự nguyện",
+    "specialty": null,
+    "room_id": "311",
+    "display_name": "Phòng khám số 311",
+    "opens_at": "07:30",
+    "closes_at": "16:30",
+    "weekend_pattern": "Thứ 2-6; Thứ 7 trực chung toàn khu; Chủ nhật nghỉ",
+    "observation_period": "06-12/07/2026; 13-19/07/2026",
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "01_Co_so_Phong_kham"
+    }
+  },
+  {
+    "facility_id": "CS2",
+    "facility_name": "Bệnh viện Tim Hà Nội - Cơ sở 2",
+    "address": "695 Lạc Long Quân, Tây Hồ, Hà Nội",
+    "area_id": "CS2_DK",
+    "area_name": "Phòng khám đa khoa",
+    "specialty": "Răng-Hàm-Mặt",
+    "room_id": "P401-RHM",
+    "display_name": "RHM (P401)",
+    "opens_at": "07:30",
+    "closes_at": "16:30",
+    "weekend_pattern": "Thứ 2-6; cuối tuần nghỉ",
+    "observation_period": "06-10/07/2026; 13-19/07/2026",
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "01_Co_so_Phong_kham"
+    }
+  },
+  {
+    "facility_id": "CS2",
+    "facility_name": "Bệnh viện Tim Hà Nội - Cơ sở 2",
+    "address": "695 Lạc Long Quân, Tây Hồ, Hà Nội",
+    "area_id": "CS2_DK",
+    "area_name": "Phòng khám đa khoa",
+    "specialty": "Phục hồi chức năng",
+    "room_id": "P401-PHCN",
+    "display_name": "PHCN (P401)",
+    "opens_at": "07:30",
+    "closes_at": "16:30",
+    "weekend_pattern": "Thứ 2-6; chiều Thứ 6 nghỉ; cuối tuần nghỉ",
+    "observation_period": "06-10/07/2026; 13-19/07/2026",
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "01_Co_so_Phong_kham"
+    }
+  },
+  {
+    "facility_id": "CS2",
+    "facility_name": "Bệnh viện Tim Hà Nội - Cơ sở 2",
+    "address": "695 Lạc Long Quân, Tây Hồ, Hà Nội",
+    "area_id": "CS2_DK",
+    "area_name": "Phòng khám đa khoa",
+    "specialty": "Tai-Mũi-Họng",
+    "room_id": "P402-TMH",
+    "display_name": "TMH (P402)",
+    "opens_at": "07:30",
+    "closes_at": "16:30",
+    "weekend_pattern": "Theo tuần; có tuần nghỉ toàn bộ; cuối tuần nghỉ",
+    "observation_period": "06-10/07/2026; 13-19/07/2026",
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "01_Co_so_Phong_kham"
+    }
+  },
+  {
+    "facility_id": "CS2",
+    "facility_name": "Bệnh viện Tim Hà Nội - Cơ sở 2",
+    "address": "695 Lạc Long Quân, Tây Hồ, Hà Nội",
+    "area_id": "CS2_DK",
+    "area_name": "Phòng khám đa khoa",
+    "specialty": "Nhi",
+    "room_id": "P402-NHI",
+    "display_name": "PK NHI (P402)",
+    "opens_at": "07:30",
+    "closes_at": "16:30",
+    "weekend_pattern": "Thứ 2-6; cuối tuần nghỉ",
+    "observation_period": "06-10/07/2026; 13-19/07/2026",
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "01_Co_so_Phong_kham"
+    }
+  },
+  {
+    "facility_id": "CS2",
+    "facility_name": "Bệnh viện Tim Hà Nội - Cơ sở 2",
+    "address": "695 Lạc Long Quân, Tây Hồ, Hà Nội",
+    "area_id": "CS2_DK",
+    "area_name": "Phòng khám đa khoa",
+    "specialty": "Da liễu",
+    "room_id": "P403-DL",
+    "display_name": "DA LIỄU (P403)",
+    "opens_at": "07:30",
+    "closes_at": "16:30",
+    "weekend_pattern": "Thứ 2-6; cuối tuần nghỉ",
+    "observation_period": "06-10/07/2026; 13-19/07/2026",
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "01_Co_so_Phong_kham"
+    }
+  },
+  {
+    "facility_id": "CS2",
+    "facility_name": "Bệnh viện Tim Hà Nội - Cơ sở 2",
+    "address": "695 Lạc Long Quân, Tây Hồ, Hà Nội",
+    "area_id": "CS2_DK",
+    "area_name": "Phòng khám đa khoa",
+    "specialty": "Sản-Phụ khoa",
+    "room_id": "P403-SPK",
+    "display_name": "Sản-Phụ khoa (P403)",
+    "opens_at": "07:30",
+    "closes_at": "16:30",
+    "weekend_pattern": "Chủ yếu buổi sáng; buổi chiều nghỉ; cuối tuần nghỉ",
+    "observation_period": "06-10/07/2026; 13-19/07/2026",
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "01_Co_so_Phong_kham"
+    }
+  },
+  {
+    "facility_id": "CS2",
+    "facility_name": "Bệnh viện Tim Hà Nội - Cơ sở 2",
+    "address": "695 Lạc Long Quân, Tây Hồ, Hà Nội",
+    "area_id": "CS2_DK",
+    "area_name": "Phòng khám đa khoa",
+    "specialty": "Y học cổ truyền",
+    "room_id": "P404-YHCT",
+    "display_name": "YHCT (P404)",
+    "opens_at": "07:30",
+    "closes_at": "16:30",
+    "weekend_pattern": "Thứ 2-6; cuối tuần nghỉ",
+    "observation_period": "06-10/07/2026; 13-19/07/2026",
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "01_Co_so_Phong_kham"
+    }
+  },
+  {
+    "facility_id": "CS2",
+    "facility_name": "Bệnh viện Tim Hà Nội - Cơ sở 2",
+    "address": "695 Lạc Long Quân, Tây Hồ, Hà Nội",
+    "area_id": "CS2_DK",
+    "area_name": "Phòng khám đa khoa",
+    "specialty": "Nội chung - Hô hấp",
+    "room_id": "P405A-HH",
+    "display_name": "Nội chung - Hô hấp (P405.A)",
+    "opens_at": "07:30",
+    "closes_at": "16:30",
+    "weekend_pattern": "Theo tuần; có thể nghỉ Thứ 6; cuối tuần nghỉ",
+    "observation_period": "06-10/07/2026; 13-19/07/2026",
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "01_Co_so_Phong_kham"
+    }
+  },
+  {
+    "facility_id": "CS2",
+    "facility_name": "Bệnh viện Tim Hà Nội - Cơ sở 2",
+    "address": "695 Lạc Long Quân, Tây Hồ, Hà Nội",
+    "area_id": "CS2_DK",
+    "area_name": "Phòng khám đa khoa",
+    "specialty": "Nội chung - Cơ xương khớp",
+    "room_id": "P405B-CXK",
+    "display_name": "Nội chung - CXK (P405.B)",
+    "opens_at": "07:30",
+    "closes_at": "16:30",
+    "weekend_pattern": "Thứ 2-6; cuối tuần nghỉ",
+    "observation_period": "06-10/07/2026; 13-19/07/2026",
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "01_Co_so_Phong_kham"
+    }
+  },
+  {
+    "facility_id": "CS2",
+    "facility_name": "Bệnh viện Tim Hà Nội - Cơ sở 2",
+    "address": "695 Lạc Long Quân, Tây Hồ, Hà Nội",
+    "area_id": "CS2_DK",
+    "area_name": "Phòng khám đa khoa",
+    "specialty": "Nội tiết/Nội tim mạch - chưa xác định",
+    "room_id": "P405C-NTMNT",
+    "display_name": "PK NTM - NT (P405.C)",
+    "opens_at": "07:30",
+    "closes_at": "16:30",
+    "weekend_pattern": "Thứ 2-6; hiển thị nguồn lực 'BS TMCH'; cuối tuần nghỉ",
+    "observation_period": "06-10/07/2026; 13-19/07/2026",
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "01_Co_so_Phong_kham"
+    }
+  },
+  {
+    "facility_id": "CS2",
+    "facility_name": "Bệnh viện Tim Hà Nội - Cơ sở 2",
+    "address": "695 Lạc Long Quân, Tây Hồ, Hà Nội",
+    "area_id": "CS2_DK",
+    "area_name": "Phòng khám đa khoa",
+    "specialty": "Mắt",
+    "room_id": "P405D-MAT",
+    "display_name": "MẮT (P405.D)",
+    "opens_at": "07:30",
+    "closes_at": "16:30",
+    "weekend_pattern": "Thứ 2-6; cuối tuần nghỉ",
+    "observation_period": "06-10/07/2026; 13-19/07/2026",
+    "source_confidence": "OBSERVED",
+    "source": {
+      "workbook": "so_hoa_lich_benh_vien_tim_ha_noi_so_bo.xlsx",
+      "sheet": "01_Co_so_Phong_kham"
+    }
+  }
+]

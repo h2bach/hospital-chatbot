@@ -3,22 +3,12 @@ package agent
 import (
 	"agent/internal/domain"
 	"fmt"
-	"strings"
 
 	mcp_sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
 func normalizeAccessRole(value string) domain.AccessRole {
-	switch domain.AccessRole(strings.ToUpper(strings.TrimSpace(value))) {
-	case domain.PatientAccessRole:
-		return domain.PatientAccessRole
-	case domain.DoctorAccessRole:
-		return domain.DoctorAccessRole
-	case domain.AdminAccessRole:
-		return domain.AdminAccessRole
-	default:
-		return domain.GuestAccessRole
-	}
+	return domain.GuestAccessRole
 }
 
 // NormalizeRole is used by the HTTP boundary before a request reaches the agent.
@@ -36,37 +26,19 @@ func toolsForRole(all []mcp_sdk.Tool, role domain.AccessRole) []mcp_sdk.Tool {
 }
 
 func roleToolNames(role domain.AccessRole) map[string]bool {
-	guest := map[string]bool{
-		"checkTime": true, "createPlan": true, "mockInfoHealth": true,
-		"searchInfo": true, "searchHospitalKnowledge": true, "getHospitalInfo": true,
-		"getHospitalHours": true, "getEmergencyInfo": true, "listDoctors": true,
-		"getDoctorSchedules": true, "listDepartments": true, "listMedicalServices": true,
-		"getMedicalService": true, "getServicePrices": true, "getBookingLinks": true,
-		"findAvailableSlots": true,
+	// Tất cả công cụ đều chỉ đọc dữ liệu công khai; không có hồ sơ người bệnh
+	// hay thao tác tạo/hủy lịch, nên mọi vai trò dùng cùng một tập công cụ.
+	public := map[string]bool{}
+	for _, name := range []string{
+		"checkTime", "hospitalInfoHealth", "getHospitalDatasetMeta",
+		"searchHospitalDirectory", "listHospitalFacilities", "getHospitalOrganization",
+		"listHospitalRooms", "searchHanoiHeartDoctors", "getHanoiHeartDoctor",
+		"listCurrentDoctorSchedule", "getDoctorAvailability", "getSchedulingRules",
+		"getObservedAssignmentPatterns", "getScheduleDataDictionary", "getScheduleSourceRegistry",
+	} {
+		public[name] = true
 	}
-	if role == domain.GuestAccessRole {
-		return guest
-	}
-	if role == domain.PatientAccessRole {
-		for name := range map[string]bool{"verifyPatient": true, "createAppointment": true, "cancelAppointment": true} {
-			guest[name] = true
-		}
-		return guest
-	}
-	if role == domain.DoctorAccessRole {
-		for name := range map[string]bool{"listInfoCollections": true, "listInfoRecords": true, "getInfoRecord": true} {
-			guest[name] = true
-		}
-		return guest
-	}
-	if role != domain.AdminAccessRole {
-		return guest
-	}
-	all := map[string]bool{}
-	for _, name := range []string{"checkTime", "createPlan", "mockInfoHealth", "listInfoCollections", "listInfoRecords", "getInfoRecord", "createInfoRecord", "updateInfoRecord", "deleteInfoRecord", "searchInfo", "findAvailableSlots", "createAppointment", "cancelAppointment", "verifyPatient", "searchHospitalKnowledge", "getHospitalInfo", "getHospitalHours", "getEmergencyInfo", "listDoctors", "getDoctorSchedules", "listDepartments", "listMedicalServices", "getMedicalService", "getServicePrices", "getBookingLinks"} {
-		all[name] = true
-	}
-	return all
+	return public
 }
 
 func ensureToolAllowed(role domain.AccessRole, toolName string) error {
