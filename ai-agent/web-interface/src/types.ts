@@ -8,6 +8,13 @@ export interface ChatMessage {
   role: MessageRole
   content: string
   delivery?: DeliveryState
+  images?: ChatImage[]
+}
+
+export interface ChatImage {
+  mimeType: "image/jpeg" | "image/png"
+  data: string
+  name?: string
 }
 
 export interface ChatSession {
@@ -25,4 +32,3 @@ export interface SessionSummary {
 }
 
 export type ServerStatus = "checking" | "online" | "offline"
-

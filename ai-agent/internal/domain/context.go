@@ -16,6 +16,12 @@ const (
 type Message struct {
 	Role    Role
 	Content string
+	Images  []Image
+}
+
+type Image struct {
+	MIMEType string `json:"mime_type,omitempty"`
+	Data     []byte `json:"data,omitempty"`
 }
 
 type Context struct {

@@ -9,7 +9,7 @@ import {
   UserRound,
   Volume2,
 } from "lucide-react"
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import type { ChatMessage, MessageRole } from "../types"
@@ -83,6 +83,7 @@ function MessageItem({ message }: { message: ChatMessage }) {
   const { label, Icon } = roleDetails(message.role)
   const roleClass = message.role.toLowerCase()
   const canSpeak = message.role === "Assistant" && "speechSynthesis" in window
+  const [preview, setPreview] = useState<string | null>(null)
 
   return (
     <article className={`message message-${roleClass}`}>
@@ -106,6 +107,18 @@ function MessageItem({ message }: { message: ChatMessage }) {
           ) : null}
         </div>
         <div className="message-content">
+          {message.images?.length ? (
+            <div className="message-images" aria-label="Hình ảnh đính kèm">
+              {message.images.map((image, index) => {
+                const source = `data:${image.mimeType};base64,${image.data}`
+                return (
+                  <button type="button" className="message-image-button" key={`${image.mimeType}-${index}`} onClick={() => setPreview(source)}>
+                    <img src={source} alt="Hình ảnh đính kèm" />
+                  </button>
+                )
+              })}
+            </div>
+          ) : null}
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
             components={{
@@ -120,6 +133,12 @@ function MessageItem({ message }: { message: ChatMessage }) {
           </ReactMarkdown>
         </div>
       </div>
+      {preview ? (
+        <div className="image-lightbox" role="dialog" aria-label="Xem hình ảnh" onClick={() => setPreview(null)}>
+          <button type="button" className="image-lightbox-close" aria-label="Đóng hình ảnh" onClick={() => setPreview(null)}>×</button>
+          <img src={preview} alt="Hình ảnh đính kèm phóng to" onClick={(event) => event.stopPropagation()} />
+        </div>
+      ) : null}
     </article>
   )
 }

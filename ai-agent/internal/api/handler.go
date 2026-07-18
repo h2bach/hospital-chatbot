@@ -10,6 +10,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 )
 
 func readJSON(w http.ResponseWriter, r *http.Request, v any) bool {
@@ -69,6 +70,11 @@ func (svr *Server) PostMessage(w http.ResponseWriter, r *http.Request) {
 	if !readJSON(w, r, &req) {
 		return
 	}
+	images, err := req.DomainImages()
+	if err != nil {
+		writeJSON(w, dto.NewErrorResponse(err.Error()), http.StatusBadRequest)
+		return
+	}
 
 	session, err := svr.sessionStore.GetByID(sessionID)
 	if err != nil {
@@ -96,10 +102,14 @@ func (svr *Server) PostMessage(w http.ResponseWriter, r *http.Request) {
 		session.Context.UserRole = string(session.Context.Role)
 	}
 
-	agentResponse, err := svr.agent.Call(r.Context(), req.Message, &session.Context)
+	agentResponse, err := svr.agent.CallWithImages(r.Context(), req.Message, images, &session.Context)
 	if err != nil {
 		log.Printf("agent request failed session=%s role=%s: %v", sessionID, session.Context.Role, err)
-		writeJSON(w, dto.NewErrorResponse("Trợ lý chưa thể xử lý yêu cầu này. Vui lòng thử lại."), http.StatusInternalServerError)
+		message := "Trợ lý chưa thể xử lý yêu cầu này. Vui lòng thử lại."
+		if len(images) > 0 && strings.Contains(err.Error(), "FPT_VLM_MODEL") {
+			message = "Chưa cấu hình FPT VLM. Hãy đặt FPT_VLM_MODEL bằng tên một model hỗ trợ hình ảnh trong FPT AI Marketplace."
+		}
+		writeJSON(w, dto.NewErrorResponse(message), http.StatusInternalServerError)
 		return
 	}
 	err = svr.sessionStore.Save(session)

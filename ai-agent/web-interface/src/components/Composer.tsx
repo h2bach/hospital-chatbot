@@ -2,6 +2,7 @@ import {
   ArrowUp,
   LoaderCircle,
   Mic,
+  Paperclip,
   RefreshCw,
   ShieldCheck,
   Square,
@@ -46,13 +47,15 @@ async function convertToWav(audio: Blob): Promise<Blob> {
     await context.close()
   }
 }
+import type { ClipboardEvent } from "react"
+import type { ChatImage } from "../types"
 
 interface ComposerProps {
   value: string
   sending: boolean
   error: string | null
   onChange: (value: string) => void
-  onSend: (value: string) => void
+	onSend: (value: string, images: ChatImage[]) => void
   onReload: () => void
 }
 
@@ -73,6 +76,10 @@ export function Composer({
   const [recordingSeconds, setRecordingSeconds] = useState(0)
   const [voiceError, setVoiceError] = useState<string | null>(null)
   const recordingStartedAtRef = useRef<number | null>(null)
+  const [images, setImages] = useState<ChatImage[]>([])
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const allowedTypes = ["image/jpeg", "image/png"] as const
 
   useEffect(() => {
     const textarea = textareaRef.current
@@ -108,7 +115,37 @@ export function Composer({
     const message = value.trim()
     if (!message || sending) return
     recorderRef.current?.stop()
-    onSend(message)
+    onSend(message, images)
+    setImages([])
+  }
+
+  function addImages(files: ArrayLike<File> | null) {
+    if (!files) return
+    const candidates = Array.from(files).slice(0, 2 - images.length)
+    void Promise.all(candidates.map((file) => new Promise<ChatImage | null>((resolve) => {
+      if (!allowedTypes.includes(file.type as (typeof allowedTypes)[number]) || file.size > 10 * 1024 * 1024) {
+        resolve(null)
+        return
+      }
+      const reader = new FileReader()
+      reader.onload = () => resolve({
+        mimeType: file.type as ChatImage["mimeType"],
+        data: String(reader.result).split(",", 2)[1] ?? "",
+        name: file.name,
+      })
+      reader.onerror = () => resolve(null)
+      reader.readAsDataURL(file)
+    }))).then((loaded) => setImages((current) => [...current, ...loaded.filter((item): item is ChatImage => item !== null)]))
+  }
+
+  function handlePaste(event: ClipboardEvent<HTMLTextAreaElement>) {
+    const pastedImages = Array.from(event.clipboardData.items)
+      .filter((item) => item.kind === "file" && item.type.startsWith("image/"))
+      .map((item) => item.getAsFile())
+      .filter((file): file is File => file !== null)
+    if (pastedImages.length === 0) return
+    event.preventDefault()
+    addImages(pastedImages)
   }
 
   async function toggleVoiceInput() {
@@ -188,6 +225,7 @@ export function Composer({
           placeholder="Nhập câu hỏi về đặt lịch, BHYT, quy trình khám…"
           aria-describedby="composer-help composer-privacy"
           onChange={(event) => onChange(event.target.value)}
+          onPaste={handlePaste}
           onBlur={() => window.scrollTo(0, 0)}
           onKeyDown={(event) => {
             if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
@@ -197,6 +235,27 @@ export function Composer({
           }}
         />
         <div className="composer-actions">
+          <input
+            ref={fileInputRef}
+            className="sr-only"
+            type="file"
+            accept="image/jpeg,image/png"
+            multiple
+            onChange={(event) => {
+              addImages(event.target.files)
+              event.currentTarget.value = ""
+            }}
+          />
+          <button
+            type="button"
+            className="voice-button"
+            aria-label="Đính kèm hình ảnh"
+            title="Đính kèm hình ảnh (JPEG, PNG)"
+            disabled={sending || images.length >= 2}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <Paperclip aria-hidden="true" />
+          </button>
           {speechSupported ? (
             <button
               type="button"
@@ -225,6 +284,15 @@ export function Composer({
           </button>
         </div>
       </div>
+      {images.length > 0 ? (
+        <div className="composer-help" role="status">
+          {images.map((image, index) => (
+            <button key={`${image.name}-${index}`} type="button" className="text-button" onClick={() => setImages((current) => current.filter((_, itemIndex) => itemIndex !== index))}>
+              {image.name} ×
+            </button>
+          ))}
+        </div>
+      ) : null}
       {listening ? (
         <div className="voice-status voice-status-recording" role="status">
           <span className="recording-dot" aria-hidden="true" />

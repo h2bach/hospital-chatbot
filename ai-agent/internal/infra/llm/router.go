@@ -2,6 +2,7 @@ package llm
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"sync/atomic"
@@ -33,7 +34,7 @@ func (r *Router) Chat(ctx context.Context, context domain.Context) (*agent.LLMOu
 			start = active - 1
 		}
 	}
-	var lastErr error
+	providerErrors := make([]error, 0, len(r.providers))
 	for offset := range r.providers {
 		index := (start + uint64(offset)) % uint64(len(r.providers))
 		output, err := r.providers[index].Chat(ctx, context)
@@ -41,9 +42,9 @@ func (r *Router) Chat(ctx context.Context, context domain.Context) (*agent.LLMOu
 			r.active.Store(index + 1)
 			return output, nil
 		}
-		lastErr = err
+		providerErrors = append(providerErrors, err)
 	}
-	return nil, fmt.Errorf("all LLM providers failed: %w", lastErr)
+	return nil, fmt.Errorf("all LLM providers failed: %w", errors.Join(providerErrors...))
 }
 
 func configuredProviders(value string) []string {
