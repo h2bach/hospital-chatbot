@@ -43,3 +43,7 @@ htmlcov/
 
 #AI
 opencode.json
+
+# Ingested runtime data (Chroma / BM25 / SQLite + source markdown)
+data/
+ai-service/data/

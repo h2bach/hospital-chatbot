@@ -1,16 +1,19 @@
 """
-Main graph module - orchestration layer.
+Retrieval graph module.
+
+Exposes the retrieval-only RAG graph and its state.
 """
 
-from .main_state import MainState, build_planner_view
-from .schemas import Task, PlannerOutput, BranchResult, BranchError, DataType
+from app.services.rag.graph.retrieval_graph import build_retrieval_graph
+from app.services.rag.graph.state import (
+    RetrievalState,
+    RetrievedItem,
+    WorkerResult,
+)
 
 __all__ = [
-    "MainState",
-    "build_planner_view",
-    "Task",
-    "PlannerOutput",
-    "BranchResult",
-    "BranchError",
-    "DataType",
+    "build_retrieval_graph",
+    "RetrievalState",
+    "RetrievedItem",
+    "WorkerResult",
 ]

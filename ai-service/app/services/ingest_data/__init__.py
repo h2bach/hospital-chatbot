@@ -6,7 +6,9 @@ Contains all logic for data ingestion and management:
 - Update: Data synchronization and updates
 """
 
-from app.services.ingest_data.ingest.service import IngestService
-from app.services.ingest_data.update.service import UpdateService
+from app.services.ingest_data.ingest.service import (
+    DefaultIngestService,
+    IngestService,
+)
 
-__all__ = ["IngestService", "UpdateService"]
+__all__ = ["DefaultIngestService", "IngestService"]

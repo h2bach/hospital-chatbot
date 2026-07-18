@@ -46,6 +46,17 @@ class AgentService(ABC):
         """
         ...
 
+    async def retrieve(
+        self, query: str, top_k: int | None = None, **kwargs: Any
+    ) -> dict:
+        """
+        Retrieve relevant context for a query (retrieval-only services).
+
+        Default implementation delegates to invoke(); retrieval services
+        override this to return contexts + citations + timings.
+        """
+        return await self.invoke(query, top_k=top_k, **kwargs)
+
     @abstractmethod
     async def stream(self, message: str, **kwargs: Any) -> AsyncIterator[str]:
         """

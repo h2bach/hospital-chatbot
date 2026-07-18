@@ -16,6 +16,7 @@ Design Principles:
 """
 
 import logging
+import threading
 from abc import ABC, abstractmethod
 from typing import Any, Literal
 from dataclasses import dataclass
@@ -104,16 +105,17 @@ class LLMProviderFactory(ABC):
 
 class OllamaProviderFactory(LLMProviderFactory):
     """Factory for Ollama provider."""
-    
-    def create_llm(self, model_name: str) -> Any:
+
+    def create_llm(self, model_name: str, **kwargs) -> Any:
         return ChatOllama(
             base_url=self.settings.ollama_base_url,
             model=model_name or self.settings.ollama_model,
             temperature=self.settings.llm_temperature,
             num_predict=self.settings.llm_max_tokens,
             timeout=self.settings.llm_timeout,
+            keep_alive=kwargs.get("keep_alive", self.settings.query_transform_keep_alive),
         )
-    
+
     def validate_config(self) -> bool:
         # Ollama doesn't need API key, just check if base_url is set
         return bool(self.settings.ollama_base_url)
@@ -199,12 +201,16 @@ def _build_tier_configs(settings: Settings) -> dict[ModelTier, TierConfig]:
     This is WHERE tier logic is DEFINED.
     Only model names from settings are used, not tier mappings.
     """
+    # Local Ollama model is the always-available fallback (no API key needed).
+    ollama_fallback = ModelSpec("ollama", settings.query_transform_ollama_model)
+
     return {
         "cheap": TierConfig(
             primary=ModelSpec("other", settings.other_model),
             fallbacks=[
                 ModelSpec("other", "gpt-4o-mini"),
                 ModelSpec("google", settings.google_model),
+                ollama_fallback,
             ]
         ),
         "middle": TierConfig(
@@ -212,6 +218,7 @@ def _build_tier_configs(settings: Settings) -> dict[ModelTier, TierConfig]:
             fallbacks=[
                 ModelSpec("other", "gpt-4o-mini"),
                 ModelSpec("google", settings.google_model),
+                ollama_fallback,
             ]
         ),
         "strong": TierConfig(
@@ -219,6 +226,7 @@ def _build_tier_configs(settings: Settings) -> dict[ModelTier, TierConfig]:
             fallbacks=[
                 ModelSpec("other", settings.other_model),
                 ModelSpec("other", "gpt-4o-mini"),
+                ollama_fallback,
             ]
         ),
     }
@@ -229,24 +237,29 @@ def _build_tier_configs(settings: Settings) -> dict[ModelTier, TierConfig]:
 # ============================================================================
 
 class LLMCache:
-    """Singleton cache for LLM instances per tier."""
-    
+    """Thread-safe singleton cache for LLM instances per tier."""
+
     def __init__(self):
         # Cache structure: {tier: (ModelSpec, LLM instance)}
         self._cache: dict[ModelTier, tuple[ModelSpec, Any]] = {}
-    
+        self._lock = threading.Lock()
+
     def get(self, tier: ModelTier) -> tuple[ModelSpec, Any] | None:
-        """Get cached LLM for tier."""
+        """Get cached LLM for tier (lock-free read after first write)."""
         return self._cache.get(tier)
-    
+
     def set(self, tier: ModelTier, model_spec: ModelSpec, llm: Any) -> None:
-        """Cache LLM instance for tier."""
-        self._cache[tier] = (model_spec, llm)
-        logger.info(f"Cached {model_spec} for tier '{tier}'")
-    
+        """Cache LLM instance for tier (thread-safe write)."""
+        with self._lock:
+            # Double-checked: another thread may have written between our read and this write
+            if tier not in self._cache:
+                self._cache[tier] = (model_spec, llm)
+                logger.info(f"Cached {model_spec} for tier '{tier}'")
+
     def clear(self) -> None:
         """Clear all cache."""
-        self._cache.clear()
+        with self._lock:
+            self._cache.clear()
         logger.info("LLM cache cleared")
 
 
@@ -345,7 +358,6 @@ def create_llm(
             
             # Create LLM instance
             llm = factory.create_llm(model_spec.model_name)
-            
             # Log success
             if not is_primary:
                 logger.warning(f"{log_prefix} SUCCESS: Using {model_spec}")
@@ -440,3 +452,86 @@ def get_all_tiers_info(settings: Settings) -> dict[ModelTier, dict]:
         tier: get_tier_info(settings, tier)
         for tier in ["cheap", "middle", "strong"]
     }
+
+
+# ============================================================================
+# Dedicated factory for QueryTransform node
+# ============================================================================
+
+def create_query_transform_llm(settings: Settings) -> Any:
+    """
+    Create the LLM used exclusively by the QueryTransform node.
+
+    Key differences from generic create_llm():
+    - num_predict capped at query_transform_max_tokens (default 150) — sub-queries
+      are short; cutting this from 2048 reduces LLM latency by ~40-60%.
+    - temperature=0 — deterministic output, no sampling overhead.
+    - keep_alive=query_transform_keep_alive — keeps qwen resident in Ollama VRAM
+      between requests, avoiding the 2-4s cold-reload penalty.
+    - Tries cloud providers first (if configured), falls back to local Ollama.
+
+    Returns a cached singleton — safe to call multiple times.
+    """
+    _TIER = "cheap"
+
+    # Return from cache if already created (double-check with lock in LLMCache.set)
+    cached = _llm_cache.get(_TIER)
+    if cached:
+        return cached[1]
+
+    ollama_model = settings.query_transform_ollama_model
+    max_tokens   = settings.query_transform_max_tokens
+    keep_alive   = settings.query_transform_keep_alive
+
+    # Build candidate list: cloud providers (if keys present) → local Ollama fallback.
+    candidates: list[tuple[str, Any]] = []
+
+    if settings.other_api_key:
+        try:
+            llm = ChatOpenAI(
+                model=settings.other_model,
+                api_key=settings.other_api_key,
+                base_url=settings.other_base_url,
+                temperature=0,
+                max_tokens=max_tokens,
+                timeout=settings.llm_timeout,
+            )
+            candidates.append(("other", llm))
+        except Exception:
+            pass
+
+    if settings.google_api_key:
+        try:
+            llm = ChatGoogleGenerativeAI(
+                model=settings.google_model,
+                google_api_key=settings.google_api_key,
+                temperature=0,
+                max_output_tokens=max_tokens,
+                timeout=settings.llm_timeout,
+            )
+            candidates.append(("google", llm))
+        except Exception:
+            pass
+
+    # Always add local Ollama as the guaranteed fallback.
+    candidates.append(
+        (
+            f"ollama:{ollama_model}",
+            ChatOllama(
+                base_url=settings.ollama_base_url,
+                model=ollama_model,
+                temperature=0,
+                num_predict=max_tokens,
+                timeout=settings.llm_timeout,
+                keep_alive=keep_alive,
+            ),
+        )
+    )
+
+    # Use the first candidate (cloud preferred, Ollama always last).
+    provider_name, llm = candidates[0]
+    spec = ModelSpec(provider_name.split(":")[0], provider_name)
+    _llm_cache.set(_TIER, spec, llm)
+    logger.info("QueryTransform LLM ready: %s (num_predict=%d, keep_alive=%s)",
+                provider_name, max_tokens, keep_alive)
+    return llm

@@ -12,22 +12,22 @@ class RetrieveRequest(BaseModel):
         min_length=1,
         max_length=10_000,
         description="Query string to retrieve relevant context",
-        examples=["What is the company policy on remote work?"],
-    )
-    data_type: str = Field(
-        ...,
-        description="Type of data to query (e.g., 'document', 'policy', 'faq', 'code')",
-        examples=["document"],
+        examples=["Quy trình đón tiếp bệnh nhân ngoại trú như thế nào?"],
     )
     top_k: int | None = Field(
-        default=5,
+        default=None,
         ge=1,
         le=50,
-        description="Number of top results to return",
+        description="Number of final context items to return (defaults to server config)",
+    )
+    data_type: str | None = Field(
+        default=None,
+        description="Optional data-type hint (reserved for future filtering)",
+        examples=["document"],
     )
     filters: dict | None = Field(
         default=None,
-        description="Additional filters for retrieval (e.g., date range, category)",
+        description="Additional filters for retrieval (reserved for future use)",
     )
 
 

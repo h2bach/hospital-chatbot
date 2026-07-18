@@ -1,21 +1,18 @@
 """
-RAGService — Retrieval-Augmented Generation Service built with LangGraph.
+RAGService — retrieval-only RAG service (LangGraph).
 
-This is the core RAG service that orchestrates the multi-agent RAG pipeline:
-    - Uses MainState for comprehensive state management
-    - Graph from main_graph.py handles full workflow
-    - Supports iterative planning and parallel execution
+Pipeline (see graph/retrieval_graph.py):
+    query_transform (LLM once) -> parallel hybrid-search workers -> merge
 
-Architecture:
-    START → planner → [router → subgraphs → merge → planner] → synthesizer → END
+invoke() returns retrieved contexts + citations + per-stage timings. This
+service does NOT generate answers; the backend decides whether to call an LLM
+for synthesis.
 
-The graph construction is separated:
-    1. build_rag_graph() — Initialize structure
-    2. compile_rag_graph() — Compile for execution
-
-The invoke() and stream() methods satisfy the AgentService interface,
-so the API layer never needs to change.
+The LLM used by QueryTransform is created ONCE in __init__ and kept as a
+singleton on self.llm — never created inside a request hot-path.
 """
+
+from __future__ import annotations
 
 import logging
 import time
@@ -24,146 +21,149 @@ from typing import Any, AsyncIterator
 
 from app.config import Settings
 from app.services.base import AgentService
-from app.services.rag.llm_factory import create_llm
-from app.services.rag.graph.main_graph import (
-    build_rag_graph,
-    compile_rag_graph,
-)
-from app.services.rag.graph.main_state import MainState
+from app.services.rag.graph.retrieval_graph import build_retrieval_graph
+from app.services.rag.graph.state import RetrievalState
+from app.services.rag.llm_factory import create_query_transform_llm
 
 logger = logging.getLogger(__name__)
 
 
+def build_citation(metadata: dict[str, Any]) -> dict[str, Any]:
+    """Build a structured citation from chunk metadata (no LLM)."""
+    heading_path = metadata.get("heading_path") or []
+    if isinstance(heading_path, str):
+        heading_path = [p.strip() for p in heading_path.split(">") if p.strip()]
+    return {
+        "document": metadata.get("document_name") or metadata.get("document_id"),
+        "source_file": metadata.get("source_file"),
+        "heading_path": heading_path,
+        "line_start": metadata.get("line_start"),
+        "line_end": metadata.get("line_end"),
+        "page_start": metadata.get("page_start"),
+        "page_end": metadata.get("page_end"),
+        "version": metadata.get("version"),
+    }
+
+
 class RAGService(AgentService):
-    """
-    RAG Service — LangGraph multi-agent implementation for RAG.
-
-    Current graph::
-
-        START → planner → [router → subgraphs → merge → planner] → synthesizer → END
-
-    Graph construction is separated into:
-        1. build_rag_graph() — Initialize structure (nodes + edges)
-        2. compile_rag_graph() — Compile for execution
-    
-    Uses MainState (Pydantic) for comprehensive state management across all nodes.
-    LLM is created via tier-based create_llm() factory with automatic fallback.
-    """
+    """Retrieval-only RAG service."""
 
     def __init__(self, settings: Settings) -> None:
         super().__init__(settings)
-        # Build and compile graph using separated logic
-        graph_builder = build_rag_graph(settings)
-        self.graph = compile_rag_graph(graph_builder)
-        logger.info("RAGService initialized with main graph")
 
-    # ── AgentService Interface ───────────────────────────────────────
+        # B3: LLM singleton — created ONCE here, reused by every request.
+        # Never created inside a node or request handler.
+        self.llm = create_query_transform_llm(settings)
 
-    async def invoke(self, message: str, **kwargs: Any) -> dict:
+        # Graph compiled once at construction; passed self.llm so nodes never
+        # call create_llm() at request time.
+        self.graph = build_retrieval_graph(settings, llm=self.llm)
+        logger.info("RAGService initialized (retrieval-only, LLM pre-loaded)")
+
+    async def warmup(self) -> None:
         """
-        Run the full graph and return the complete result.
-        
-        This method:
-            1. Creates initial MainState with trace_id
-            2. Invokes the compiled graph
-            3. Extracts final_answer from state
-            4. Returns formatted response
-        
-        Args:
-            message: User query string
-            **kwargs: Optional parameters (session_id, max_iterations, etc.)
-            
-        Returns:
-            dict with: answer, trace_id, iterations, latency_ms
+        Warm every hot path before the server accepts traffic:
+
+          1. Direct LLM inference — forces qwen2.5 to load into Ollama VRAM
+             (keep_alive starts counting). MUST bypass the heuristic-skip in
+             query_transform, otherwise a short warmup query would skip the LLM
+             and leave the model cold for the first real complex query.
+          2. Full graph ainvoke with a DECOMPOSABLE query — JIT-warms LangGraph
+             routing, the Send fan-out, and the search/embedding path.
+        """
+        # 1. Force real LLM load (cannot be skipped by heuristics).
+        try:
+            t = time.perf_counter()
+            await self.llm.ainvoke("ping")
+            logger.info(
+                "LLM warmup (model loaded) in %.0fms",
+                (time.perf_counter() - t) * 1000,
+            )
+        except Exception as exc:
+            logger.warning("LLM warmup failed (non-fatal): %s", exc)
+
+        # 2. Full pipeline warm with a query that triggers decomposition
+        #    (>8 words + conjunction) so both LLM and search paths are exercised.
+        try:
+            await self.graph.ainvoke(
+                RetrievalState(
+                    query="khởi động hệ thống và làm nóng đường dẫn tìm kiếm truy vấn",
+                    trace_id="warmup",
+                    top_k=1,
+                )
+            )
+            logger.info("RAGService warmup complete")
+        except Exception as exc:
+            logger.warning("RAGService warmup failed (non-fatal): %s", exc)
+
+    async def retrieve(
+        self, query: str, top_k: int | None = None, **kwargs: Any
+    ) -> dict:
+        """
+        Run the retrieval pipeline and return contexts + citations + timings.
         """
         start = time.perf_counter()
-        trace_id = str(uuid.uuid4())
+        trace_id = kwargs.get("trace_id") or str(uuid.uuid4())
+
+        initial = RetrievalState(
+            query=query,
+            trace_id=trace_id,
+            top_k=top_k or self.settings.retrieval_final_top_k,
+        )
+
+        result = await self.graph.ainvoke(initial)
+
+        contexts = result["contexts"] if isinstance(result, dict) else result.contexts
+        sub_queries = (
+            result["sub_queries"] if isinstance(result, dict) else result.sub_queries
+        )
+        timings = result["timings_ms"] if isinstance(result, dict) else result.timings_ms
+
+        latency_ms = (time.perf_counter() - start) * 1000
+        timings = {**timings, "total": round(latency_ms, 1)}
+
+        contexts_out = []
+        citations_out = []
+        for item in contexts:
+            meta = item.metadata if hasattr(item, "metadata") else item["metadata"]
+            text = item.text if hasattr(item, "text") else item["text"]
+            score = item.score if hasattr(item, "score") else item["score"]
+            chunk_id = item.chunk_id if hasattr(item, "chunk_id") else item["chunk_id"]
+            contexts_out.append(
+                {"chunk_id": chunk_id, "text": text, "score": score, "metadata": meta}
+            )
+            citations_out.append(
+                {"chunk_id": chunk_id, "score": score, **build_citation(meta)}
+            )
 
         logger.info(
-            "Agent invoke started",
+            "retrieve completed",
             extra={
                 "trace_id": trace_id,
-                "message_length": len(message),
+                "results": len(contexts_out),
+                "latency_ms": f"{latency_ms:.1f}",
             },
         )
 
-        try:
-            # Build initial MainState
-            initial_state = MainState(
-                trace_id=trace_id,
-                session_id=kwargs.get("session_id"),
-                query=message,
-                max_iterations=kwargs.get("max_iterations", 5),
-            )
+        return {
+            "query": query,
+            "sub_queries": sub_queries,
+            "contexts": contexts_out,
+            "citations": citations_out,
+            "total_results": len(contexts_out),
+            "timings_ms": timings,
+            "trace_id": trace_id,
+            "latency_ms": round(latency_ms, 1),
+        }
 
-            # Invoke the graph
-            result = await self.graph.ainvoke(initial_state)
-            
-            latency_ms = (time.perf_counter() - start) * 1000
-
-            logger.info(
-                "Agent invoke completed",
-                extra={
-                    "trace_id": trace_id,
-                    "latency_ms": f"{latency_ms:.1f}",
-                    "iterations": result.iteration,
-                    "result_count": len(result.branch_results),
-                },
-            )
-
-            return {
-                "answer": result.final_answer,
-                "trace_id": trace_id,
-                "iterations": result.iteration,
-                "result_count": len(result.branch_results),
-                "error_count": len(result.errors),
-                "latency_ms": round(latency_ms, 1),
-            }
-
-        except Exception as exc:
-            latency_ms = (time.perf_counter() - start) * 1000
-            logger.error(
-                "Agent invoke failed",
-                extra={
-                    "trace_id": trace_id,
-                    "latency_ms": f"{latency_ms:.1f}",
-                    "error": str(exc),
-                },
-            )
-            raise
+    async def invoke(self, message: str, **kwargs: Any) -> dict:
+        return await self.retrieve(message, **kwargs)
 
     async def stream(self, message: str, **kwargs: Any) -> AsyncIterator[str]:
-        """
-        Stream tokens directly from the LLM.
-        
-        Note: This bypasses the full graph for simple streaming use cases.
-        For full RAG pipeline, use invoke() instead.
-        
-        This is kept for backward compatibility and simple chat scenarios.
-        
-        Args:
-            message: User query string
-            **kwargs: Optional parameters
-            
-        Yields:
-            str: Token chunks from LLM
-        """
-        start = time.perf_counter()
+        result = await self.retrieve(message, **kwargs)
+        for ctx in result["contexts"]:
+            yield ctx["text"] + "\n\n"
 
-        logger.info(
-            "Agent stream started",
-            extra={"message_length": len(message)},
-        )
 
-        # Get LLM instance via tier-based factory (default to middle tier)
-        llm = create_llm(self.settings, tier="middle")
-        
-        async for chunk in llm.astream(message):
-            if chunk.content:
-                yield chunk.content
+__all__ = ["RAGService", "build_citation"]
 
-        latency_ms = (time.perf_counter() - start) * 1000
-        logger.info(
-            "Agent stream completed",
-            extra={"latency_ms": f"{latency_ms:.1f}"},
-        )

@@ -46,9 +46,10 @@ def get_ingest_service() -> IngestService:
 def get_update_service() -> IngestService:
     """
     Singleton update service.
-    
-    Handles data synchronization operations.
-    """
-    from app.services.ingest_data.update import UpdateService
 
-    return UpdateService(get_settings())
+    DefaultIngestService implements both ingest() and update() (create/update
+    re-ingest, delete removes from all stores), so we reuse it here.
+    """
+    from app.services.ingest_data.ingest import DefaultIngestService
+
+    return DefaultIngestService(get_settings())
