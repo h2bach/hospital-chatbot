@@ -155,11 +155,12 @@ export function Sidebar({
                     type="button"
                     className="session-select"
                     aria-current={isActive ? "page" : undefined}
+                    title={title}
                     onClick={() => onSelect(session.id)}
                   >
                     <MessageCircle aria-hidden="true" />
                     <span>
-                      <strong>{title}</strong>
+                      <strong title={title}>{title}</strong>
                       <small>Hỗ trợ thông tin người bệnh</small>
                     </span>
                   </button>
