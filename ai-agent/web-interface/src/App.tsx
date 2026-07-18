@@ -434,7 +434,6 @@ export function App() {
             error={activeError}
             onRetry={() => selectedId && void loadActiveSession(selectedId)}
             onSuggestion={setComposerValue}
-            onEmergency={() => setEmergencyOpen(true)}
           />
         </div>
 

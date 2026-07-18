@@ -154,6 +154,7 @@ export function Composer({
           placeholder="Nhập câu hỏi về đặt lịch, BHYT, quy trình khám…"
           aria-describedby="composer-help composer-privacy"
           onChange={(event) => onChange(event.target.value)}
+          onBlur={() => window.scrollTo(0, 0)}
           onKeyDown={(event) => {
             if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
               event.preventDefault()
