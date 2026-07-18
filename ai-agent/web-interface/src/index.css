@@ -2393,16 +2393,16 @@ button:disabled {
   }
 
   .message-body {
-    max-width: calc(100% - 64px);
+    max-width: calc(100% - 76px);
   }
 
   .message-assistant .message-body {
     width: auto;
-    max-width: calc(100% - 64px);
+    max-width: calc(100% - 76px);
   }
 
   .message-user .message-body {
-    max-width: 85%;
+    max-width: 80%;
   }
 
   .header-logo {
@@ -2441,12 +2441,17 @@ button:disabled {
     padding: 14px 10px 28px;
   }
 
+  .message-body {
+    max-width: calc(100% - 68px);
+  }
+
   .message-assistant .message-body {
-    max-width: calc(100% - 56px);
+    width: auto;
+    max-width: calc(100% - 68px);
   }
 
   .message-user .message-body {
-    max-width: 86%;
+    max-width: 80%;
   }
 
   .composer-wrap {
