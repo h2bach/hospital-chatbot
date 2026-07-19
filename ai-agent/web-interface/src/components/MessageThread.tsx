@@ -13,6 +13,7 @@ import { useEffect, useRef, useState } from "react"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import type { ChatMessage, MessageRole } from "../types"
+import { CitationBadge } from "./CitationBadge"
 
 interface MessageThreadProps {
   sessionId?: string
