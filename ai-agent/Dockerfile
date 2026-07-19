@@ -1,7 +1,7 @@
 FROM node:22-alpine AS web-builder
 WORKDIR /build/web-interface
 COPY web-interface/package.json web-interface/package-lock.json ./
-RUN npm ci
+RUN npm install --no-audit
 COPY web-interface/ ./
 # vite.config.ts: outDir: "../static" → outputs to /build/static
 RUN npm run build
