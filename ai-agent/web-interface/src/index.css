@@ -901,7 +901,7 @@ button:disabled {
   justify-content: center;
   flex-direction: column;
   text-align: center;
-  margin: auto 0;
+  margin: auto;
 }
 
 .scroll-bottom-floating-button {
