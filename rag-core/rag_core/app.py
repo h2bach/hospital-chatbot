@@ -1261,7 +1261,10 @@ def is_price_chunk(chunk: Chunk) -> bool:
 
 
 def is_legal_document_chunk(chunk: Chunk) -> bool:
-    return chunk.content_type == "bhyt_legal_document"
+    if chunk.content_type in {"bhyt_legal_document", "bhyt_policy", "bhyt_update_alert"}:
+        return True
+    text = chunk.content_text
+    return "Nghị quyết" in text or "Thông tư" in text or "Nghị định" in text or "Luật" in text or "Công văn" in text
 
 
 def is_legal_document_query(query: str) -> bool:
@@ -1269,13 +1272,9 @@ def is_legal_document_query(query: str) -> bool:
     if legal_code_token(query):
         return True
     document_cues = (
-        "van ban", "cong van", "thong tu", "nghi dinh", "nghi quyet", "luat",
+        "van ban", "cong van", "thong tu", "nghi dinh", "nghi quyet", "luat", "quyet dinh",
     )
-    temporal_cues = (
-        "ban hanh", "cong bo", "hieu luc", "het hieu luc", "bai bo", "thay the",
-        "co quan ban hanh", "tinh trang phap ly", "trang thai phap ly",
-    )
-    return any(cue in value for cue in document_cues) and any(cue in value for cue in temporal_cues)
+    return any(cue in value for cue in document_cues)
 
 
 def legal_code_token(query: str) -> str:
