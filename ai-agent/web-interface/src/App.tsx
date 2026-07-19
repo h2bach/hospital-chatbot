@@ -258,7 +258,11 @@ export function App() {
     }
     if (skipNextActiveLoad.current === selectedId) {
       skipNextActiveLoad.current = null
-      setActiveSession({ id: selectedId, ownerId: "", title: "", messages: [], tools: [] })
+      setActiveSession((current) =>
+        current && current.id === selectedId
+          ? current
+          : { id: selectedId, ownerId: "", title: "", messages: [], tools: [] },
+      )
       setActiveError(null)
       setLoadingActive(false)
       return
@@ -278,6 +282,7 @@ export function App() {
     // Reuse any existing session without a title / messages
     const emptySession = sessions.find((session) => !session.title.trim())
     if (emptySession) {
+      skipNextActiveLoad.current = emptySession.id
       setSelectedId(emptySession.id)
       setMobileSidebarOpen(false)
       return emptySession.id
