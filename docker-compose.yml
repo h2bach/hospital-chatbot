@@ -1,4 +1,11 @@
 services:
+  rag-core:
+    build:
+      context: .
+      dockerfile: rag-core/Dockerfile
+    ports:
+      - "127.0.0.1:6689:6689"
+
   hospital-info-service:
     build:
       context: ./hospital-info-service
@@ -20,7 +27,7 @@ services:
       hospital-info-service:
         condition: service_healthy
     ports:
-      - "127.0.0.1:8082:8080"
+      - "8082:8080"
 
   ai-agent:
     build:
@@ -31,8 +38,11 @@ services:
       PORT: "8080"
       AGENT_STATIC_DIR: /app/static
       HOSPITAL_INFO_SERVICE_URL: http://hospital-info-service:8080
+      RAG_SERVICE_URL: http://rag-core:6689
     depends_on:
       hospital-info-service:
         condition: service_healthy
+      rag-core:
+        condition: service_started
     ports:
       - "8080:8080"

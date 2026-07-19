@@ -12,15 +12,17 @@ import {
 import { useEffect, useRef, useState } from "react"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
-import type { ChatImage, ChatMessage, MessageRole } from "../types"
+import type { ChatMessage, MessageRole } from "../types"
+import { CitationBadge } from "./CitationBadge"
 
 interface MessageThreadProps {
+  sessionId?: string
   messages: ChatMessage[]
   loading: boolean
   sending: boolean
   error: string | null
   onRetry: () => void
-  onRetryMessage?: (content: string, images: ChatImage[]) => void
+  onRetryMessage?: (content: string) => void
   onSuggestion: (prompt: string) => void
 }
 
@@ -82,10 +84,12 @@ function speakResponse(content: string) {
 
 function MessageItem({
   message,
+  sessionId,
   onRetryMessage,
 }: {
   message: ChatMessage
-  onRetryMessage?: (content: string, images: ChatImage[]) => void
+  sessionId?: string
+  onRetryMessage?: (content: string) => void
 }) {
   const { label, Icon } = roleDetails(message.role)
   const roleClass = message.role.toLowerCase()
@@ -107,7 +111,7 @@ function MessageItem({
                 <button
                   type="button"
                   className="retry-inline-button"
-                  onClick={() => onRetryMessage(message.content, message.images ?? [])}
+                  onClick={() => onRetryMessage(message.content)}
                 >
                   <RefreshCw aria-hidden="true" />
                   Thử lại
@@ -174,6 +178,9 @@ export function MessageThread({
   onSuggestion,
 }: MessageThreadProps) {
   const bottomRef = useRef<HTMLDivElement>(null)
+  const userScrolledUp = useRef(false)
+  const [showScrollBottom, setShowScrollBottom] = useState(false)
+
   const visibleMessages = messages.filter(
     (message) =>
       message.role === "User" ||
@@ -181,17 +188,48 @@ export function MessageThread({
   )
 
   useEffect(() => {
+    const container = bottomRef.current?.closest(".conversation-scroll")
+    if (!container) return
+
+    const handleScroll = () => {
+      const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 120
+      userScrolledUp.current = !isNearBottom
+      setShowScrollBottom(!isNearBottom && visibleMessages.length > 2)
+    }
+
+    container.addEventListener("scroll", handleScroll, { passive: true })
+    return () => container.removeEventListener("scroll", handleScroll)
+  }, [visibleMessages.length])
+
+  useEffect(() => {
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches
     const container = bottomRef.current?.closest(".conversation-scroll")
     if (container) {
-      container.scrollTo({
-        top: container.scrollHeight,
-        behavior: reduceMotion ? "auto" : "smooth",
-      })
+      if (sending) {
+        userScrolledUp.current = false
+      }
+      if (!userScrolledUp.current) {
+        container.scrollTo({
+          top: container.scrollHeight,
+          behavior: reduceMotion ? "auto" : "smooth",
+        })
+      }
     }
   }, [messages, sending])
 
-  if (loading) {
+  const scrollToBottom = () => {
+    const container = bottomRef.current?.closest(".conversation-scroll")
+    if (container) {
+      userScrolledUp.current = false
+      setShowScrollBottom(false)
+      container.scrollTo({
+        top: container.scrollHeight,
+        behavior: "smooth",
+      })
+    }
+  }
+
+  if (loading && visibleMessages.length === 0) {
     return (
       <div className="thread thread-loading" aria-label="Đang tải cuộc trò chuyện">
         <div className="message-skeleton message-skeleton-wide" />
@@ -201,7 +239,7 @@ export function MessageThread({
     )
   }
 
-  if (error) {
+  if (error && visibleMessages.length === 0) {
     return (
       <div className="thread-state" role="alert">
         <span className="state-icon danger">
@@ -293,6 +331,16 @@ export function MessageThread({
         </div>
       ) : null}
       <div ref={bottomRef} />
+      {showScrollBottom && (
+        <button
+          type="button"
+          className="scroll-bottom-floating-button"
+          onClick={scrollToBottom}
+          aria-label="Cuộn xuống tin nhắn mới nhất"
+        >
+          ↓ Tin nhắn mới nhất
+        </button>
+      )}
     </div>
   )
 }

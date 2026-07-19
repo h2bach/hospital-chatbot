@@ -22,6 +22,7 @@ if (-not $ApiKeys -or $ApiKeys -eq "your_actual_gemini_api_key_here") {
 $InfoPort = 8081
 $AgentPort = 8080
 $DashboardPort = 8082
+$RagPort = 6689
 $StaticDir = Join-Path (Get-Location) "ai-agent\static"
 
 if (-not (Test-Path -LiteralPath "hospital-data\current_schedule.json")) {
@@ -127,6 +128,7 @@ $env:GEMINI_API_KEYS = $ApiKeys
 $env:PORT = $AgentPort
 $env:AGENT_STATIC_DIR = $StaticDir
 $env:HOSPITAL_INFO_SERVICE_URL = "http://127.0.0.1:$InfoPort"
+$env:RAG_SERVICE_URL = "http://127.0.0.1:$RagPort"
 
 try {
     Push-Location "ai-agent"

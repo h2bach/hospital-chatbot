@@ -3,7 +3,6 @@ import {
   ArrowUp,
   LoaderCircle,
   Mic,
-  Paperclip,
   RefreshCw,
   ShieldCheck,
   Square,
@@ -49,103 +48,21 @@ async function convertToWav(audio: Blob): Promise<Blob> {
     await context.close()
   }
 }
-import type { ClipboardEvent } from "react"
-import type { ChatImage } from "../types"
 
 interface ComposerProps {
   value: string
-  images: ChatImage[]
   sending: boolean
   error: string | null
   onChange: (value: string) => void
-  onImagesChange: (images: ChatImage[]) => void
-  onSend: (value: string, images: ChatImage[]) => void
+  onSend: (value: string) => void
   onReload: () => void
-}
-
-async function processImageFile(file: File): Promise<ChatImage | null> {
-  return new Promise((resolve) => {
-    const isImage = file.type.startsWith("image/") || file.type === "" || /\.(jpe?g|png|webp|heic|heif)$/i.test(file.name)
-    if (!isImage) {
-      resolve(null)
-      return
-    }
-
-    const reader = new FileReader()
-    reader.onerror = () => resolve(null)
-    reader.onload = (e) => {
-      const result = e.target?.result
-      if (typeof result !== "string") {
-        resolve(null)
-        return
-      }
-
-      const img = new Image()
-      img.onerror = () => {
-        const parts = result.split(",", 2)
-        if (parts.length === 2) {
-          const rawMime = (file.type === "image/png" ? "image/png" : "image/jpeg") as ChatImage["mimeType"]
-          resolve({
-            mimeType: rawMime,
-            data: parts[1],
-            name: file.name,
-          })
-        } else {
-          resolve(null)
-        }
-      }
-
-      img.onload = () => {
-        try {
-          const MAX_SIZE = 1920
-          let width = img.width
-          let height = img.height
-
-          if (width > MAX_SIZE || height > MAX_SIZE) {
-            if (width > height) {
-              height = Math.round((height * MAX_SIZE) / width)
-              width = MAX_SIZE
-            } else {
-              width = Math.round((width * MAX_SIZE) / height)
-              height = MAX_SIZE
-            }
-          }
-
-          const canvas = document.createElement("canvas")
-          canvas.width = width
-          canvas.height = height
-          const ctx = canvas.getContext("2d")
-          if (!ctx) {
-            resolve(null)
-            return
-          }
-
-          ctx.drawImage(img, 0, 0, width, height)
-          const dataUrl = canvas.toDataURL("image/jpeg", 0.85)
-          const base64Data = dataUrl.split(",", 2)[1] ?? ""
-          resolve({
-            mimeType: "image/jpeg",
-            data: base64Data,
-            name: file.name,
-          })
-        } catch {
-          resolve(null)
-        }
-      }
-
-      img.src = result
-    }
-    reader.readAsDataURL(file)
-  })
 }
 
 export function Composer({
   value,
-  images,
   sending,
   error,
   onChange,
-  onImagesChange,
   onSend,
   onReload,
 }: ComposerProps) {
@@ -155,12 +72,8 @@ export function Composer({
   const [speechSupported] = useState(() => typeof MediaRecorder !== "undefined" && Boolean(navigator.mediaDevices?.getUserMedia))
   const [listening, setListening] = useState(false)
   const [transcribing, setTranscribing] = useState(false)
-  const [processingImages, setProcessingImages] = useState(false)
   const [recordingSeconds, setRecordingSeconds] = useState(0)
   const [voiceError, setVoiceError] = useState<string | null>(null)
-  const [imageError, setImageError] = useState<string | null>(null)
-  const recordingStartedAtRef = useRef<number | null>(null)
-  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     const textarea = textareaRef.current
@@ -185,6 +98,8 @@ export function Composer({
     return () => window.clearInterval(timer)
   }, [listening])
 
+  const recordingStartedAtRef = useRef<number | null>(null)
+
   useEffect(
     () => () => {
       recorderRef.current?.stop()
@@ -194,42 +109,9 @@ export function Composer({
 
   function submit() {
     const message = value.trim()
-    if (!message || sending || processingImages) return
+    if (!message || sending) return
     recorderRef.current?.stop()
-    onSend(message, images)
-  }
-
-  async function addImages(files: ArrayLike<File> | null) {
-    if (!files || files.length === 0) return
-    setImageError(null)
-    const availableSlots = 2 - images.length
-    if (availableSlots <= 0) return
-
-    const candidates = Array.from(files).slice(0, availableSlots)
-    setProcessingImages(true)
-    try {
-      const processed = await Promise.all(candidates.map(processImageFile))
-      const valid = processed.filter((item): item is ChatImage => item !== null)
-      if (valid.length === 0) {
-        setImageError("Không thể đọc được tệp hình ảnh. Vui lòng chọn ảnh định dạng JPG, PNG hoặc WEBP.")
-      } else {
-        onImagesChange([...images, ...valid])
-      }
-    } catch {
-      setImageError("Đã xảy ra lỗi khi xử lý hình ảnh.")
-    } finally {
-      setProcessingImages(false)
-    }
-  }
-
-  function handlePaste(event: ClipboardEvent<HTMLTextAreaElement>) {
-    const pastedImages = Array.from(event.clipboardData.items)
-      .filter((item) => item.kind === "file" && item.type.startsWith("image/"))
-      .map((item) => item.getAsFile())
-      .filter((file): file is File => file !== null)
-    if (pastedImages.length === 0) return
-    event.preventDefault()
-    void addImages(pastedImages)
+    onSend(message)
   }
 
   async function toggleVoiceInput() {
@@ -297,43 +179,6 @@ export function Composer({
         </div>
       ) : null}
 
-      {images.length > 0 || processingImages ? (
-        <div className="composer-image-previews" role="region" aria-label="Hình ảnh đã đính kèm">
-          {images.map((image, index) => {
-            const thumbnail = `data:${image.mimeType};base64,${image.data}`
-            return (
-              <div className="composer-image-item" key={`${image.name || "img"}-${index}`}>
-                <img src={thumbnail} alt={image.name || "Đã đính kèm"} />
-                <div className="composer-image-info">
-                  <span className="composer-image-name">{image.name || `Hình ${index + 1}`}</span>
-                  <small className="composer-image-meta">Đã tải lên</small>
-                </div>
-                <button
-                  type="button"
-                  className="composer-image-remove"
-                  aria-label={`Xóa hình ${image.name || index + 1}`}
-                  onClick={() => onImagesChange(images.filter((_, itemIndex) => itemIndex !== index))}
-                >
-                  <X aria-hidden="true" />
-                </button>
-              </div>
-            )
-          })}
-          {processingImages ? (
-            <div className="composer-image-item composer-image-loading">
-              <LoaderCircle className="spin" aria-hidden="true" />
-              <span>Đang xử lý ảnh…</span>
-            </div>
-          ) : null}
-        </div>
-      ) : null}
-
-      {imageError ? (
-        <p className="voice-error" role="status">
-          {imageError}
-        </p>
-      ) : null}
-
       <div className={`composer${listening ? " is-listening" : ""}${transcribing ? " is-transcribing" : ""}`}>
         <label htmlFor="message-composer" className="sr-only">
           Câu hỏi gửi tới Trợ lý AI Bệnh viện Tim Hà Nội
@@ -347,7 +192,6 @@ export function Composer({
           placeholder="Nhập câu hỏi về đặt lịch, BHYT, quy trình khám…"
           aria-describedby="composer-privacy"
           onChange={(event) => onChange(event.target.value)}
-          onPaste={handlePaste}
           onBlur={() => window.scrollTo(0, 0)}
           onKeyDown={(event) => {
             if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
@@ -357,28 +201,6 @@ export function Composer({
           }}
         />
         <div className="composer-actions">
-          <input
-            ref={fileInputRef}
-            id="composer-file-input"
-            className="sr-only"
-            type="file"
-            accept="image/*,image/jpeg,image/png,image/webp,image/heic,image/heif"
-            multiple
-            onChange={(event) => {
-              void addImages(event.target.files)
-              event.currentTarget.value = ""
-            }}
-          />
-          <button
-            type="button"
-            className="voice-button"
-            aria-label="Đính kèm hình ảnh"
-            title="Đính kèm hình ảnh (JPEG, PNG, WEBP)"
-            disabled={sending || images.length >= 2 || processingImages}
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <Paperclip aria-hidden="true" />
-          </button>
           {speechSupported ? (
             <button
               type="button"
@@ -396,7 +218,7 @@ export function Composer({
             type="button"
             className="send-button"
             aria-label={sending ? "Trợ lý đang xử lý" : "Gửi câu hỏi"}
-            disabled={(!value.trim() && images.length === 0) || sending || processingImages}
+            disabled={!value.trim() || sending}
             onClick={submit}
           >
             {sending ? (

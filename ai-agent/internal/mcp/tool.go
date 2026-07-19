@@ -6,6 +6,7 @@ import (
 )
 
 func bindTools(server *mcp_sdk.Server) {
+	mcp_sdk.AddTool(server, &tools.SearchRAGTool, tools.SearchRAGHandler)
 	mcp_sdk.AddTool(server, &tools.CheckTimeTool, tools.CheckTimeHandler)
 	mcp_sdk.AddTool(server, &tools.HospitalInfoHealthTool, tools.HospitalInfoHealthHandler)
 	mcp_sdk.AddTool(server, &tools.HospitalMetaTool, tools.HospitalMetaHandler)

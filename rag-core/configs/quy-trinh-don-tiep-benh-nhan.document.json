@@ -1,0 +1,17 @@
+{
+  "document_id": "doc_qt_25_01",
+  "title": "Quy trình đón tiếp bệnh nhân và khám chữa bệnh ngoại trú tại Khu Tự nguyện 1 Cơ sở 1",
+  "source_file": "quy-trinh-don-tiep-benh-nhan.md",
+  "source_uri": "/knowledge/processes/QT.25.01",
+  "document_type": "hospital_process",
+  "department_id": "khoa_kham_benh_tu_nguyen",
+  "hospital_id": "benh_vien_tim_ha_noi",
+  "language": "vi",
+  "authority_level": 3,
+  "access_level": "internal",
+  "status": "active",
+  "effective_from": "2024-12-05",
+  "version_number": 7,
+  "issued_date": "2024-12-05",
+  "embedding_model": "BAAI/bge-m3"
+}

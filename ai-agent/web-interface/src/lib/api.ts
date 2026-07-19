@@ -3,7 +3,7 @@ import type {
   ChatSession,
   MessageRole,
   SessionSummary,
-  ChatImage,
+  CitationItem,
 } from "../types"
 
 const API_BASE = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, "")
@@ -197,25 +197,22 @@ export async function getSession(id: string): Promise<ChatSession> {
 export async function sendMessage(
   id: string,
   message: string,
-  images: ChatImage[] = [],
-): Promise<string> {
+): Promise<SendMessageResponse> {
   const response = asRecord(
     await requestJson<unknown>(`/c/${encodeURIComponent(id)}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        message,
-        images: images.map(({ mimeType, data }) => ({ mime_type: mimeType, data })),
-      }),
+      body: JSON.stringify({ message }),
     }),
   )
   const answer = asString(pick(response, "response", "Response"))
   if (!answer) {
     throw new ApiError("Trợ lý chưa trả về nội dung. Anh/Chị vui lòng gửi lại câu hỏi.")
   }
-  return answer
+  const citations = normalizeCitations(pick(response, "citations", "Citations"))
+  return { answer, citations }
 }
 
 export async function deleteSession(id: string): Promise<void> {

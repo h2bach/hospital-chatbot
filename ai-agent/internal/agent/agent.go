@@ -51,8 +51,9 @@ func (a *Agent) CallWithImages(ctx context.Context, input string, images []domai
 		if IsToolCall(chatOutput) {
 			toolOutput, err := a.MCPClient.CallTool(ctx, chatOutput.ToolName, chatOutput.Args)
 			agentContext.Messages = append(agentContext.Messages, domain.Message{
-				Role:    domain.AgentRole,
-				Content: fmt.Sprintf("Tool Call: %s\nArgs: %s", chatOutput.ToolName, marshalToolArgs(chatOutput.Args)),
+				Role:             domain.AgentRole,
+				Content:          fmt.Sprintf("Tool Call: %s\nArgs: %s", chatOutput.ToolName, marshalToolArgs(chatOutput.Args)),
+				ReasoningContent: chatOutput.ReasoningContent,
 			})
 			toolMessage := domain.Message{
 				Role: domain.ToolRole,
@@ -68,8 +69,9 @@ func (a *Agent) CallWithImages(ctx context.Context, input string, images []domai
 
 		if IsText(chatOutput) {
 			agentContext.Messages = append(agentContext.Messages, domain.Message{
-				Role:    domain.AgentRole,
-				Content: chatOutput.Text,
+				Role:             domain.AgentRole,
+				Content:          chatOutput.Text,
+				ReasoningContent: chatOutput.ReasoningContent,
 			})
 			return chatOutput.Text, nil
 		}
