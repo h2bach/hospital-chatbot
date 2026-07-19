@@ -15,7 +15,7 @@ import {
   getSessions,
   sendMessage,
 } from "./lib/api"
-import type { ChatImage, ChatSession, ServerStatus, SessionSummary } from "./types"
+import type { ChatSession, ServerStatus, SessionSummary } from "./types"
 
 const THEME_STORAGE_KEY = "bvtim-chat-theme"
 const APP_TITLE = "Trợ lý Tim Hà Nội"
@@ -88,7 +88,6 @@ export function App() {
   const [activeSession, setActiveSession] = useState<ChatSession | null>(null)
   const [sessionQuery, setSessionQuery] = useState("")
   const [composerValue, setComposerValue] = useState("")
-  const [composerImages, setComposerImages] = useState<ChatImage[]>([])
   const [serverStatus, setServerStatus] = useState<ServerStatus>("checking")
   const [loadingSessions, setLoadingSessions] = useState(true)
   const [loadingActive, setLoadingActive] = useState(false)
@@ -318,10 +317,9 @@ export function App() {
     setMessageError(null)
   }
 
-  async function handleSend(message: string, images: ChatImage[] = []) {
+  async function handleSend(message: string) {
     if (isSending) return
     setComposerValue("")
-    setComposerImages([])
     setMessageError(null)
     setActionError(null)
 
@@ -330,12 +328,11 @@ export function App() {
       sessionId = await handleCreateSession()
       if (!sessionId) {
         setComposerValue(message)
-        setComposerImages(images)
         return
       }
     }
 
-    const optimisticMessage = { role: "User" as const, content: message, images, delivery: "sending" as const }
+    const optimisticMessage = { role: "User" as const, content: message, delivery: "sending" as const }
     const currentId = sessionId
     setSendingSessionId(currentId)
     setActiveError(null)
@@ -353,7 +350,7 @@ export function App() {
     })
 
     try {
-      const answer = await sendMessage(currentId, message, images)
+      const { answer, citations } = await sendMessage(currentId, message)
       setActiveSession((current) => {
         if (!current || current.id !== currentId) return current
         const messages = current.messages.map((item, index) =>
@@ -363,7 +360,7 @@ export function App() {
         )
         return {
           ...current,
-          messages: [...messages, { role: "Assistant", content: answer }],
+          messages: [...messages, { role: "Assistant", content: answer, citations: citations }],
         }
       })
       setServerStatus("online")
@@ -391,7 +388,6 @@ export function App() {
         return current
       })
       setComposerValue(message)
-      setComposerImages(images)
       setMessageError(errorMessage(error))
       if (error instanceof ApiError && error.status === 0) setServerStatus("offline")
     } finally {
@@ -518,24 +514,23 @@ export function App() {
 
         <div className="conversation-scroll">
           <MessageThread
+            sessionId={selectedId ?? ""}
             messages={activeSession?.messages ?? []}
             loading={loadingActive}
             sending={isSendingCurrentSession}
             error={activeError}
             onRetry={() => selectedId && void loadActiveSession(selectedId)}
-            onRetryMessage={(msg, imgs) => void handleSend(msg, imgs)}
+            onRetryMessage={(msg) => void handleSend(msg)}
             onSuggestion={setComposerValue}
           />
         </div>
 
         <Composer
           value={composerValue}
-          images={composerImages}
           sending={isSending || creating}
           error={messageError}
           onChange={setComposerValue}
-          onImagesChange={setComposerImages}
-          onSend={(message, images) => void handleSend(message, images)}
+          onSend={(message) => void handleSend(message)}
           onReload={() => selectedId && void loadActiveSession(selectedId)}
         />
       </main>

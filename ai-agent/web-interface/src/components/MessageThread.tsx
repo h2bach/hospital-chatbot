@@ -12,15 +12,16 @@ import {
 import { useEffect, useRef, useState } from "react"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
-import type { ChatImage, ChatMessage, MessageRole } from "../types"
+import type { ChatMessage, MessageRole } from "../types"
 
 interface MessageThreadProps {
+  sessionId?: string
   messages: ChatMessage[]
   loading: boolean
   sending: boolean
   error: string | null
   onRetry: () => void
-  onRetryMessage?: (content: string, images: ChatImage[]) => void
+  onRetryMessage?: (content: string) => void
   onSuggestion: (prompt: string) => void
 }
 
@@ -82,10 +83,12 @@ function speakResponse(content: string) {
 
 function MessageItem({
   message,
+  sessionId,
   onRetryMessage,
 }: {
   message: ChatMessage
-  onRetryMessage?: (content: string, images: ChatImage[]) => void
+  sessionId?: string
+  onRetryMessage?: (content: string) => void
 }) {
   const { label, Icon } = roleDetails(message.role)
   const roleClass = message.role.toLowerCase()
@@ -107,7 +110,7 @@ function MessageItem({
                 <button
                   type="button"
                   className="retry-inline-button"
-                  onClick={() => onRetryMessage(message.content, message.images ?? [])}
+                  onClick={() => onRetryMessage(message.content)}
                 >
                   <RefreshCw aria-hidden="true" />
                   Thử lại
