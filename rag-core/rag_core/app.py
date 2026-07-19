@@ -12,6 +12,7 @@ import threading
 import unicodedata
 import uuid
 from collections import Counter, defaultdict
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from functools import lru_cache
 from http import HTTPStatus
@@ -302,6 +303,7 @@ class RAGApplication:
         self.documents = load_documents(documents_path)
         self.sessions: dict[str, dict] = {}
         self.lock = threading.RLock()
+        self._executor = ThreadPoolExecutor(max_workers=4, thread_name_prefix="rag-parallel")
 
     def health(self) -> dict:
         documents = sorted({chunk.document_id for chunk in self.chunks})
@@ -730,6 +732,49 @@ class RAGApplication:
             confidence=coverage, reason_codes=["QUERY_NOT_SUPPORTED_BY_CORPUS"], evidence=[],
             fallback_action="abstain", fallback_message=INSUFFICIENT_RAG_MESSAGE,
         )
+
+    def retrieve_parallel(self, queries: list[dict]) -> dict:
+        """Run multiple retrieve() calls in parallel using ThreadPoolExecutor.
+
+        Args:
+            queries: list of {"query": str, "top_k": int (optional, default 8)}
+
+        Returns:
+            dict with schema_version, results (list of evidence envelopes),
+            and query_count.
+        """
+        futures = []
+        for item in queries:
+            query = str(item.get("query", "")).strip()
+            top_k = item.get("top_k", 8)
+            if not isinstance(top_k, int) or top_k < 1:
+                top_k = 8
+            if not query:
+                continue
+            futures.append(self._executor.submit(self.retrieve, query, top_k))
+
+        results = []
+        for future in futures:
+            try:
+                results.append(future.result(timeout=15))
+            except Exception:
+                results.append(evidence_envelope(
+                    request_id=str(uuid.uuid4()),
+                    query="",
+                    route_decision="error",
+                    status="insufficient",
+                    confidence=0.0,
+                    reason_codes=["PARALLEL_EXECUTION_ERROR"],
+                    evidence=[],
+                    fallback_action="abstain",
+                    fallback_message=INSUFFICIENT_RAG_MESSAGE,
+                ))
+
+        return {
+            "schema_version": "heartcare.rag.parallel.v1",
+            "results": results,
+            "query_count": len(results),
+        }
 
     def _build_evidence_envelope(
         self,
@@ -1670,6 +1715,20 @@ def make_handler(application: RAGApplication, static_dir: Path):
                     self.send_json({"error": "top_k must be an integer"}, HTTPStatus.BAD_REQUEST)
                     return
                 self.send_json(application.retrieve(payload["query"].strip(), requested_top_k))
+                return
+            if parsed.path == "/api/v1/rag/retrieve_parallel":
+                payload = self.read_json()
+                if not payload or not isinstance(payload.get("queries"), list):
+                    self.send_json({"error": "queries must be a non-empty list"}, HTTPStatus.BAD_REQUEST)
+                    return
+                queries = payload["queries"]
+                if len(queries) < 1 or len(queries) > 10:
+                    self.send_json(
+                        {"error": "queries length must be between 1 and 10"},
+                        HTTPStatus.BAD_REQUEST,
+                    )
+                    return
+                self.send_json(application.retrieve_parallel(queries))
                 return
             if parsed.path == "/api/v1/rag/context":
                 payload = self.read_json()
