@@ -4,12 +4,8 @@ WORKDIR /app
 ENV PYTHONPATH=/app/rag-core PYTHONUNBUFFERED=1
 
 COPY rag-core/rag_core /app/rag-core/rag_core
-COPY rag-core/artifacts/data-rag-latest/chunks_latest.jsonl \
-     rag-core/artifacts/data-rag-latest/documents_latest.jsonl \
-     rag-core/artifacts/data-rag-latest/sections_latest.jsonl \
-     rag-core/artifacts/data-rag-latest/citations_latest.jsonl \
-     rag-core/artifacts/data-rag-latest/index_report_latest.json \
-     /app/data-rag-latest/
+COPY rag-core/artifacts/data-rag-latest /app/data-rag-latest
+COPY rag-core/artifacts/data-rag /app/data-rag
 COPY docs /app/docs
 COPY ai-agent/static /app/static
 

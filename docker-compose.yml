@@ -3,8 +3,8 @@ services:
     build:
       context: .
       dockerfile: rag-core/Dockerfile
-    expose:
-      - "6689"
+    ports:
+      - "127.0.0.1:6689:6689"
 
   hospital-info-service:
     build:
@@ -12,8 +12,8 @@ services:
     command: ["--port", "8080", "--data", "/app/data"]
     volumes:
       - ./hospital-data:/app/data
-    expose:
-      - "8080"
+    ports:
+      - "127.0.0.1:8081:8080"
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:8080/health"]
       interval: 5s

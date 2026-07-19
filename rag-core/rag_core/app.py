@@ -167,9 +167,17 @@ class CatalogAnswer:
     chunk_ids: list[str]
 
 
-def load_chunks(path: Path) -> list[Chunk]:
+def load_chunks(path: Path | str) -> list[Chunk]:
+    if isinstance(path, str):
+        path = Path(path)
+    if not path.is_file() or path.read_text(encoding="utf-8").startswith("version https://git-lfs.github.com/spec/v1"):
+        fallback = path.parent.parent / "data-rag" / "chunks.jsonl"
+        if fallback.is_file():
+            path = fallback
+
+    text = path.read_text(encoding="utf-8")
     chunks = []
-    for line in path.read_text(encoding="utf-8").splitlines():
+    for line in text.splitlines():
         if not line.strip():
             continue
         item = json.loads(line)
@@ -185,8 +193,12 @@ def load_chunks(path: Path) -> list[Chunk]:
     return chunks
 
 
-def load_catalog(path: Path | None) -> list[CatalogAnswer]:
-    if path is None or not path.is_file():
+def load_catalog(path: Path | str | None) -> list[CatalogAnswer]:
+    if path is None:
+        return []
+    if isinstance(path, str):
+        path = Path(path)
+    if not path.is_file():
         return []
     source = path.read_text(encoding="utf-8")
     sections = re.split(r"(?m)^## (?=\d+\.)", source)[1:]
@@ -203,8 +215,16 @@ def load_catalog(path: Path | None) -> list[CatalogAnswer]:
     return catalog
 
 
-def load_documents(path: Path | None) -> list[dict]:
-    if path is None or not path.is_file():
+def load_documents(path: Path | str | None) -> list[dict]:
+    if path is None:
+        return []
+    if isinstance(path, str):
+        path = Path(path)
+    if not path.is_file() or path.read_text(encoding="utf-8").startswith("version https://git-lfs.github.com/spec/v1"):
+        fallback = path.parent.parent / "data-rag" / "documents.jsonl"
+        if fallback.is_file():
+            path = fallback
+    if not path.is_file():
         return []
     documents = []
     for line in path.read_text(encoding="utf-8").splitlines():
@@ -264,7 +284,7 @@ class RAGApplication:
         self.process_index = BM25Index()
         self.process_index.build([
             chunk for chunk in self.chunks
-            if not is_price_chunk(chunk) and not is_legal_document_chunk(chunk)
+            if not is_price_chunk(chunk)
         ])
         self.legacy_process_index = BM25Index()
         self.legacy_process_index.build([
