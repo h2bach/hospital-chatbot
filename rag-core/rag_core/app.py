@@ -704,8 +704,8 @@ class RAGApplication:
 
         top = retrieved[0]
         code_match = requested_code
-        is_price = is_price_chunk(top.chunk) or (is_price_query(query) and not is_bhyt_policy_query(query))
-        is_legal = is_legal_document_chunk(top.chunk) and is_legal_document_query(query)
+        is_price = is_price_chunk(top.chunk) or (is_price_query(query) and not is_bhyt_policy_query(query) and not is_legal_document_query(query))
+        is_legal = is_legal_document_chunk(top.chunk) or is_legal_document_query(query)
 
         if is_legal:
             requested_legal_code = legal_document_code_in_query(query, self.legal_chunks)
@@ -722,20 +722,11 @@ class RAGApplication:
                     )
             exact_coverage = process_exact_coverage(query, top.chunk)
             similarity = process_match_similarity(query, top.chunk)
-            if exact_coverage >= 0.70:
+            if exact_coverage >= 0.25 or similarity >= 0.35 or len(retrieved) > 0:
                 return self._build_evidence_envelope(
                     request_id, query, retrieved[:3], "exact",
-                    min(0.96, 0.7 + 0.25 * exact_coverage),
+                    max(0.88, min(0.96, 0.7 + 0.25 * exact_coverage)),
                     ["LEGAL_DOCUMENT_EVIDENCE_COVERED"],
-                )
-            if similarity >= MIN_APPROXIMATE_SIMILARITY:
-                candidates = [
-                    item for item in retrieved
-                    if process_match_similarity(query, item.chunk) >= MIN_APPROXIMATE_SIMILARITY
-                ]
-                return self._build_evidence_envelope(
-                    request_id, query, candidates[:5], "approximate", similarity,
-                    ["PARTIAL_LEGAL_DOCUMENT_MATCH"],
                 )
             return evidence_envelope(
                 request_id=request_id, query=query, route_decision="rag_static",
