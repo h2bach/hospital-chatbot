@@ -1,0 +1,63 @@
+{
+  "artifact_files": {
+    "chunks": "chunks_latest.jsonl",
+    "citations": "citations_latest.jsonl",
+    "documents": "documents_latest.jsonl",
+    "normalized_prices": "normalized-price-list_latest.md",
+    "report": "index_report_latest.json",
+    "sections": "sections_latest.jsonl"
+  },
+  "artifact_tag": "_latest",
+  "bhyt_diagnostics": {
+    "chunks_by_source_type": {
+      "policy": 28,
+      "price": 9702,
+      "update_alert": 1
+    },
+    "chunks_with_legal_context": 9731,
+    "inactive_chunk_count": 0,
+    "legal_source_count": 19,
+    "missing_legal_source_references": 0,
+    "missing_source_line_count": 0,
+    "parsed_chunks": 9750,
+    "parsed_knowledge_chunks": 9731,
+    "resolved_legal_basis_count": 19410,
+    "source_dataset_id": "bhyt_benh_vien_tim_ha_noi_rag_2026_07_18",
+    "source_schema_version": "1.0.0"
+  },
+  "chunk_count": 12757,
+  "chunks_by_document": {
+    "doc_bhyt_benh_vien_tim_hn": 9750,
+    "doc_gia_dvbv_tim_hn": 2946,
+    "doc_qt_25_01": 61
+  },
+  "chunks_by_type": {
+    "bhyt_legal_document": 19,
+    "bhyt_policy": 28,
+    "bhyt_price_service": 9702,
+    "bhyt_update_alert": 1,
+    "paragraph": 19,
+    "price_service": 2946,
+    "process_table_row": 42
+  },
+  "document_count": 3,
+  "duplicate_chunk_ids": 0,
+  "generated_at": "2026-07-18T22:02:12.388971+00:00",
+  "max_token_count": 384,
+  "normalized_price_rows": 2946,
+  "price_diagnostics": {
+    "continuation_rows_merged": 132,
+    "empty_both_prices": 4,
+    "empty_service_names": 0,
+    "malformed_numbered_rows": 0,
+    "orphan_continuations": 0,
+    "parsed_entries": 2946
+  },
+  "section_count": 54,
+  "source_dir": "docs",
+  "source_hashes": {
+    "GiaDVBV_tim_HN.md": "sha256:8070ac0d84aa4e91223037708587d41abb275ddee1b2481177fe1de34e93a747",
+    "bhyt_benh_vien_tim_ha_noi_rag.json": "sha256:dc0a2a5de781efae7e33dd7d98562ca3e0b9cf7398c8268825b2960b299c0cec",
+    "quy-trinh-don-tiep-benh-nhan.md": "sha256:b9623b38904d0905bcaac7d7476223a550feaaccae1d9ef4a347f9d5870dccfb"
+  }
+}

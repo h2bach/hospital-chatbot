@@ -813,7 +813,7 @@ export function App() {
             <div className="breadcrumb"><Database size={16} /><span>Hospital data</span><ChevronRight size={14} /><strong>{currentSummary?.title || "Đang tải"}</strong></div>
             <div className="topbar-actions">
               <span className={`sync-pill ${syncStatus}`}><span className="status-dot" />{syncStatus === "live" ? "Live" : "Offline"}</span>
-              <a className="chat-link" href="http://localhost:8080" target="_blank" rel="noreferrer">Mở chatbot <ArrowUpRight size={16} /></a>
+              <a className="chat-link" href={`${window.location.protocol}//${window.location.hostname}:8080`} target="_blank" rel="noreferrer">Mở chatbot <ArrowUpRight size={16} /></a>
             </div>
           </header>
 

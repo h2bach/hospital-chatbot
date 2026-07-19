@@ -16,6 +16,7 @@ TOKEN_RE = re.compile(r"[\wÀ-ỹ]+", re.UNICODE)
 NUMBERED_ROW_RE = re.compile(r"^\d+(?:[,.]\d+)?$")
 PAGE_RE = re.compile(r"<!--\s*(?:Trang PDF|page:)\s*(\d+)", re.IGNORECASE)
 BHYT_CHUNK_ID_RE = re.compile(r'^\s*"chunk_id"\s*:\s*"([^"]+)"')
+BHYT_SOURCE_ID_RE = re.compile(r'^\s*"source_id"\s*:\s*"([^"]+)"')
 
 
 def tokenize(text: str) -> list[str]:
@@ -473,11 +474,145 @@ def source_chunk_lines(path: Path) -> dict[str, int]:
     return result
 
 
+def source_record_lines(path: Path) -> dict[str, int]:
+    """Map each source identifier to the first physical JSON line defining it."""
+    result: dict[str, int] = {}
+    with path.open(encoding="utf-8") as handle:
+        for line_number, line in enumerate(handle, 1):
+            match = BHYT_SOURCE_ID_RE.match(line)
+            if match:
+                # The canonical source catalog precedes all legal_basis references,
+                # so the first occurrence is the source record suitable for citation.
+                result.setdefault(match.group(1), line_number)
+    return result
+
+
+def resolve_legal_basis(
+    legal_basis: object,
+    sources_by_id: dict[str, dict],
+) -> tuple[list[dict], int]:
+    """Hydrate lightweight legal references with their complete source records."""
+    if not isinstance(legal_basis, list):
+        return [], 0
+    resolved: list[dict] = []
+    missing = 0
+    for reference in legal_basis:
+        if not isinstance(reference, dict):
+            continue
+        source_id = str(reference.get("source_id") or "")
+        source = sources_by_id.get(source_id)
+        if source is None:
+            missing += 1
+            resolved.append({**reference, "resolution_status": "missing_source"})
+            continue
+        # Preserve every catalog field, including verification notes and gazette
+        # files, while allowing the knowledge record to add an article locator.
+        resolved.append({**source, **reference, "resolution_status": "resolved"})
+    return resolved, missing
+
+
+def compact_legal_context_line(source: dict, *, include_status: bool = True) -> str:
+    """Create a retrieval-friendly legal context header with all key dates."""
+    identity = normalize_inline(str(source.get("document_code") or source.get("title") or source.get("source_id") or ""))
+    parts = [identity]
+    fields = (
+        ("Cơ quan ban hành", "issuer"),
+        ("Ngày ban hành", "issued_date"),
+        ("Ngày công bố", "published_date"),
+        ("Có hiệu lực từ", "effective_from"),
+        ("Có hiệu lực đến", "effective_to"),
+        ("Bị thay thế/bãi bỏ từ", "superseded_on"),
+    )
+    for label, key in fields:
+        value = normalize_inline(str(source.get(key) or ""))
+        if value:
+            parts.append(f"{label}: {value}")
+    if include_status:
+        status = normalize_inline(str(source.get("legal_status") or ""))
+        if status:
+            parts.append(f"Trạng thái: {status}")
+        effective_note = normalize_inline(str(source.get("article_level_effective_note") or ""))
+        if effective_note:
+            parts.append(f"Hiệu lực theo điều khoản: {effective_note}")
+    locator = normalize_inline(str(source.get("locator") or ""))
+    if locator:
+        parts.append(f"Vị trí căn cứ: {locator}")
+    return "Căn cứ pháp lý: " + "; ".join(part for part in parts if part)
+
+
+def legal_source_content(source: dict) -> str:
+    """Render a complete, standalone chunk for a catalogued legal source."""
+    values = (
+        ("Văn bản", source.get("title")),
+        ("Số/ký hiệu", source.get("document_code")),
+        ("Loại nguồn", source.get("source_type")),
+        ("Cơ quan ban hành", source.get("issuer")),
+        ("Ngày ban hành", source.get("issued_date")),
+        ("Ngày công bố", source.get("published_date")),
+        ("Ngày hiệu lực", source.get("effective_from")),
+        ("Ngày hết hiệu lực", source.get("effective_to")),
+        ("Bị thay thế/bãi bỏ từ", source.get("superseded_on")),
+        ("Trạng thái pháp lý", source.get("legal_status")),
+        ("Ghi chú hiệu lực theo điều khoản", source.get("article_level_effective_note")),
+        ("Tình trạng tại ngày", source.get("status_as_of")),
+        ("Ghi chú kiểm chứng", source.get("verification_note")),
+        ("Nguồn chính thức", source.get("official_url")),
+        ("Tệp nguồn cục bộ", source.get("local_path")),
+    )
+    lines = [f"{label}: {normalize_inline(str(value))}" for label, value in values if value not in (None, "", [])]
+    gazettes = source.get("official_gazette_pdfs_used")
+    if isinstance(gazettes, list) and gazettes:
+        gazette_labels = []
+        for value in gazettes:
+            if isinstance(value, dict):
+                details = [
+                    f"phần {value.get('part')}" if value.get("part") is not None else "",
+                    f"số {value.get('gazette_number')}" if value.get("gazette_number") else "",
+                    f"công bố {value.get('published_date')}" if value.get("published_date") else "",
+                ]
+                gazette_labels.append(", ".join(detail for detail in details if detail))
+            else:
+                gazette_labels.append(normalize_inline(str(value)))
+        lines.append("Công báo/tệp chính thức đã dùng: " + "; ".join(gazette_labels))
+    lines.append(f"Nguồn chính thức: {'Có' if source.get('official') else 'Không'}")
+    return "\n".join(lines)
+
+
+def fit_retrieval_prefix(parts: list[str], content_text: str, max_tokens: int = 384) -> str:
+    """Keep the highest-priority aliases that fit without repeated full scans."""
+    remaining = max_tokens - len(tokenize(content_text))
+    selected: list[str] = []
+    seen: set[str] = set()
+    for part in parts:
+        value = normalize_inline(part)
+        if not value or value in seen:
+            continue
+        part_tokens = len(tokenize(value))
+        if part_tokens <= remaining:
+            selected.append(value)
+            seen.add(value)
+            remaining -= part_tokens
+    return ". ".join(selected)
+
+
 def parse_bhyt_json(path: Path) -> tuple[dict, list[dict], list[dict], dict]:
     raw = json.loads(path.read_text(encoding="utf-8"))
     source_chunks = raw.get("knowledge_chunks")
     if not isinstance(source_chunks, list):
         raise ValueError(f"knowledge_chunks không phải array tại {path}")
+    source_records = raw.get("sources")
+    if not isinstance(source_records, list):
+        raise ValueError(f"sources không phải array tại {path}")
+    sources_by_id: dict[str, dict] = {}
+    for source_index, source in enumerate(source_records):
+        if not isinstance(source, dict):
+            raise ValueError(f"sources[{source_index}] không phải object")
+        source_id = str(source.get("source_id") or "")
+        if not source_id:
+            raise ValueError(f"sources[{source_index}] thiếu source_id")
+        if source_id in sources_by_id:
+            raise ValueError(f"source_id trùng lặp: {source_id}")
+        sources_by_id[source_id] = source
 
     document_id = "doc_bhyt_benh_vien_tim_hn"
     content_hash = sha256_file(path)
@@ -505,11 +640,15 @@ def parse_bhyt_json(path: Path) -> tuple[dict, list[dict], list[dict], dict]:
     }
 
     line_by_source_id = source_chunk_lines(path)
+    line_by_legal_source_id = source_record_lines(path)
     sections: dict[str, dict] = {}
     chunks: list[dict] = []
     counts: Counter[str] = Counter()
     missing_line_count = 0
     inactive_count = 0
+    resolved_legal_basis_count = 0
+    missing_legal_source_references = 0
+    chunks_with_legal_context = 0
 
     type_labels = {
         "policy": "Chính sách và quyền lợi BHYT",
@@ -521,6 +660,78 @@ def parse_bhyt_json(path: Path) -> tuple[dict, list[dict], list[dict], dict]:
         "price": "bhyt_price_service",
         "update_alert": "bhyt_update_alert",
     }
+
+    legal_type_labels = {
+        "law": "Luật",
+        "decree": "Nghị định",
+        "circular": "Thông tư",
+        "resolution": "Nghị quyết",
+        "official_hospital_webpage": "Nguồn chính thức của bệnh viện",
+        "official_moh_publication": "Nguồn chính thức của Bộ Y tế",
+        "secondary_analysis_pdf": "Tài liệu phân tích thứ cấp",
+    }
+    for source_index, source in enumerate(source_records):
+        source_id = str(source["source_id"])
+        source_type = str(source.get("source_type") or "other")
+        source_type_label = legal_type_labels.get(source_type, source_type)
+        section_label = f"Danh mục nguồn và văn bản pháp lý / {source_type_label}"
+        section_id = stable_id("sec", document_id, section_label)
+        heading_path = [title, "Danh mục nguồn và văn bản pháp lý", source_type_label]
+        sections.setdefault(section_id, {
+            "section_id": section_id,
+            "document_id": document_id,
+            "version_id": version_id,
+            "heading_path": heading_path,
+            "title": section_label,
+        })
+        source_title = normalize_inline(str(source.get("title") or source_id))
+        document_code = normalize_inline(str(source.get("document_code") or ""))
+        retrieval_aliases = [
+            source_title,
+            document_code,
+            normalize_inline(str(source.get("issuer") or "")),
+            normalize_inline(str(source.get("issued_date") or "")),
+            normalize_inline(str(source.get("effective_from") or "")),
+            "ngày ban hành ngày hiệu lực thời gian hiệu lực trạng thái văn bản công văn thông tư nghị định nghị quyết luật",
+        ]
+        source_line = line_by_legal_source_id.get(source_id, source_index + 1)
+        chunk = make_chunk(
+            document_id=document_id,
+            version_id=version_id,
+            section_id=section_id,
+            chunk_index=len(chunks),
+            content_type="bhyt_legal_document",
+            content_text=legal_source_content(source),
+            retrieval_prefix=". ".join(dict.fromkeys(value for value in retrieval_aliases if value)),
+            heading_path=heading_path,
+            source_file=path.name,
+            source_line_start=source_line,
+            source_line_end=source_line,
+            metadata={
+                "source_catalog_record": source,
+                "source_id": source_id,
+                "document_code": source.get("document_code"),
+                "title": source_title,
+                "issuer": source.get("issuer"),
+                "issued_date": source.get("issued_date"),
+                "published_date": source.get("published_date"),
+                "effective_from": source.get("effective_from"),
+                "effective_to": source.get("effective_to"),
+                "superseded_on": source.get("superseded_on"),
+                "article_level_effective_note": source.get("article_level_effective_note"),
+                "legal_status": source.get("legal_status"),
+                "official": bool(source.get("official")),
+                "retrieval_visibility": "searchable_reference",
+            },
+            identity=source_id,
+        )
+        chunk["authority_level"] = 3 if source.get("official") else 1
+        chunk["effective_from"] = source.get("effective_from")
+        chunk["effective_to"] = source.get("effective_to") or source.get("superseded_on")
+        # Historical and future records remain searchable as references. Their
+        # temporal/legal status is explicit in metadata and must be rendered.
+        chunk["is_active"] = True
+        chunks.append(chunk)
 
     for source_index, item in enumerate(source_chunks):
         if not isinstance(item, dict):
@@ -548,6 +759,23 @@ def parse_bhyt_json(path: Path) -> tuple[dict, list[dict], list[dict], dict]:
         question_variants = [normalize_inline(str(value)) for value in item.get("question_variants", []) if str(value).strip()]
         keywords = [normalize_inline(str(value)) for value in item.get("keywords", []) if str(value).strip()]
         caveats = [normalize_inline(str(value)) for value in item.get("caveats", []) if str(value).strip()]
+        legal_context, missing_references = resolve_legal_basis(item.get("legal_basis", []), sources_by_id)
+        missing_legal_source_references += missing_references
+        resolved_legal_basis_count += sum(
+            context.get("resolution_status") == "resolved" for context in legal_context
+        )
+        if legal_context:
+            chunks_with_legal_context += 1
+        legal_context_lines = [
+            compact_legal_context_line(context)
+            for context in legal_context
+            if context.get("resolution_status") == "resolved"
+        ]
+        compact_legal_lines = [
+            compact_legal_context_line(context, include_status=False)
+            for context in legal_context
+            if context.get("resolution_status") == "resolved"
+        ]
 
         content_lines = [item_title, answer]
         if chunk_type == "price":
@@ -572,17 +800,34 @@ def parse_bhyt_json(path: Path) -> tuple[dict, list[dict], list[dict], dict]:
                 )
         elif caveats:
             content_lines.extend(f"Lưu ý: {value}" for value in caveats[:2])
+        content_lines.extend(legal_context_lines)
 
-        retrieval_parts = [item_title, *question_variants[:3], *keywords[:12]]
-        retrieval_prefix = ". ".join(dict.fromkeys(part for part in retrieval_parts if part))
+        legal_aliases: list[str] = []
+        for context in legal_context:
+            legal_aliases.extend([
+                normalize_inline(str(context.get("document_code") or "")),
+                normalize_inline(str(context.get("title") or "")),
+                normalize_inline(str(context.get("issuer") or "")),
+                normalize_inline(str(context.get("issued_date") or "")),
+                normalize_inline(str(context.get("effective_from") or "")),
+            ])
+        retrieval_parts = [item_title, *legal_aliases, *question_variants[:3], *keywords[:12]]
         content_text = "\n".join(dict.fromkeys(part for part in content_lines if part))
-        # Source records are already atomic. Reduce optional retrieval aliases
-        # before ever splitting a legal/policy statement across chunks.
-        while len(tokenize(f"{retrieval_prefix}.\n{content_text}")) > 384 and retrieval_parts:
-            retrieval_parts.pop()
-            retrieval_prefix = ". ".join(dict.fromkeys(part for part in retrieval_parts if part))
-        if len(tokenize(f"{retrieval_prefix}.\n{content_text}")) > 384:
-            content_text = "\n".join(content_lines[:2])
+        # Source records are atomic. Preserve the answer and legal context first;
+        # retrieval aliases are fitted into the remaining token budget below.
+        if len(tokenize(content_text)) > 384:
+            # Drop duplicated price/caveat prose, never the resolved legal dates.
+            content_text = "\n".join(dict.fromkeys([item_title, answer, *legal_context_lines]))
+        if len(tokenize(content_text)) > 384:
+            # Full source records remain in metadata and in standalone legal
+            # chunks; this compact form retains every linked document and date.
+            content_text = "\n".join(dict.fromkeys([item_title, answer, *compact_legal_lines]))
+        if len(tokenize(content_text)) > 384:
+            answer_words = answer.split()
+            while len(answer_words) > 40 and len(tokenize(content_text)) > 384:
+                answer_words = answer_words[:-20]
+                content_text = "\n".join(dict.fromkeys([item_title, " ".join(answer_words), *compact_legal_lines]))
+        retrieval_prefix = fit_retrieval_prefix(retrieval_parts, content_text)
 
         source_line = line_by_source_id.get(source_chunk_id)
         if source_line is None:
@@ -604,6 +849,7 @@ def parse_bhyt_json(path: Path) -> tuple[dict, list[dict], list[dict], dict]:
             "applicability": item.get("applicability", {}),
             "validity": validity,
             "legal_basis": item.get("legal_basis", []),
+            "legal_context": legal_context,
             "verification": item.get("verification", {}),
             "caveats": caveats,
         }
@@ -639,15 +885,20 @@ def parse_bhyt_json(path: Path) -> tuple[dict, list[dict], list[dict], dict]:
 
     link_chunks(chunks)
     expected = (raw.get("statistics") or {}).get("knowledge_chunk_count")
-    if expected is not None and int(expected) != len(chunks):
-        raise ValueError(f"BHYT chunk count {len(chunks)} khác statistics {expected}")
+    if expected is not None and int(expected) != len(source_chunks):
+        raise ValueError(f"BHYT knowledge chunk count {len(source_chunks)} khác statistics {expected}")
     diagnostics = {
         "source_schema_version": raw.get("schema_version"),
         "source_dataset_id": dataset_id,
         "parsed_chunks": len(chunks),
+        "parsed_knowledge_chunks": len(source_chunks),
+        "legal_source_count": len(source_records),
         "chunks_by_source_type": dict(counts),
         "missing_source_line_count": missing_line_count,
         "inactive_chunk_count": inactive_count,
+        "resolved_legal_basis_count": resolved_legal_basis_count,
+        "missing_legal_source_references": missing_legal_source_references,
+        "chunks_with_legal_context": chunks_with_legal_context,
     }
     return document, list(sections.values()), chunks, diagnostics
 
@@ -680,7 +931,17 @@ def write_normalized_price_markdown(path: Path, entries: list[dict]) -> None:
             handle.write("| " + " | ".join(markdown_cell(value) for value in values) + " |\n")
 
 
-def build_index(source_dir: Path, output_dir: Path) -> dict:
+def artifact_suffix(artifact_tag: str) -> str:
+    value = artifact_tag.strip()
+    if not value:
+        return ""
+    safe = re.sub(r"[^a-zA-Z0-9_-]+", "-", value).strip("-_")
+    if not safe:
+        raise ValueError("artifact_tag không hợp lệ")
+    return f"_{safe}"
+
+
+def build_index(source_dir: Path, output_dir: Path, artifact_tag: str = "") -> dict:
     process_path = source_dir / "quy-trinh-don-tiep-benh-nhan.md"
     price_path = source_dir / "GiaDVBV_tim_HN.md"
     bhyt_path = source_dir / "bhyt_benh_vien_tim_ha_noi_rag.json"
@@ -702,11 +963,18 @@ def build_index(source_dir: Path, output_dir: Path) -> dict:
         raise ValueError("Có chunk vượt giới hạn 384 token")
 
     output_dir.mkdir(parents=True, exist_ok=True)
-    write_jsonl(output_dir / "documents.jsonl", documents)
-    write_jsonl(output_dir / "sections.jsonl", sections)
-    write_jsonl(output_dir / "chunks.jsonl", chunks)
-    write_normalized_price_markdown(output_dir / "normalized-price-list.md", normalized_price_entries)
-    write_jsonl(output_dir / "citations.jsonl", ({
+    suffix = artifact_suffix(artifact_tag)
+    documents_path = output_dir / f"documents{suffix}.jsonl"
+    sections_path = output_dir / f"sections{suffix}.jsonl"
+    chunks_path = output_dir / f"chunks{suffix}.jsonl"
+    normalized_price_path = output_dir / f"normalized-price-list{suffix}.md"
+    citations_path = output_dir / f"citations{suffix}.jsonl"
+    report_path = output_dir / f"index_report{suffix}.json"
+    write_jsonl(documents_path, documents)
+    write_jsonl(sections_path, sections)
+    write_jsonl(chunks_path, chunks)
+    write_normalized_price_markdown(normalized_price_path, normalized_price_entries)
+    write_jsonl(citations_path, ({
         "chunk_id": chunk["chunk_id"],
         "document_id": chunk["document_id"],
         "source_file": chunk["source_file"],
@@ -718,6 +986,15 @@ def build_index(source_dir: Path, output_dir: Path) -> dict:
     report = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "source_dir": str(source_dir),
+        "artifact_tag": suffix,
+        "artifact_files": {
+            "documents": documents_path.name,
+            "sections": sections_path.name,
+            "chunks": chunks_path.name,
+            "normalized_prices": normalized_price_path.name,
+            "citations": citations_path.name,
+            "report": report_path.name,
+        },
         "document_count": len(documents),
         "section_count": len(sections),
         "chunk_count": len(chunks),
@@ -730,7 +1007,7 @@ def build_index(source_dir: Path, output_dir: Path) -> dict:
         "bhyt_diagnostics": bhyt_diagnostics,
         "source_hashes": {document["source_file"]: document["content_hash"] for document in documents},
     }
-    (output_dir / "index_report.json").write_text(
+    report_path.write_text(
         json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
     return report
@@ -740,8 +1017,13 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Build canonical HeartCare multi-document RAG index")
     parser.add_argument("--source-dir", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
+    parser.add_argument(
+        "--artifact-tag",
+        default="",
+        help="Optional safe suffix such as latest; emits chunks_latest.jsonl without overwriting canonical artifacts",
+    )
     args = parser.parse_args()
-    report = build_index(args.source_dir, args.output_dir)
+    report = build_index(args.source_dir, args.output_dir, artifact_tag=args.artifact_tag)
     print(json.dumps(report, ensure_ascii=False, indent=2))
 
 

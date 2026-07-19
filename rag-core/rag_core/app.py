@@ -258,8 +258,14 @@ class RAGApplication:
         self.by_id = {chunk.chunk_id: chunk for chunk in self.chunks}
         dense_url = dense_url if dense_url is not None else os.getenv("DENSE_RETRIEVAL_URL", "")
         self.dense_client = DenseClient(dense_url, self.by_id) if dense_url else None
+        self.legal_chunks = [chunk for chunk in self.chunks if is_legal_document_chunk(chunk)]
+        self.legal_index = BM25Index()
+        self.legal_index.build(self.legal_chunks)
         self.process_index = BM25Index()
-        self.process_index.build([chunk for chunk in self.chunks if not is_price_chunk(chunk)])
+        self.process_index.build([
+            chunk for chunk in self.chunks
+            if not is_price_chunk(chunk) and not is_legal_document_chunk(chunk)
+        ])
         self.legacy_process_index = BM25Index()
         self.legacy_process_index.build([
             chunk for chunk in self.chunks
@@ -298,6 +304,10 @@ class RAGApplication:
             chunk.chunk_id: process_evidence_terms(chunk)
             for chunk in self.process_index.chunks
         }
+        self.legal_terms = {
+            chunk.chunk_id: process_evidence_terms(chunk)
+            for chunk in self.legal_chunks
+        }
         self.catalog = load_catalog(catalog_path)
         self.documents = load_documents(documents_path)
         self.sessions: dict[str, dict] = {}
@@ -314,6 +324,7 @@ class RAGApplication:
             "indexed_chunks": len(self.chunks),
             "process_chunks": len(self.process_index.chunks),
             "bhyt_policy_chunks": len(self.policy_index.chunks),
+            "legal_document_chunks": len(self.legal_chunks),
             "price_service_chunks": len(self.price_chunks),
             "catalog_answers": len(self.catalog),
             "knowledge_sources": len(self.knowledge_catalog()),
@@ -426,6 +437,15 @@ class RAGApplication:
         limit = max(1, min(top_k, 10))
         price_intent = is_price_query(query)
         process_anchor = has_process_knowledge_anchor(query)
+
+        if is_legal_document_query(query):
+            legal_lexical = self.legal_index.search(query, max(30, limit))
+            legal_dense = self._dense_search(query, max(30, limit), {"bhyt_legal_document"})
+            legal_initial = (
+                reciprocal_rank_fusion(legal_lexical, legal_dense)
+                if legal_dense else legal_lexical
+            )
+            return self._rerank_process(query, legal_initial)[:limit]
 
         # BHYT questions about entitlement, procedures, referrals or payment
         # must not be swallowed by the generic word "chi phí" and routed into
@@ -602,6 +622,17 @@ class RAGApplication:
                 confidence=0.0, reason_codes=["SERVICE_CODE_NOT_FOUND"], evidence=[],
                 fallback_action="abstain", fallback_message=INSUFFICIENT_RAG_MESSAGE,
             )
+        requested_legal_token = legal_code_token(query)
+        if (
+            is_legal_document_query(query)
+            and requested_legal_token
+            and not legal_document_code_in_query(query, self.legal_chunks)
+        ):
+            return evidence_envelope(
+                request_id=request_id, query=query, route_decision="rag_static", status="insufficient",
+                confidence=0.0, reason_codes=["LEGAL_DOCUMENT_CODE_NOT_FOUND"], evidence=[],
+                fallback_action="abstain", fallback_message=INSUFFICIENT_RAG_MESSAGE,
+            )
 
         overview_similarity = process_overview_similarity(query)
         if is_process_overview_query(query):
@@ -654,6 +685,44 @@ class RAGApplication:
         top = retrieved[0]
         code_match = requested_code
         is_price = is_price_chunk(top.chunk) or (is_price_query(query) and not is_bhyt_policy_query(query))
+        is_legal = is_legal_document_chunk(top.chunk) and is_legal_document_query(query)
+
+        if is_legal:
+            requested_legal_code = legal_document_code_in_query(query, self.legal_chunks)
+            if requested_legal_code:
+                exact_code = [
+                    item for item in retrieved
+                    if fold(str((item.chunk.metadata or {}).get("document_code", "")))
+                    == fold(requested_legal_code)
+                ]
+                if exact_code:
+                    return self._build_evidence_envelope(
+                        request_id, query, exact_code[:3], "exact", 1.0,
+                        ["EXACT_LEGAL_DOCUMENT_CODE"],
+                    )
+            exact_coverage = process_exact_coverage(query, top.chunk)
+            similarity = process_match_similarity(query, top.chunk)
+            if exact_coverage >= 0.70:
+                return self._build_evidence_envelope(
+                    request_id, query, retrieved[:3], "exact",
+                    min(0.96, 0.7 + 0.25 * exact_coverage),
+                    ["LEGAL_DOCUMENT_EVIDENCE_COVERED"],
+                )
+            if similarity >= MIN_APPROXIMATE_SIMILARITY:
+                candidates = [
+                    item for item in retrieved
+                    if process_match_similarity(query, item.chunk) >= MIN_APPROXIMATE_SIMILARITY
+                ]
+                return self._build_evidence_envelope(
+                    request_id, query, candidates[:5], "approximate", similarity,
+                    ["PARTIAL_LEGAL_DOCUMENT_MATCH"],
+                )
+            return evidence_envelope(
+                request_id=request_id, query=query, route_decision="rag_static",
+                status="insufficient", confidence=exact_coverage,
+                reason_codes=["LEGAL_DOCUMENT_NOT_FOUND"], evidence=[],
+                fallback_action="abstain", fallback_message=INSUFFICIENT_RAG_MESSAGE,
+            )
 
         # Dense retrieval always returns a nearest neighbour, even for a query
         # unrelated to the hospital corpus. Do not promote that neighbour into
@@ -827,6 +896,13 @@ class RAGApplication:
             if overview:
                 return overview
 
+        if (
+            is_legal_document_query(query)
+            and legal_code_token(query)
+            and not legal_document_code_in_query(query, self.legal_chunks)
+        ):
+            return INSUFFICIENT_RAG_MESSAGE
+
         retrieved = self.search(query, 5)
         catalog_answer = self._match_catalog(query, retrieved)
         if catalog_answer:
@@ -838,6 +914,17 @@ class RAGApplication:
             if retrieved[0].chunk.content_type == "bhyt_price_service":
                 return self._bhyt_price_answer(query, retrieved)
             return self._price_answer(query, retrieved)
+
+        if retrieved and is_legal_document_chunk(retrieved[0].chunk) and is_legal_document_query(query):
+            requested_code = legal_document_code_in_query(query, self.legal_chunks)
+            evidence = [
+                item.chunk for item in retrieved
+                if not requested_code
+                or fold(str((item.chunk.metadata or {}).get("document_code", ""))) == fold(requested_code)
+            ][:3]
+            if evidence:
+                excerpts = [clean_excerpt(chunk.content_text) for chunk in evidence]
+                return "**Thông tin văn bản trong kho dữ liệu:**\n\n" + "\n\n".join(excerpts) + "\n\n" + self._citations(evidence)
 
         # Non-price prose needs a hospital/BHYT/process domain anchor. Purely
         # lexical collisions such as "tổng thống Mỹ" must not be accepted just
@@ -1153,6 +1240,40 @@ def is_price_chunk(chunk: Chunk) -> bool:
     return chunk.content_type in {"price_service", "bhyt_price_service"}
 
 
+def is_legal_document_chunk(chunk: Chunk) -> bool:
+    return chunk.content_type == "bhyt_legal_document"
+
+
+def is_legal_document_query(query: str) -> bool:
+    value = fold(query)
+    if legal_code_token(query):
+        return True
+    document_cues = (
+        "van ban", "cong van", "thong tu", "nghi dinh", "nghi quyet", "luat",
+    )
+    temporal_cues = (
+        "ban hanh", "cong bo", "hieu luc", "het hieu luc", "bai bo", "thay the",
+        "co quan ban hanh", "tinh trang phap ly", "trang thai phap ly",
+    )
+    return any(cue in value for cue in document_cues) and any(cue in value for cue in temporal_cues)
+
+
+def legal_code_token(query: str) -> str:
+    match = re.search(r"\b\d{1,3}/\d{4}/[a-z0-9-]+\b", fold(query))
+    return match.group(0) if match else ""
+
+
+def legal_document_code_in_query(query: str, chunks: list[Chunk]) -> str:
+    query_value = fold(query)
+    matches = {
+        str((chunk.metadata or {}).get("document_code", "")).strip()
+        for chunk in chunks
+        if (chunk.metadata or {}).get("document_code")
+        and fold(str((chunk.metadata or {}).get("document_code", ""))) in query_value
+    }
+    return sorted(matches, key=lambda value: (-len(value), value))[0] if matches else ""
+
+
 def price_target_terms(query: str) -> set[str]:
     generic = {
         "gia", "chi", "phi", "dich", "vu", "tien", "muc", "thu", "bao", "nhieu",
@@ -1314,6 +1435,11 @@ def build_clarification_options(evidence: list[dict], top_k: int = 5) -> list[di
                 f"Tra cứu chính xác{source_scope} dịch vụ mã {code}: {name}"
                 if code else f"Tra cứu chính xác{source_scope}: {name}"
             )
+        elif content_type == "bhyt_legal_document":
+            code = str(facts.get("document_code", "")).strip()
+            title = str(facts.get("title", "")).strip() or "Văn bản pháp lý"
+            label = f"{code} — {title}" if code else title
+            selection_query = f'Tra cứu chính xác văn bản {code}: "{title}"' if code else f'Tra cứu chính xác văn bản: "{title}"'
         else:
             step = str(facts.get("process_step", "")).strip()
             heading = " › ".join(chunk.get("heading_path") or [])
@@ -1562,6 +1688,8 @@ def route_query(query: str) -> str:
     value = fold(query)
     if any(term in value for term in ("dau nguc", "kho tho", "ngat", "dot quy", "chay mau nhieu", "tu tu")):
         return "emergency"
+    if is_legal_document_query(query):
+        return "rag"
     if any(term in value for term in ("ho so cua toi", "ket qua xet nghiem", "benh an", "thanh toan cua toi")):
         return "requires_tool"
     if any(term in value for term in ("hom nay", "chieu nay", "con lich", "gia hien tai", "dang truc", "giuong trong", "trang thai")):

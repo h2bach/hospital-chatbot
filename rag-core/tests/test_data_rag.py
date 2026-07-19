@@ -6,7 +6,7 @@ from rag_core.indexing import build_index
 
 
 ROOT = Path(__file__).resolve().parents[2]
-SOURCE = ROOT / "docs/data_rag"
+SOURCE = ROOT / "docs"
 ARTIFACT = ROOT / "rag-core/artifacts/data-rag"
 
 
@@ -20,7 +20,7 @@ def test_index_covers_all_documents_and_normalizes_split_price_rows(tmp_path):
     assert report["chunks_by_document"] == {
         "doc_qt_25_01": 61,
         "doc_gia_dvbv_tim_hn": 2946,
-        "doc_bhyt_benh_vien_tim_hn": 9731,
+        "doc_bhyt_benh_vien_tim_hn": 9750,
     }
     assert report["price_diagnostics"]["parsed_entries"] == 2946
     assert report["price_diagnostics"]["continuation_rows_merged"] == 132
@@ -28,8 +28,11 @@ def test_index_covers_all_documents_and_normalizes_split_price_rows(tmp_path):
     assert report["price_diagnostics"]["malformed_numbered_rows"] == 0
     assert report["duplicate_chunk_ids"] == 0
     assert report["max_token_count"] <= 384
-    assert report["bhyt_diagnostics"]["parsed_chunks"] == 9731
+    assert report["bhyt_diagnostics"]["parsed_chunks"] == 9750
+    assert report["bhyt_diagnostics"]["parsed_knowledge_chunks"] == 9731
+    assert report["bhyt_diagnostics"]["legal_source_count"] == 19
     assert report["bhyt_diagnostics"]["missing_source_line_count"] == 0
+    assert report["bhyt_diagnostics"]["missing_legal_source_references"] == 0
 
     chunks = load_jsonl(tmp_path / "chunks.jsonl")
     process_chunks = [chunk for chunk in chunks if chunk["document_id"] == "doc_qt_25_01"]
