@@ -279,10 +279,10 @@ func (client *FPTClient) Chat(ctx context.Context, agentContext domain.Context) 
 		Tools:       tools,
 	}
 	if len(tools) > 0 {
-		// FPT's hosted vLLM endpoint rejects the default auto mode unless its
-		// server is started with an auto-tool parser. Explicitly disable tool
-		// selection so ordinary text/VLM requests remain usable.
-		requestBody.ToolChoice = "none"
+		// Tool use is required for grounded hospital answers and indexed
+		// citations. Deployments with a model that cannot call functions can set
+		// FPT_TOOL_CHOICE=none as a rollback without changing code.
+		requestBody.ToolChoice = configuredFPTToolChoice()
 	}
 	body, err := json.Marshal(requestBody)
 	if err != nil {
@@ -300,6 +300,14 @@ func (client *FPTClient) Chat(ctx context.Context, agentContext domain.Context) 
 		lastErr = err
 	}
 	return nil, fmt.Errorf("all FPT API keys failed: %w", lastErr)
+}
+
+func configuredFPTToolChoice() string {
+	choice := strings.TrimSpace(os.Getenv("FPT_TOOL_CHOICE"))
+	if choice == "" {
+		return "auto"
+	}
+	return choice
 }
 
 type fptContentPart struct {

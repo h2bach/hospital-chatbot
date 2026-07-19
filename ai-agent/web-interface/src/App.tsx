@@ -348,7 +348,7 @@ export function App() {
     })
 
     try {
-      const answer = await sendMessage(currentId, message, images)
+			const result = await sendMessage(currentId, message, images)
       setActiveSession((current) => {
         if (!current || current.id !== currentId) return current
         const messages = current.messages.map((item, index) =>
@@ -358,7 +358,12 @@ export function App() {
         )
         return {
           ...current,
-          messages: [...messages, { role: "Assistant", content: answer }],
+					messages: [...messages, {
+						role: "Assistant",
+						content: result.answer,
+						citations: result.citations,
+						runId: result.runId,
+					}],
         }
       })
       setServerStatus("online")
@@ -520,6 +525,7 @@ export function App() {
             onRetry={() => selectedId && void loadActiveSession(selectedId)}
             onRetryMessage={(msg, imgs) => void handleSend(msg, imgs)}
             onSuggestion={setComposerValue}
+				sessionId={selectedId}
           />
         </div>
 

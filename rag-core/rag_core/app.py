@@ -310,6 +310,11 @@ class RAGApplication:
         }
         self.catalog = load_catalog(catalog_path)
         self.documents = load_documents(documents_path)
+        self.documents_by_id = {
+            str(document.get("document_id")): document
+            for document in self.documents
+            if document.get("document_id")
+        }
         self.sessions: dict[str, dict] = {}
         self.lock = threading.RLock()
 
@@ -419,7 +424,7 @@ class RAGApplication:
             "citation_id": f"CTX{index}",
             "chunk_id": chunk.chunk_id,
             "source_file": chunk.source_file,
-            "source_uri": f"docs/data_rag/{chunk.source_file}" if chunk.source_file else "",
+            "source_uri": self.documents_by_id.get(chunk.document_id, {}).get("source_uri", ""),
             "line_start": chunk.source_line_start,
             "line_end": chunk.source_line_end,
             "heading_path": chunk.heading_path,
@@ -849,7 +854,7 @@ class RAGApplication:
                 "citation_id": citation_id,
                 "chunk_id": chunk.chunk_id,
                 "source_file": chunk.source_file,
-                "source_uri": f"docs/data_rag/{chunk.source_file}" if chunk.source_file else "",
+                "source_uri": self.documents_by_id.get(chunk.document_id, {}).get("source_uri", ""),
                 "line_start": chunk.source_line_start,
                 "line_end": chunk.source_line_end,
                 "page_start": chunk.page_start,

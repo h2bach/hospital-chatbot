@@ -1,21 +1,17 @@
 package llm
 
-import (
-	"bytes"
-	"encoding/json"
-	"testing"
-)
+import "testing"
 
-func TestFPTChatRequestDisablesAutomaticToolChoice(t *testing.T) {
-	body, err := json.Marshal(fptChatRequest{
-		Model:      "vision-model",
-		Tools:      []fptToolWrapper{{Type: "function"}},
-		ToolChoice: "none",
-	})
-	if err != nil {
-		t.Fatalf("marshal request: %v", err)
+func TestFPTToolChoiceDefaultsToAutoForGroundedAnswers(t *testing.T) {
+	t.Setenv("FPT_TOOL_CHOICE", "")
+	if choice := configuredFPTToolChoice(); choice != "auto" {
+		t.Fatalf("tool choice=%q, want auto", choice)
 	}
-	if !bytes.Contains(body, []byte(`"tool_choice":"none"`)) {
-		t.Fatalf("request body = %s, want tool_choice none", body)
+}
+
+func TestFPTToolChoiceAllowsLegacyRollback(t *testing.T) {
+	t.Setenv("FPT_TOOL_CHOICE", "none")
+	if choice := configuredFPTToolChoice(); choice != "none" {
+		t.Fatalf("tool choice=%q, want none", choice)
 	}
 }

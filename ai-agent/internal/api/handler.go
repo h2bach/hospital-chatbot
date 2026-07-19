@@ -2,7 +2,9 @@ package api
 
 import (
 	"agent/internal/agent"
+	"agent/internal/application"
 	"agent/internal/api/dto"
+	"agent/internal/domain"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -42,6 +44,17 @@ func getDeviceID(r *http.Request) string {
 	return id
 }
 
+func (svr *Server) getOwnedSession(r *http.Request, sessionID string) (domain.Session, error) {
+	session, err := svr.sessionStore.GetByID(sessionID)
+	if err != nil {
+		return domain.Session{}, err
+	}
+	if session.OwnerID != getDeviceID(r) {
+		return domain.Session{}, application.ErrIDNotFound
+	}
+	return session, nil
+}
+
 func (svr *Server) GetAllSessions(w http.ResponseWriter, r *http.Request) {
 	deviceID := getDeviceID(r)
 	sessions := svr.sessionStore.GetAllForOwner(deviceID)
@@ -56,10 +69,10 @@ func (svr *Server) GetSession(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	session, err := svr.sessionStore.GetByID(sessionID)
+	session, err := svr.getOwnedSession(r, sessionID)
 	if err != nil {
 		errorResponse := dto.NewErrorResponse(err.Error())
-		writeJSON(w, errorResponse, http.StatusBadRequest)
+		writeJSON(w, errorResponse, http.StatusNotFound)
 		return
 	}
 
@@ -84,18 +97,24 @@ func (svr *Server) PostMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	session, err := svr.sessionStore.GetByID(sessionID)
+	session, err := svr.getOwnedSession(r, sessionID)
 	if err != nil {
 		errorResponse := dto.NewErrorResponse(err.Error())
-		writeJSON(w, errorResponse, http.StatusBadRequest)
+		writeJSON(w, errorResponse, http.StatusNotFound)
 		return
 	}
-	agentResponse, err := svr.agent.CallWithImages(r.Context(), req.Message, images, &session.Context)
+	agentResponse, err := svr.agent.CallDetailedWithImages(r.Context(), req.Message, images, &session.Context)
 	if err != nil {
 		log.Printf("agent request failed session=%s: %v", sessionID, err)
 		userFacingError := StandardizeModelError(err)
 		writeJSON(w, dto.NewErrorResponse(userFacingError), http.StatusInternalServerError)
 		return
+	}
+	if session.CitationContexts == nil {
+		session.CitationContexts = make(map[string]domain.CitationContextSnapshot)
+	}
+	for citationID, snapshot := range agentResponse.CitationContexts {
+		session.CitationContexts[citationID] = snapshot
 	}
 	err = svr.sessionStore.Save(session)
 	if err != nil {
@@ -112,7 +131,7 @@ func (svr *Server) PostMessage(w http.ResponseWriter, r *http.Request) {
 			svr.sessionStore.Save(session)
 		}()
 	}
-	resp := dto.NewPostMessageResponse(agentResponse)
+	resp := dto.NewPostMessageResponse(agentResponse.Text, agentResponse.RunID, agentResponse.Citations)
 	writeJSON(w, resp, http.StatusOK)
 }
 
@@ -130,6 +149,13 @@ func (svr *Server) PostNewSession(w http.ResponseWriter, r *http.Request) {
 
 func (svr *Server) DeleteSession(w http.ResponseWriter, r *http.Request) {
 	sessionID := r.PathValue("id")
-	svr.sessionStore.DeleteByID(sessionID)
+	if _, err := svr.getOwnedSession(r, sessionID); err != nil {
+		writeJSON(w, dto.NewErrorResponse(application.ErrIDNotFound.Error()), http.StatusNotFound)
+		return
+	}
+	if err := svr.sessionStore.DeleteByID(sessionID); err != nil {
+		writeJSON(w, dto.NewErrorResponse(err.Error()), http.StatusNotFound)
+		return
+	}
 	w.WriteHeader(http.StatusNoContent)
 }

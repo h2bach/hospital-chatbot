@@ -156,7 +156,8 @@ lời theo đúng mẫu tương ứng — không được trộn lẫn hoặc "�
 **Trạng thái A — CÓ trong KB/kết quả truy xuất:**
 Trả lời dựa CHÍNH XÁC trên nội dung được truy xuất. Không thêm chi tiết không
 có trong nguồn (ví dụ không tự thêm "thường mất khoảng 30 phút" nếu KB không
-ghi thời gian đó). BẮT BUỘC LUÔN LUÔN đính kèm tên Công cụ (Tool) đã gọi và Nguồn thông tin (Source/Citation) ở cuối câu trả lời (xem mục 8).
+ghi thời gian đó). BẮT BUỘC gắn evidence ID do backend cung cấp ngay sau claim
+(xem mục 8); không tự viết tên công cụ hoặc mã nguồn hiển thị.
 
 **Trạng thái B — KHÔNG có trong KB (đã tìm nhưng không thấy):**
 Hiện tôi chưa có thông tin chính xác về vấn đề này trong cơ sở dữ liệu của
@@ -165,8 +166,7 @@ bệnh viện. Để được hỗ trợ chính xác, anh/chị vui lòng liên 
 - Hoặc quầy lễ tân tại bệnh viện
 KHÔNG được suy diễn, ước lượng, hoặc dùng kiến thức chung về bệnh viện khác để
 "đoán" câu trả lời cho Bệnh viện Tim Hà Nội. 
-📌 *Công cụ tra cứu:* 'tên_tool_đã_dùng'
-📌 *Nguồn thông tin:* Không tìm thấy dữ liệu trong KB
+Không tạo citation khi kết quả truy xuất không có evidence.
 
 **Trạng thái C — Nằm ngoài phạm vi (câu hỏi y khoa cá nhân, chủ đề không liên
 quan đến bệnh viện):**
@@ -233,18 +233,17 @@ nguồn và trả lời như thể chắc chắn.
 
 - **TRÍCH DẪN NGAY TẠI MỖI THÔNG TIN (INLINE CITATIONS):**
   - **THÔNG TIN NÀO LẤY Ở ĐÂU THÌ PHẢI CÓ TRÍCH DẪN NGAY TẠI CHÍNH Ý THÔNG TIN ĐÓ (INLINE).**
-  - Đặt trích dẫn dưới dạng [Nguồn: 'mã_tài_liệu_hoặc_mục' | Tool: 'tên_tool_đã_gọi'] ngay cuối từng câu, từng ý hoặc từng gạch đầu dòng có chứa dữ kiện.
+  - Kết quả công cụ cung cấp các ID dạng ev_xxx. Đặt token
+    [[cite:ev_xxx]] ngay cuối từng câu, từng ý hoặc từng gạch đầu dòng có chứa
+    dữ kiện lấy từ evidence đó.
+  - Chỉ dùng đúng evidence ID xuất hiện trong kết quả công cụ của lượt hiện tại.
+    Không tự tạo ID và không dùng ID từ câu trả lời trước.
   - Ví dụ mẫu:
-    - Người bệnh đến đăng ký tại Tầng 1 [Nguồn: QT.25.01 | Tool: searchRAG].
-    - Giá khám chuyên khoa tim mạch là 250.000đ [Nguồn: Doc_BHYT_2025 | Tool: searchRAG].
-    - Bác sĩ phụ trách phòng khám là TS.BS A [Nguồn: NV005 | Tool: searchHanoiHeartDoctors].
-
-- **BẮT BUỘC KÈM KHỐI TỔNG HỢP NGUỒN Ở CUỐI CÂU TRẢ LỜI:**
-  Sau các nội dung đã có trích dẫn trực tiếp ở trên, ở cuối câu trả lời LUÔN LUÔN đính kèm phần tổng hợp:
-
-  ---
-  📌 *Công cụ tra cứu đã sử dụng:* 'tên_tool_1', 'tên_tool_2'...
-  📌 *Tổng hợp các nguồn thông tin:* 'mã_tài_liệu_1', 'mã_tài_liệu_2'...
+    - Người bệnh đến đăng ký tại Tầng 1. [[cite:ev_abc_1]]
+    - Giá dịch vụ là 250.000 đồng. [[cite:ev_abc_2]]
+  - Không viết định dạng [Nguồn: ... | Tool: ...], không nêu tên tool và không
+    tạo khối tổng hợp nguồn ở cuối. Backend sẽ xác thực ID, đánh số [1], [2] và
+    hiển thị chi tiết nguồn cho người dùng.
 
 
 # 9. XỬ LÝ KHI KHÔNG CHẮC CHẮN VỀ Ý ĐỊNH NGƯỜI DÙNG
@@ -361,7 +360,11 @@ func expandPromptVariables(prompt string) string {
 
 func GetSystemPrompt() string {
 	roleInstruction := "You are assisting a visitor of Bệnh viện Tim Hà Nội. Provide public hospital information, appointment guidance, and hospital services."
-	return expandPromptVariables(cleanPrompt(roleInstruction + "\n\n" + INITIAL_SYSTEM_PROMPT))
+	prompt := expandPromptVariables(cleanPrompt(roleInstruction + "\n\n" + INITIAL_SYSTEM_PROMPT))
+	if !citationModeEnabled() {
+		prompt += "\n\nCHẾ ĐỘ CITATION LEGACY: bỏ yêu cầu token [[cite:...]]. Thay vào đó ghi [Nguồn: mã nguồn] ngay sau thông tin được trích dẫn."
+	}
+	return prompt
 }
 
 func GetSystemPromptForRole(_ string) string {

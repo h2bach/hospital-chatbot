@@ -5,9 +5,28 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 )
+
+func TestLiveSearchRAGHandlerPreservesEvidence(t *testing.T) {
+	url := os.Getenv("LIVE_RAG_URL")
+	if url == "" {
+		t.Skip("LIVE_RAG_URL is not configured")
+	}
+	t.Setenv("RAG_SERVICE_URL", url)
+	_, out, err := SearchRAGHandler(context.Background(), nil, SearchRAGInput{
+		Query: "SPECT/CT tưới máu cơ tim gắng sức Tetrofosmin",
+		TopK:  5,
+	})
+	if err != nil {
+		t.Fatalf("live RAG handler: %v", err)
+	}
+	if len(out.Evidence) == 0 || len(out.Citations) == 0 {
+		t.Fatalf("live RAG contract was flattened; evidence=%d citations=%d text_prefix=%.120s", len(out.Evidence), len(out.Citations), out.Text)
+	}
+}
 
 func TestSearchRAGHandler_EmptyQuery(t *testing.T) {
 	_, out, err := SearchRAGHandler(context.Background(), nil, SearchRAGInput{Query: ""})
@@ -36,7 +55,7 @@ func TestSearchRAGHandler_Success(t *testing.T) {
 					ChunkID:     "chunk-1",
 					DocumentID:  "QT.25.01",
 					ContentType: "quy_trinh",
-					HeadingPath: "Quy trình khám bệnh > Bước 1",
+					HeadingPath: []string{"Quy trình khám bệnh", "Bước 1"},
 					ContentText: "Người bệnh đến đăng ký tại tầng 1.",
 					Facts: map[string]any{
 						"step": "Đăng ký",

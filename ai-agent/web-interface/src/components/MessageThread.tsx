@@ -13,6 +13,7 @@ import { useEffect, useRef, useState } from "react"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import type { ChatImage, ChatMessage, MessageRole } from "../types"
+import { CitationBadge } from "./CitationBadge"
 
 interface MessageThreadProps {
   messages: ChatMessage[]
@@ -22,6 +23,7 @@ interface MessageThreadProps {
   onRetry: () => void
   onRetryMessage?: (content: string, images: ChatImage[]) => void
   onSuggestion: (prompt: string) => void
+	sessionId?: string | null
 }
 
 const suggestions = [
@@ -65,6 +67,7 @@ function roleDetails(role: MessageRole) {
 function toSpeechText(markdown: string) {
   return markdown
     .replace(/!\[[^\]]*\]\([^)]*\)/g, "")
+		.replace(/\[\d+\]\(#citation-[^)]+\)/g, "")
     .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
     .replace(/[`*_>#|~-]/g, " ")
     .replace(/\s+/g, " ")
@@ -83,9 +86,11 @@ function speakResponse(content: string) {
 function MessageItem({
   message,
   onRetryMessage,
+	sessionId,
 }: {
   message: ChatMessage
   onRetryMessage?: (content: string, images: ChatImage[]) => void
+	sessionId?: string | null
 }) {
   const { label, Icon } = roleDetails(message.role)
   const roleClass = message.role.toLowerCase()
@@ -143,11 +148,14 @@ function MessageItem({
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
             components={{
-              a: ({ children, ...props }) => (
-                <a {...props} target="_blank" rel="noreferrer">
-                  {children}
-                </a>
-              ),
+				a: ({ children, href, ...props }) => {
+					const citationPrefix = "#citation-"
+					if (href?.startsWith(citationPrefix)) {
+						const citation = message.citations?.find((item) => item.id === href.slice(citationPrefix.length))
+						return citation ? <CitationBadge citation={citation} sessionId={sessionId} /> : <span className="citation-missing">{children}</span>
+					}
+					return <a {...props} href={href} target="_blank" rel="noreferrer">{children}</a>
+				},
             }}
           >
             {message.content || "Chưa có nội dung phản hồi."}
@@ -172,6 +180,7 @@ export function MessageThread({
   onRetry,
   onRetryMessage,
   onSuggestion,
+	sessionId,
 }: MessageThreadProps) {
   const bottomRef = useRef<HTMLDivElement>(null)
   const visibleMessages = messages.filter(
@@ -274,6 +283,7 @@ export function MessageThread({
           key={`${message.role}-${index}-${message.content.slice(0, 24)}`}
           message={message}
           onRetryMessage={onRetryMessage}
+			sessionId={sessionId}
         />
       ))}
       {sending ? (

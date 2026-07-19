@@ -3,6 +3,10 @@ services:
     build:
       context: .
       dockerfile: rag-core/Dockerfile
+    # Production retrieval is intentionally CPU-only for this MVP.
+    # Keeping the dense endpoint empty prevents accidental GPU delegation.
+    environment:
+      DENSE_RETRIEVAL_URL: ""
     expose:
       - "6689"
 
@@ -39,6 +43,7 @@ services:
       AGENT_STATIC_DIR: /app/static
       HOSPITAL_INFO_SERVICE_URL: http://hospital-info-service:8080
       RAG_SERVICE_URL: http://rag-core:6689
+      CITATION_MODE: "${CITATION_MODE:-indexed}"
     depends_on:
       hospital-info-service:
         condition: service_healthy

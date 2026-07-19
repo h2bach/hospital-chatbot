@@ -66,16 +66,29 @@ describe("API response normalizers", () => {
 })
 
 describe("sendMessage", () => {
-  it("sends the selected access role in the Role header", async () => {
+  it("normalizes indexed citations while preserving the response field", async () => {
     const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue({
       ok: true,
       status: 200,
-      text: async () => JSON.stringify({ response: "Đã nhận yêu cầu." }),
+			text: async () => JSON.stringify({
+				response: "Thông tin [1](#citation-cit-1)",
+				run_id: "run-1",
+				citations: [{
+					id: "cit-1", index: 1, source_kind: "rag_document", title: "Quy trình",
+					excerpt: "Người bệnh đến đăng ký.", highlight_ranges: [{ start: 0, end: 10 }],
+					match_status: "exact", location: { chunk_id: "chunk-1" },
+					freshness: { approval_status: "published" }, context_available: true,
+				}],
+			}),
     } as Response)
 
     await expect(
-      sendMessage("session-1", "Lịch bác sĩ tuần này", "GUEST"),
-    ).resolves.toBe("Đã nhận yêu cầu.")
+			sendMessage("session-1", "Quy trình khám"),
+		).resolves.toMatchObject({
+			answer: "Thông tin [1](#citation-cit-1)",
+			runId: "run-1",
+			citations: [{ id: "cit-1", index: 1, title: "Quy trình" }],
+		})
 
     expect(fetchMock).toHaveBeenCalledWith(
       "/c/session-1",
@@ -83,27 +96,23 @@ describe("sendMessage", () => {
         method: "POST",
         headers: expect.objectContaining({
           "Content-Type": "application/json",
-          Role: "GUEST",
         }),
       }),
     )
   })
 
-  it("defaults to GUEST when a role is not supplied", async () => {
+  it("keeps legacy responses compatible with an empty citation list", async () => {
     const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue({
       ok: true,
       status: 200,
       text: async () => JSON.stringify({ response: "Đã nhận yêu cầu." }),
     } as Response)
 
-    await sendMessage("session-2", "Giờ làm việc của bệnh viện?")
-
-    expect(fetchMock).toHaveBeenCalledWith(
-      "/c/session-2",
-      expect.objectContaining({
-        headers: expect.objectContaining({ Role: "GUEST" }),
-      }),
-    )
+		await expect(sendMessage("session-2", "Giờ làm việc của bệnh viện?")).resolves.toEqual({
+			answer: "Đã nhận yêu cầu.",
+			runId: undefined,
+			citations: [],
+		})
+		expect(fetchMock).toHaveBeenCalledOnce()
   })
 })
-

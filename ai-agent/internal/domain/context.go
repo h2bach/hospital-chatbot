@@ -18,8 +18,10 @@ const (
 type Message struct {
 	Role             Role
 	Content          string
-	ReasoningContent string
+	ReasoningContent string `json:"-"`
 	Images           []Image
+	Citations        []Citation `json:"citations,omitempty"`
+	RunID            string     `json:"run_id,omitempty"`
 }
 
 type Image struct {
@@ -39,4 +41,9 @@ type Session struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	Context   Context
+	// CitationContexts contains the immutable evidence snapshot used to build
+	// citation popovers and context panels. It is deliberately excluded from
+	// session JSON responses; callers can only request one authorized citation
+	// through the dedicated context endpoint.
+	CitationContexts map[string]CitationContextSnapshot `json:"-"`
 }

@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"strings"
@@ -25,10 +26,6 @@ type SearchRAGInput struct {
 	TopK  int    `json:"top_k,omitempty" jsonschema:"optional top-k passages to retrieve, default is 8"`
 }
 
-type RAGTextOutput struct {
-	Text string `json:"text" jsonschema:"Extracted plain text knowledge from RAG"`
-}
-
 type ragRetrieveRequest struct {
 	Query string `json:"query"`
 	TopK  int    `json:"top_k"`
@@ -39,7 +36,7 @@ type ragChunkContent struct {
 	DocumentID  string         `json:"document_id"`
 	ContentType string         `json:"content_type"`
 	ContentText string         `json:"content_text"`
-	HeadingPath string         `json:"heading_path"`
+	HeadingPath []string       `json:"heading_path"`
 	Facts       map[string]any `json:"facts"`
 }
 
@@ -54,20 +51,63 @@ type ragEvidenceItem struct {
 
 type ragRetrieveResponse struct {
 	RequestID       string            `json:"request_id"`
-	Query           string            `json:"query"`
+	Query           any               `json:"query"`
 	RouteDecision   string            `json:"route_decision"`
 	Status          string            `json:"status"`
 	Confidence      float64           `json:"confidence"`
 	ReasonCodes     []string          `json:"reason_codes"`
 	Evidence        []ragEvidenceItem `json:"evidence"`
+	Citations       []ragCitationItem `json:"citations"`
+	Clarification   map[string]any    `json:"clarification,omitempty"`
 	FallbackAction  string            `json:"fallback_action"`
 	FallbackMessage string            `json:"fallback_message"`
+	Answerability   struct {
+		Status      string   `json:"status"`
+		Confidence  any      `json:"confidence"`
+		ReasonCodes []string `json:"reason_codes"`
+	} `json:"answerability"`
+	Route struct {
+		Decision string `json:"decision"`
+	} `json:"route"`
+	Fallback struct {
+		Action  string `json:"action"`
+		Message string `json:"message"`
+	} `json:"fallback"`
 }
 
-func SearchRAGHandler(ctx context.Context, _ *mcp_sdk.CallToolRequest, input SearchRAGInput) (*mcp_sdk.CallToolResult, RAGTextOutput, error) {
+type ragCitationItem struct {
+	CitationID  string         `json:"citation_id"`
+	ChunkID     string         `json:"chunk_id"`
+	SourceFile  string         `json:"source_file"`
+	SourceURI   string         `json:"source_uri"`
+	LineStart   int            `json:"line_start"`
+	LineEnd     int            `json:"line_end"`
+	PageStart   int            `json:"page_start"`
+	HeadingPath []string       `json:"heading_path"`
+	LegalBasis  any            `json:"legal_basis,omitempty"`
+}
+
+// RAGToolOutput keeps the user-facing text for model compatibility and the
+// original evidence contract for citation/audit consumers.
+type RAGToolOutput struct {
+	Text             string            `json:"text" jsonschema:"Human-readable retrieval result"`
+	RequestID        string            `json:"request_id,omitempty"`
+	Query            string            `json:"query,omitempty"`
+	RouteDecision    string            `json:"route_decision,omitempty"`
+	Status           string            `json:"status,omitempty"`
+	Confidence       float64           `json:"confidence,omitempty"`
+	ReasonCodes      []string          `json:"reason_codes,omitempty"`
+	Evidence         []ragEvidenceItem `json:"evidence,omitempty"`
+	Citations        []ragCitationItem `json:"citations,omitempty"`
+	Clarification    map[string]any    `json:"clarification,omitempty"`
+	FallbackAction   string            `json:"fallback_action,omitempty"`
+	FallbackMessage  string            `json:"fallback_message,omitempty"`
+}
+
+func SearchRAGHandler(ctx context.Context, _ *mcp_sdk.CallToolRequest, input SearchRAGInput) (*mcp_sdk.CallToolResult, RAGToolOutput, error) {
 	query := strings.TrimSpace(input.Query)
 	if query == "" {
-		return nil, RAGTextOutput{Text: "Lỗi: Câu truy vấn không được để trống."}, nil
+		return nil, RAGToolOutput{Text: "Lỗi: Câu truy vấn không được để trống."}, nil
 	}
 
 	topK := input.TopK
@@ -89,18 +129,18 @@ func SearchRAGHandler(ctx context.Context, _ *mcp_sdk.CallToolRequest, input Sea
 		TopK:  topK,
 	})
 	if err != nil {
-		return nil, RAGTextOutput{}, fmt.Errorf("marshal rag request: %w", err)
+		return nil, RAGToolOutput{}, fmt.Errorf("marshal rag request: %w", err)
 	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, bytes.NewReader(reqBody))
 	if err != nil {
-		return nil, RAGTextOutput{}, fmt.Errorf("create rag request: %w", err)
+		return nil, RAGToolOutput{}, fmt.Errorf("create rag request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return nil, RAGTextOutput{
+		return nil, RAGToolOutput{
 			Text: fmt.Sprintf("Không thể kết nối với RAG service tại %s. Lỗi: %v", baseURL, err),
 		}, nil
 	}
@@ -108,22 +148,83 @@ func SearchRAGHandler(ctx context.Context, _ *mcp_sdk.CallToolRequest, input Sea
 
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, RAGTextOutput{}, fmt.Errorf("read rag response: %w", err)
+		return nil, RAGToolOutput{}, fmt.Errorf("read rag response: %w", err)
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, RAGTextOutput{
+		return nil, RAGToolOutput{
 			Text: fmt.Sprintf("RAG service trả về lỗi HTTP status %d: %s", resp.StatusCode, string(bodyBytes)),
 		}, nil
 	}
 
 	var ragResp ragRetrieveResponse
 	if err := json.Unmarshal(bodyBytes, &ragResp); err != nil {
-		return nil, RAGTextOutput{Text: string(bodyBytes)}, nil
+		log.Printf("RAG evidence contract decode failed: %v", err)
+		return nil, RAGToolOutput{Text: string(bodyBytes)}, nil
+	}
+	if ragResp.Status == "" {
+		ragResp.Status = ragResp.Answerability.Status
+	}
+	if ragResp.Confidence == 0 {
+		ragResp.Confidence = ragConfidenceScore(ragResp.Answerability.Confidence)
+	}
+	if len(ragResp.ReasonCodes) == 0 {
+		ragResp.ReasonCodes = ragResp.Answerability.ReasonCodes
+		if confidence, ok := ragResp.Answerability.Confidence.(map[string]any); ok {
+			if encoded, err := json.Marshal(confidence["reason_codes"]); err == nil {
+				_ = json.Unmarshal(encoded, &ragResp.ReasonCodes)
+			}
+		}
+	}
+	if ragResp.RouteDecision == "" {
+		ragResp.RouteDecision = ragResp.Route.Decision
+	}
+	if ragResp.FallbackAction == "" {
+		ragResp.FallbackAction = ragResp.Fallback.Action
+	}
+	if ragResp.FallbackMessage == "" {
+		ragResp.FallbackMessage = ragResp.Fallback.Message
 	}
 
 	formattedText := formatRAGResponse(ragResp)
-	return nil, RAGTextOutput{Text: formattedText}, nil
+	return nil, RAGToolOutput{
+		Text:            formattedText,
+		RequestID:       ragResp.RequestID,
+		Query:           ragQueryText(ragResp.Query),
+		RouteDecision:   ragResp.RouteDecision,
+		Status:          ragResp.Status,
+		Confidence:      ragResp.Confidence,
+		ReasonCodes:     ragResp.ReasonCodes,
+		Evidence:        ragResp.Evidence,
+		Citations:       ragResp.Citations,
+		Clarification:   ragResp.Clarification,
+		FallbackAction:  ragResp.FallbackAction,
+		FallbackMessage: ragResp.FallbackMessage,
+	}, nil
+}
+
+func ragConfidenceScore(value any) float64 {
+	switch typed := value.(type) {
+	case float64:
+		return typed
+	case map[string]any:
+		if score, ok := typed["score"].(float64); ok {
+			return score
+		}
+	}
+	return 0
+}
+
+func ragQueryText(value any) string {
+	switch typed := value.(type) {
+	case string:
+		return typed
+	case map[string]any:
+		if original, ok := typed["original"].(string); ok {
+			return original
+		}
+	}
+	return ""
 }
 
 func formatRAGResponse(resp ragRetrieveResponse) string {
@@ -160,8 +261,8 @@ func formatRAGResponse(resp ragRetrieveResponse) string {
 				citation = fmt.Sprintf("E%d", item.Rank)
 			}
 			b.WriteString(fmt.Sprintf("[%s] Nguồn: %s", citation, chunk.DocumentID))
-			if chunk.HeadingPath != "" {
-				b.WriteString(fmt.Sprintf(" > %s", chunk.HeadingPath))
+			if len(chunk.HeadingPath) > 0 {
+				b.WriteString(fmt.Sprintf(" > %s", strings.Join(chunk.HeadingPath, " > ")))
 			}
 			if chunk.ContentType != "" {
 				b.WriteString(fmt.Sprintf(" (%s)", chunk.ContentType))

@@ -35,7 +35,14 @@ func (m *MemorySessionStore) cleanupExpiredLocked() {
 }
 
 func (m *MemorySessionStore) GetAll() []domain.Session {
-	return m.GetAllForOwner("")
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.cleanupExpiredLocked()
+	result := make([]domain.Session, 0, len(m.sessions))
+	for _, session := range m.sessions {
+		result = append(result, session)
+	}
+	return result
 }
 
 func (m *MemorySessionStore) GetAllForOwner(ownerID string) []domain.Session {
@@ -45,7 +52,7 @@ func (m *MemorySessionStore) GetAllForOwner(ownerID string) []domain.Session {
 
 	result := make([]domain.Session, 0, len(m.sessions))
 	for _, session := range m.sessions {
-		if ownerID == "" || session.OwnerID == "" || session.OwnerID == ownerID {
+		if session.OwnerID == ownerID {
 			result = append(result, session)
 		}
 	}
@@ -85,6 +92,7 @@ func (m *MemorySessionStore) CreateForOwner(ownerID string) (string, error) {
 			Messages: []domain.Message{},
 			Tools:    nil,
 		},
+		CitationContexts: make(map[string]domain.CitationContextSnapshot),
 	}
 	m.sessions[id] = session
 	return id, nil
