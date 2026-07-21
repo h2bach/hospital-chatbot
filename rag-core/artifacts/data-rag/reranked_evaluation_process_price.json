@@ -1,0 +1,88 @@
+{
+  "schema_version": "heartcare.rag.reranked-evaluation.v1",
+  "status": "fail",
+  "sample_count": 13,
+  "skipped_non_retrieval": 4,
+  "chunks_sha256": "603f8294a2ecde389a1bb4fd38d9b2aee4ebbf7c65d2bb258798317186ffca8a",
+  "dense_index_id": "bge-m3-603f8294a2ec",
+  "embedding_model": "BAAI/bge-m3",
+  "reranker_model": "BAAI/bge-reranker-v2-m3",
+  "device": "cuda",
+  "candidate_k": 20,
+  "b2_hybrid_rrf": {
+    "recall_at_1": 0.7692307692307693,
+    "recall_at_3": 1.0,
+    "recall_at_5": 1.0,
+    "mrr_at_5": 0.8717948717948718
+  },
+  "b3_reranked": {
+    "recall_at_1": 0.6923076923076923,
+    "recall_at_3": 0.8461538461538461,
+    "recall_at_5": 0.9230769230769231,
+    "mrr_at_5": 0.7846153846153846
+  },
+  "b4_context_expanded": {
+    "recall_at_1": 0.6923076923076923,
+    "recall_at_3": 0.6923076923076923,
+    "recall_at_5": 0.8461538461538461,
+    "mrr_at_5": 0.7307692307692307
+  },
+  "rerank_seconds": 15.26,
+  "elapsed_seconds": 101.462,
+  "failures": [
+    {
+      "id": "price_exact_code",
+      "expected": [
+        "chk_c5ac9c10d0a76e2652a0"
+      ],
+      "hybrid_top5": [
+        "chk_cc17390a2f7484565b92",
+        "chk_c5ac9c10d0a76e2652a0",
+        "chk_de7782369ac59a71e8a6",
+        "chk_94adca30cd07c1113e8c",
+        "chk_d018453e453309613e7a"
+      ],
+      "reranked_top5": [
+        "chk_94adca30cd07c1113e8c",
+        "chk_3b972c14a89338d37b97",
+        "chk_042b203ce0b10c9c15da",
+        "chk_368ff2d1968fb9270dca",
+        "chk_c5ac9c10d0a76e2652a0"
+      ],
+      "expanded_top5": [
+        "chk_94adca30cd07c1113e8c",
+        "chk_6d1649012978cbe7f06a",
+        "chk_386540a27984211d25c8",
+        "chk_3b972c14a89338d37b97",
+        "chk_1c1353c77b6d2b4bd4de"
+      ]
+    },
+    {
+      "id": "price_tee",
+      "expected": [
+        "chk_736a21b6f14adc750de1"
+      ],
+      "hybrid_top5": [
+        "chk_736a21b6f14adc750de1",
+        "chk_13629c857c84fbd37fb6",
+        "chk_4f6b1d8558ddffab014f",
+        "chk_caa152ff74b78e09d7ba",
+        "chk_21e91f9467d7cbb2411c"
+      ],
+      "reranked_top5": [
+        "chk_212c7c25a425ebda0983",
+        "chk_c7cce57190fa055c920a",
+        "chk_4267d41d47fc55ec5c4b",
+        "chk_1ffc7e006aa6652a1d7e",
+        "chk_b2bea6ec91eb7e664b8b"
+      ],
+      "expanded_top5": [
+        "chk_212c7c25a425ebda0983",
+        "chk_47fb870196edfda0f905",
+        "chk_1ffc7e006aa6652a1d7e",
+        "chk_c7cce57190fa055c920a",
+        "chk_b2bea6ec91eb7e664b8b"
+      ]
+    }
+  ]
+}

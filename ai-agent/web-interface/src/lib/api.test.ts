@@ -27,6 +27,7 @@ describe("API response normalizers", () => {
     expect(session.messages[1]).toEqual({
       role: "Assistant",
       content: "Bây giờ là 20:00.",
+      images: [],
     })
     expect(session.tools).toHaveLength(1)
   })
@@ -66,16 +67,17 @@ describe("API response normalizers", () => {
 })
 
 describe("sendMessage", () => {
-  it("sends the selected access role in the Role header", async () => {
+  it("returns the answer and an empty citation list when none are provided", async () => {
     const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue({
       ok: true,
       status: 200,
       text: async () => JSON.stringify({ response: "Đã nhận yêu cầu." }),
     } as Response)
 
-    await expect(
-      sendMessage("session-1", "Lịch bác sĩ tuần này", "GUEST"),
-    ).resolves.toBe("Đã nhận yêu cầu.")
+    await expect(sendMessage("session-1", "Lịch bác sĩ tuần này")).resolves.toEqual({
+      answer: "Đã nhận yêu cầu.",
+      citations: [],
+    })
 
     expect(fetchMock).toHaveBeenCalledWith(
       "/c/session-1",
@@ -83,27 +85,39 @@ describe("sendMessage", () => {
         method: "POST",
         headers: expect.objectContaining({
           "Content-Type": "application/json",
-          Role: "GUEST",
         }),
       }),
     )
   })
 
-  it("defaults to GUEST when a role is not supplied", async () => {
-    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue({
+  it("normalizes citations returned alongside the answer", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue({
       ok: true,
       status: 200,
-      text: async () => JSON.stringify({ response: "Đã nhận yêu cầu." }),
+      text: async () =>
+        JSON.stringify({
+          response: "Giá khám là 500.000 đồng [1](#citation-cit_1).",
+          citations: [
+            {
+              id: "cit_1",
+              index: 1,
+              source_kind: "rag_document",
+              title: "Bảng giá dịch vụ",
+              excerpt: "Giá khám: 500.000 đồng",
+              highlight_ranges: [{ start: 0, end: 5 }],
+              match_status: "exact",
+              confidence: 0.92,
+              context_available: true,
+            },
+            { title: "Thiếu id nên bị loại" },
+          ],
+        }),
     } as Response)
 
-    await sendMessage("session-2", "Giờ làm việc của bệnh viện?")
+    const result = await sendMessage("session-2", "Giờ làm việc của bệnh viện?")
 
-    expect(fetchMock).toHaveBeenCalledWith(
-      "/c/session-2",
-      expect.objectContaining({
-        headers: expect.objectContaining({ Role: "GUEST" }),
-      }),
-    )
+    expect(result.citations).toEqual([
+      expect.objectContaining({ id: "cit_1", index: 1, title: "Bảng giá dịch vụ" }),
+    ])
   })
 })
-

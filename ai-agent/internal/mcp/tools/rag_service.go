@@ -27,7 +27,11 @@ type SearchRAGInput struct {
 }
 
 type RAGTextOutput struct {
-	Text string `json:"text" jsonschema:"Extracted plain text knowledge from RAG"`
+	Text       string            `json:"text" jsonschema:"Extracted plain text knowledge from RAG"`
+	Status     string            `json:"status,omitempty" jsonschema:"answerability status: exact, approximate, insufficient or blocked"`
+	Confidence float64           `json:"confidence,omitempty" jsonschema:"answerability confidence score in [0,1]"`
+	Evidence   []ragEvidenceItem `json:"evidence,omitempty" jsonschema:"verified evidence chunks backing the text"`
+	Citations  []map[string]any  `json:"citations,omitempty" jsonschema:"citation metadata (source file, lines, headings) per evidence chunk"`
 }
 
 type ragRetrieveRequest struct {
@@ -40,7 +44,7 @@ type ragChunkContent struct {
 	DocumentID  string         `json:"document_id"`
 	ContentType string         `json:"content_type"`
 	ContentText string         `json:"content_text"`
-	HeadingPath string         `json:"heading_path"`
+	HeadingPath []string       `json:"heading_path"`
 	Facts       map[string]any `json:"facts"`
 }
 
@@ -54,15 +58,46 @@ type ragEvidenceItem struct {
 }
 
 type ragRetrieveResponse struct {
-	RequestID       string            `json:"request_id"`
-	Query           string            `json:"query"`
-	RouteDecision   string            `json:"route_decision"`
-	Status          string            `json:"status"`
-	Confidence      float64           `json:"confidence"`
+	RequestID     string  `json:"request_id"`
+	RouteDecision string  `json:"route_decision"`
+	Status        string  `json:"status"`
+	Confidence    float64 `json:"confidence"`
+	Answerability struct {
+		Status     string `json:"status"`
+		Confidence struct {
+			Score       float64  `json:"score"`
+			ReasonCodes []string `json:"reason_codes"`
+		} `json:"confidence"`
+	} `json:"answerability"`
 	ReasonCodes     []string          `json:"reason_codes"`
 	Evidence        []ragEvidenceItem `json:"evidence"`
-	FallbackAction  string            `json:"fallback_action"`
-	FallbackMessage string            `json:"fallback_message"`
+	Citations       []map[string]any  `json:"citations"`
+	Fallback        struct {
+		Action  string `json:"action"`
+		Message string `json:"message"`
+	} `json:"fallback"`
+	FallbackAction  string `json:"fallback_action"`
+	FallbackMessage string `json:"fallback_message"`
+}
+
+// resolveEnvelope flattens the nested heartcare.rag.evidence.v1 envelope into
+// the legacy flat fields the formatter and evidence normalizer read.
+func (resp *ragRetrieveResponse) resolveEnvelope() {
+	if resp.Status == "" {
+		resp.Status = resp.Answerability.Status
+	}
+	if resp.Confidence == 0 {
+		resp.Confidence = resp.Answerability.Confidence.Score
+	}
+	if len(resp.ReasonCodes) == 0 {
+		resp.ReasonCodes = resp.Answerability.Confidence.ReasonCodes
+	}
+	if resp.FallbackAction == "" {
+		resp.FallbackAction = resp.Fallback.Action
+	}
+	if resp.FallbackMessage == "" {
+		resp.FallbackMessage = resp.Fallback.Message
+	}
 }
 
 func SearchRAGHandler(ctx context.Context, _ *mcp_sdk.CallToolRequest, input SearchRAGInput) (*mcp_sdk.CallToolResult, RAGTextOutput, error) {
@@ -122,9 +157,15 @@ func SearchRAGHandler(ctx context.Context, _ *mcp_sdk.CallToolRequest, input Sea
 	if err := json.Unmarshal(bodyBytes, &ragResp); err != nil {
 		return nil, RAGTextOutput{Text: string(bodyBytes)}, nil
 	}
+	ragResp.resolveEnvelope()
 
-	formattedText := formatRAGResponse(ragResp)
-	return nil, RAGTextOutput{Text: formattedText}, nil
+	return nil, RAGTextOutput{
+		Text:       formatRAGResponse(ragResp),
+		Status:     ragResp.Status,
+		Confidence: ragResp.Confidence,
+		Evidence:   ragResp.Evidence,
+		Citations:  ragResp.Citations,
+	}, nil
 }
 
 func formatRAGResponse(resp ragRetrieveResponse) string {
@@ -161,8 +202,8 @@ func formatRAGResponse(resp ragRetrieveResponse) string {
 				citation = fmt.Sprintf("E%d", item.Rank)
 			}
 			b.WriteString(fmt.Sprintf("[%s] Nguồn: %s", citation, chunk.DocumentID))
-			if chunk.HeadingPath != "" {
-				b.WriteString(fmt.Sprintf(" > %s", chunk.HeadingPath))
+			if len(chunk.HeadingPath) > 0 {
+				b.WriteString(fmt.Sprintf(" > %s", strings.Join(chunk.HeadingPath, " > ")))
 			}
 			if chunk.ContentType != "" {
 				b.WriteString(fmt.Sprintf(" (%s)", chunk.ContentType))

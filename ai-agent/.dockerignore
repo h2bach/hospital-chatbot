@@ -1,0 +1,5 @@
+web-interface/
+
+# Old locally-built bundles not referenced by static/index.html.
+static/assets/index-T9KDaQpj.css
+static/assets/index-ncsYuHW_.js

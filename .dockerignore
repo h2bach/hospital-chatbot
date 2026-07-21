@@ -1,1 +1,26 @@
-ai-agent/web-interface/
+# The root context is used only by rag-core. Keep it deterministic and small:
+# do not send the repository, local virtualenvs, GPU artifacts or agent logs to
+# the Docker daemon.
+**
+
+!rag-core/
+rag-core/**
+!rag-core/Dockerfile
+!rag-core/rag_core/
+!rag-core/rag_core/**
+
+!rag-core/artifacts/
+rag-core/artifacts/**
+!rag-core/artifacts/data-rag-latest/
+rag-core/artifacts/data-rag-latest/**
+!rag-core/artifacts/data-rag-latest/chunks_latest.jsonl
+!rag-core/artifacts/data-rag-latest/documents_latest.jsonl
+!rag-core/artifacts/data-rag/
+rag-core/artifacts/data-rag/**
+!rag-core/artifacts/data-rag/chunks.jsonl
+!rag-core/artifacts/data-rag/documents.jsonl
+
+!ai-agent/
+ai-agent/**
+!ai-agent/static/
+!ai-agent/static/**

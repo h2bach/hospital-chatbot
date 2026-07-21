@@ -16,8 +16,10 @@ export interface CitationLocation {
 }
 
 export interface CitationFreshness {
-  last_updated?: string
-  valid_until?: string
+  version?: string
+  effective_at?: string
+  observed_at?: string
+  approval_status?: string
 }
 
 export interface CitationItem {
@@ -34,15 +36,25 @@ export interface CitationItem {
   context_available: boolean
 }
 
+export interface CitationField {
+  label: string
+  value: string
+  highlighted?: boolean
+}
+
 export interface ContextBlock {
-  content: string
-  section?: string
+  id: string
+  heading?: string
+  text: string
+  fields: CitationField[]
   is_anchor: boolean
+  highlight_ranges: HighlightRange[]
 }
 
 export interface CitationContextResponse {
-  citation_id: string
+  citation: CitationItem
   blocks: ContextBlock[]
+  warning?: string
 }
 
 export interface ChatMessage {

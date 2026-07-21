@@ -1,5 +1,7 @@
 package dto
 
+import "agent/internal/domain"
+
 type PostNewSessionResponse struct {
 	SessionID string `json:"session_id"`
 }
@@ -11,11 +13,13 @@ func NewPostNewSessionResponse(sessionID string) *PostNewSessionResponse {
 }
 
 type PostMessageResponse struct {
-	Response string `json:"response"`
+	Response  string            `json:"response"`
+	Citations []domain.Citation `json:"citations,omitempty"`
 }
 
-func NewPostMessageResponse(response string) *PostMessageResponse {
+func NewPostMessageResponse(response string, citations []domain.Citation) *PostMessageResponse {
 	return &PostMessageResponse{
-		Response: response,
+		Response:  response,
+		Citations: citations,
 	}
 }

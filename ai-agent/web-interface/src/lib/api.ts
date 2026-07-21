@@ -4,6 +4,12 @@ import type {
   MessageRole,
   SessionSummary,
   CitationItem,
+  CitationField,
+  CitationContextResponse,
+  ContextBlock,
+  HighlightRange,
+  CitationLocation,
+  CitationFreshness,
 } from "../types"
 
 const API_BASE = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, "")
@@ -40,6 +46,14 @@ function asString(value: unknown): string {
   return typeof value === "string" ? value : ""
 }
 
+function asNumber(value: unknown, fallback = 0): number {
+  return typeof value === "number" && Number.isFinite(value) ? value : fallback
+}
+
+function asBoolean(value: unknown): boolean {
+  return value === true
+}
+
 function normalizeRole(value: unknown): MessageRole {
   const role = asString(value).toLowerCase()
   if (role === "assistant" || role === "agent") return "Assistant"
@@ -61,10 +75,12 @@ function normalizeMessage(value: unknown): ChatMessage | null {
         return [{ mimeType: mimeType as "image/jpeg" | "image/png", data }]
       })
     : []
+  const citations = normalizeCitations(pick(value, "Citations", "citations"))
   return {
     role: normalizeRole(pick(value, "Role", "role")),
     content,
     images,
+    ...(citations.length > 0 ? { citations } : {}),
   }
 }
 
@@ -103,6 +119,63 @@ export function normalizeSessionList(payload: unknown): SessionSummary[] {
       },
     ]
   })
+}
+
+function normalizeHighlightRanges(value: unknown): HighlightRange[] {
+  if (!Array.isArray(value)) return []
+  return value.flatMap((item) => {
+    if (!isRecord(item)) return []
+    return [
+      {
+        start: asNumber(pick(item, "start", "Start")),
+        end: asNumber(pick(item, "end", "End")),
+      },
+    ]
+  })
+}
+
+function normalizeCitationLocation(value: unknown): CitationLocation | undefined {
+  if (!isRecord(value)) return undefined
+  return {
+    document_id: asString(pick(value, "document_id", "DocumentID")) || undefined,
+    section: asString(pick(value, "section", "Section")) || undefined,
+    page: asNumber(pick(value, "page", "Page")) || undefined,
+    url: asString(pick(value, "url", "URL")) || undefined,
+  }
+}
+
+function normalizeCitationFreshness(value: unknown): CitationFreshness | undefined {
+  if (!isRecord(value)) return undefined
+  return {
+    version: asString(pick(value, "version", "Version")) || undefined,
+    effective_at: asString(pick(value, "effective_at", "EffectiveAt")) || undefined,
+    observed_at: asString(pick(value, "observed_at", "ObservedAt")) || undefined,
+    approval_status: asString(pick(value, "approval_status", "ApprovalStatus")) || undefined,
+  }
+}
+
+function normalizeCitation(value: unknown): CitationItem | null {
+  if (!isRecord(value)) return null
+  const id = asString(pick(value, "id", "ID"))
+  if (!id) return null
+  return {
+    id,
+    index: asNumber(pick(value, "index", "Index")),
+    source_kind: asString(pick(value, "source_kind", "SourceKind")),
+    title: asString(pick(value, "title", "Title")),
+    excerpt: asString(pick(value, "excerpt", "Excerpt")),
+    highlight_ranges: normalizeHighlightRanges(pick(value, "highlight_ranges", "HighlightRanges")),
+    match_status: asString(pick(value, "match_status", "MatchStatus")),
+    confidence: asNumber(pick(value, "confidence", "Confidence")),
+    location: normalizeCitationLocation(pick(value, "location", "Location")),
+    freshness: normalizeCitationFreshness(pick(value, "freshness", "Freshness")),
+    context_available: asBoolean(pick(value, "context_available", "ContextAvailable")),
+  }
+}
+
+function normalizeCitations(value: unknown): CitationItem[] {
+  if (!Array.isArray(value)) return []
+  return value.flatMap((item) => normalizeCitation(item) ?? [])
 }
 
 const DEVICE_ID_KEY = "bvtim-device-id"
@@ -194,6 +267,11 @@ export async function getSession(id: string): Promise<ChatSession> {
   )
 }
 
+export interface SendMessageResponse {
+  answer: string
+  citations: CitationItem[]
+}
+
 export async function sendMessage(
   id: string,
   message: string,
@@ -213,6 +291,57 @@ export async function sendMessage(
   }
   const citations = normalizeCitations(pick(response, "citations", "Citations"))
   return { answer, citations }
+}
+
+function normalizeCitationField(value: unknown): CitationField | null {
+  if (!isRecord(value)) return null
+  const label = asString(pick(value, "label", "Label"))
+  const fieldValue = asString(pick(value, "value", "Value"))
+  if (!label || !fieldValue) return null
+  return {
+    label,
+    value: fieldValue,
+    highlighted: asBoolean(pick(value, "highlighted", "Highlighted")) || undefined,
+  }
+}
+
+function normalizeContextBlock(value: unknown): ContextBlock | null {
+  if (!isRecord(value)) return null
+  const rawFields = pick(value, "fields", "Fields")
+  return {
+    id: asString(pick(value, "id", "ID")),
+    heading: asString(pick(value, "heading", "Heading")) || undefined,
+    text: asString(pick(value, "text", "Text")),
+    fields: Array.isArray(rawFields)
+      ? rawFields.flatMap((item) => normalizeCitationField(item) ?? [])
+      : [],
+    is_anchor: asBoolean(pick(value, "is_anchor", "IsAnchor")),
+    highlight_ranges: normalizeHighlightRanges(pick(value, "highlight_ranges", "HighlightRanges")),
+  }
+}
+
+export async function getCitationContext(
+  sessionId: string,
+  citationId: string,
+  scope: "section" | "document" = "section",
+): Promise<CitationContextResponse> {
+  const response = asRecord(
+    await requestJson<unknown>(
+      `/c/${encodeURIComponent(sessionId)}/citations/${encodeURIComponent(citationId)}/context?scope=${scope}`,
+    ),
+  )
+  const citation = normalizeCitation(pick(response, "citation", "Citation"))
+  if (!citation) {
+    throw new ApiError("Chưa tải được ngữ cảnh trích dẫn. Anh/Chị vui lòng thử lại.")
+  }
+  const rawBlocks = pick(response, "blocks", "Blocks")
+  return {
+    citation,
+    blocks: Array.isArray(rawBlocks)
+      ? rawBlocks.flatMap((item) => normalizeContextBlock(item) ?? [])
+      : [],
+    warning: asString(pick(response, "warning", "Warning")) || undefined,
+  }
 }
 
 export async function deleteSession(id: string): Promise<void> {

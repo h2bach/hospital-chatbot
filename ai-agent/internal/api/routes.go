@@ -22,6 +22,7 @@ func addRoutes(server *Server) {
 
 	mux.HandleFunc("GET /c", server.GetAllSessions)
 	mux.HandleFunc("GET /c/{id}", server.GetSession)
+	mux.HandleFunc("GET /c/{id}/citations/{citation_id}/context", server.GetCitationContext)
 	mux.HandleFunc("POST /c", server.PostNewSession)
 	mux.HandleFunc("POST /c/{id}", server.PostMessage)
 	mux.HandleFunc("DELETE /c/{id}", server.DeleteSession)

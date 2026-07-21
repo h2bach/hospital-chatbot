@@ -9,7 +9,7 @@ import {
   UserRound,
   Volume2,
 } from "lucide-react"
-import { useEffect, useRef, useState } from "react"
+import { Children, useEffect, useRef, useState } from "react"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import type { ChatMessage, MessageRole } from "../types"
@@ -71,6 +71,10 @@ function toSpeechText(markdown: string) {
     .replace(/[`*_>#|~-]/g, " ")
     .replace(/\s+/g, " ")
     .trim()
+}
+
+function childrenToText(children: React.ReactNode): string {
+  return Children.toArray(children).join("")
 }
 
 function speakResponse(content: string) {
@@ -147,11 +151,23 @@ function MessageItem({
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
             components={{
-              a: ({ children, ...props }) => (
-                <a {...props} target="_blank" rel="noreferrer">
-                  {children}
-                </a>
-              ),
+              a: ({ children, href, ...props }) => {
+                if (href?.startsWith("#citation-")) {
+                  return (
+                    <CitationBadge
+                      citationId={href.slice("#citation-".length)}
+                      indexText={childrenToText(children)}
+                      citations={message.citations}
+                      sessionId={sessionId ?? ""}
+                    />
+                  )
+                }
+                return (
+                  <a href={href} {...props} target="_blank" rel="noreferrer">
+                    {children}
+                  </a>
+                )
+              },
             }}
           >
             {message.content || "Chưa có nội dung phản hồi."}
@@ -169,6 +185,7 @@ function MessageItem({
 }
 
 export function MessageThread({
+  sessionId,
   messages,
   loading,
   sending,
@@ -311,6 +328,7 @@ export function MessageThread({
         <MessageItem
           key={`${message.role}-${index}-${message.content.slice(0, 24)}`}
           message={message}
+          sessionId={sessionId}
           onRetryMessage={onRetryMessage}
         />
       ))}

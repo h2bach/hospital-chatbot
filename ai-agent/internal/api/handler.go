@@ -3,11 +3,14 @@ package api
 import (
 	"agent/internal/agent"
 	"agent/internal/api/dto"
+	"agent/internal/application"
+	"agent/internal/domain"
 	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"log"
+	"maps"
 	"net/http"
 	"os"
 )
@@ -42,6 +45,20 @@ func getDeviceID(r *http.Request) string {
 	return id
 }
 
+// getOwnedSession loads a session and hides it from every device other than
+// its owner. Sessions created before device scoping (empty OwnerID) stay
+// reachable from any device.
+func (svr *Server) getOwnedSession(r *http.Request, sessionID string) (domain.Session, error) {
+	session, err := svr.sessionStore.GetByID(sessionID)
+	if err != nil {
+		return domain.Session{}, err
+	}
+	if session.OwnerID != "" && session.OwnerID != getDeviceID(r) {
+		return domain.Session{}, application.ErrIDNotFound
+	}
+	return session, nil
+}
+
 func (svr *Server) GetAllSessions(w http.ResponseWriter, r *http.Request) {
 	deviceID := getDeviceID(r)
 	sessions := svr.sessionStore.GetAllForOwner(deviceID)
@@ -56,10 +73,10 @@ func (svr *Server) GetSession(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	session, err := svr.sessionStore.GetByID(sessionID)
+	session, err := svr.getOwnedSession(r, sessionID)
 	if err != nil {
 		errorResponse := dto.NewErrorResponse(err.Error())
-		writeJSON(w, errorResponse, http.StatusBadRequest)
+		writeJSON(w, errorResponse, http.StatusNotFound)
 		return
 	}
 
@@ -84,18 +101,24 @@ func (svr *Server) PostMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	session, err := svr.sessionStore.GetByID(sessionID)
+	session, err := svr.getOwnedSession(r, sessionID)
 	if err != nil {
 		errorResponse := dto.NewErrorResponse(err.Error())
-		writeJSON(w, errorResponse, http.StatusBadRequest)
+		writeJSON(w, errorResponse, http.StatusNotFound)
 		return
 	}
-	agentResponse, err := svr.agent.CallWithImages(r.Context(), req.Message, images, &session.Context)
+	agentResponse, err := svr.agent.Respond(r.Context(), req.Message, images, &session.Context)
 	if err != nil {
 		log.Printf("agent request failed session=%s: %v", sessionID, err)
 		userFacingError := StandardizeModelError(err)
 		writeJSON(w, dto.NewErrorResponse(userFacingError), http.StatusInternalServerError)
 		return
+	}
+	if len(agentResponse.CitationContexts) > 0 {
+		if session.CitationContexts == nil {
+			session.CitationContexts = map[string]domain.CitationContextSnapshot{}
+		}
+		maps.Copy(session.CitationContexts, agentResponse.CitationContexts)
 	}
 	err = svr.sessionStore.Save(session)
 	if err != nil {
@@ -112,7 +135,7 @@ func (svr *Server) PostMessage(w http.ResponseWriter, r *http.Request) {
 			svr.sessionStore.Save(session)
 		}()
 	}
-	resp := dto.NewPostMessageResponse(agentResponse)
+	resp := dto.NewPostMessageResponse(agentResponse.Text, agentResponse.Citations)
 	writeJSON(w, resp, http.StatusOK)
 }
 
@@ -130,6 +153,8 @@ func (svr *Server) PostNewSession(w http.ResponseWriter, r *http.Request) {
 
 func (svr *Server) DeleteSession(w http.ResponseWriter, r *http.Request) {
 	sessionID := r.PathValue("id")
-	svr.sessionStore.DeleteByID(sessionID)
+	if _, err := svr.getOwnedSession(r, sessionID); err == nil {
+		svr.sessionStore.DeleteByID(sessionID)
+	}
 	w.WriteHeader(http.StatusNoContent)
 }

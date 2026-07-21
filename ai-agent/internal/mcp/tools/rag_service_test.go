@@ -22,7 +22,6 @@ func TestSearchRAGHandler_EmptyQuery(t *testing.T) {
 func TestSearchRAGHandler_Success(t *testing.T) {
 	mockResponse := ragRetrieveResponse{
 		RequestID:     "req-123",
-		Query:         "quy trinh kham",
 		RouteDecision: "rag_static",
 		Status:        "exact",
 		Confidence:    0.95,
@@ -36,7 +35,7 @@ func TestSearchRAGHandler_Success(t *testing.T) {
 					ChunkID:     "chunk-1",
 					DocumentID:  "QT.25.01",
 					ContentType: "quy_trinh",
-					HeadingPath: "Quy trình khám bệnh > Bước 1",
+					HeadingPath: []string{"Quy trình khám bệnh", "Bước 1"},
 					ContentText: "Người bệnh đến đăng ký tại tầng 1.",
 					Facts: map[string]any{
 						"step": "Đăng ký",
@@ -76,6 +75,9 @@ func TestSearchRAGHandler_Success(t *testing.T) {
 	}
 	if !strings.Contains(out.Text, "[C1]") {
 		t.Errorf("expected output to contain citation [C1], got: %s", out.Text)
+	}
+	if out.Status != "exact" || len(out.Evidence) != 1 {
+		t.Errorf("expected structured status/evidence to be preserved, got status=%q evidence=%d", out.Status, len(out.Evidence))
 	}
 }
 

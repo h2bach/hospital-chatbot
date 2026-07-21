@@ -2,6 +2,7 @@ package mcp
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"strings"
 	"sync/atomic"
@@ -9,6 +10,37 @@ import (
 
 	mcp_sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 )
+
+// ToolResult carries both the human/model-readable text of a tool call and the
+// machine-readable structured payload used for evidence extraction.
+type ToolResult struct {
+	Text       string
+	Structured any
+}
+
+// decodeStructuredContent prefers the MCP structuredContent field and falls
+// back to parsing the text content only when it is a JSON object. Plain
+// human-readable text must never be mistaken for structured evidence.
+func decodeStructuredContent(structured any, text string) any {
+	if raw, ok := structured.(json.RawMessage); ok {
+		var decoded any
+		if json.Unmarshal(raw, &decoded) == nil && decoded != nil {
+			return decoded
+		}
+	} else if structured != nil {
+		return structured
+	}
+
+	trimmed := strings.TrimSpace(text)
+	if !strings.HasPrefix(trimmed, "{") {
+		return nil
+	}
+	var decoded map[string]any
+	if json.Unmarshal([]byte(trimmed), &decoded) != nil || len(decoded) == 0 {
+		return nil
+	}
+	return decoded
+}
 
 const (
 	DEFAULT_RETRY_TIME = 5 * time.Second
@@ -105,8 +137,13 @@ func (client *MCPClient) Tools(ctx context.Context) ([]mcp_sdk.Tool, error) {
 }
 
 func (client *MCPClient) CallTool(ctx context.Context, toolName string, args map[string]any) (string, error) {
+	result, err := client.CallToolStructured(ctx, toolName, args)
+	return result.Text, err
+}
+
+func (client *MCPClient) CallToolStructured(ctx context.Context, toolName string, args map[string]any) (ToolResult, error) {
 	if tools, _ := client.Tools(ctx); len(tools) == 0 || client.session == nil {
-		return "", ErrNoToolsAvailable
+		return ToolResult{}, ErrNoToolsAvailable
 	}
 
 	params := mcp_sdk.CallToolParams{
@@ -116,7 +153,7 @@ func (client *MCPClient) CallTool(ctx context.Context, toolName string, args map
 	callResult, err := client.session.CallTool(ctx, &params)
 	if err != nil {
 		client.tools = nil
-		return "", err
+		return ToolResult{}, err
 	}
 
 	var b strings.Builder
@@ -124,8 +161,10 @@ func (client *MCPClient) CallTool(ctx context.Context, toolName string, args map
 		if textContent, ok := content.(*mcp_sdk.TextContent); ok {
 			b.WriteString(textContent.Text + "\n")
 		} else {
-			return "", errors.New("error marshalling text content")
+			return ToolResult{}, errors.New("error marshalling text content")
 		}
 	}
-	return b.String(), nil
+	result := ToolResult{Text: b.String()}
+	result.Structured = decodeStructuredContent(callResult.StructuredContent, result.Text)
+	return result, nil
 }

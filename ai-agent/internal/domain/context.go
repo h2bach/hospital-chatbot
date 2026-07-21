@@ -20,6 +20,7 @@ type Message struct {
 	Content          string
 	ReasoningContent string
 	Images           []Image
+	Citations        []Citation `json:",omitempty"`
 }
 
 type Image struct {
@@ -39,4 +40,9 @@ type Session struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	Context   Context
+
+	// CitationContexts stores the immutable evidence snapshot behind every
+	// public citation ID handed to the client. Served only through the
+	// dedicated citation-context endpoint, never inlined in session JSON.
+	CitationContexts map[string]CitationContextSnapshot `json:"-"`
 }

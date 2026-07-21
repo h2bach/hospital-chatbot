@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 )
 
 type Agent struct {
@@ -27,6 +28,18 @@ func (a *Agent) Call(ctx context.Context, input string, agentContext *domain.Con
 }
 
 func (a *Agent) CallWithImages(ctx context.Context, input string, images []domain.Image, agentContext *domain.Context) (string, error) {
+	response, err := a.run(ctx, input, images, agentContext, false)
+	return response.Text, err
+}
+
+// Respond runs the full agent loop with evidence tracking: every tool result
+// is normalized into verified evidence, the model cites it with [[cite:ID]]
+// tokens, and the final answer carries validated public citations.
+func (a *Agent) Respond(ctx context.Context, input string, images []domain.Image, agentContext *domain.Context) (AgentResponse, error) {
+	return a.run(ctx, input, images, agentContext, true)
+}
+
+func (a *Agent) run(ctx context.Context, input string, images []domain.Image, agentContext *domain.Context, withCitations bool) (AgentResponse, error) {
 	tools, _ := a.MCPClient.Tools(ctx)
 	agentContext.Tools = tools
 	syncSystemPrompt(agentContext)
@@ -38,18 +51,29 @@ func (a *Agent) CallWithImages(ctx context.Context, input string, images []domai
 		Images:  images,
 	})
 
+	ledger := newEvidenceLedger()
+
 	for turn := 0; turn < maxModelTurns; turn++ {
 		a.MCPClient.Retry(ctx)
 		chatOutput, err := a.LLM.Chat(ctx, *agentContext)
 		if err != nil {
-			return "", err
+			return AgentResponse{}, err
 		}
 		if chatOutput == nil {
-			return "", fmt.Errorf("model returned an empty response")
+			return AgentResponse{}, fmt.Errorf("model returned an empty response")
+		}
+
+		// Some providers plan a tool call inside plain text instead of the
+		// native tool_calls field; recover it before treating the turn as text.
+		if !IsToolCall(chatOutput) && IsText(chatOutput) {
+			if inlineCall, ok := parseInlineToolCall(chatOutput.Text, tools); ok {
+				inlineCall.ReasoningContent = chatOutput.ReasoningContent
+				chatOutput = inlineCall
+			}
 		}
 
 		if IsToolCall(chatOutput) {
-			toolOutput, err := a.MCPClient.CallTool(ctx, chatOutput.ToolName, chatOutput.Args)
+			toolResult, err := a.MCPClient.CallToolStructured(ctx, chatOutput.ToolName, chatOutput.Args)
 			agentContext.Messages = append(agentContext.Messages, domain.Message{
 				Role:             domain.AgentRole,
 				Content:          fmt.Sprintf("Tool Call: %s\nArgs: %s", chatOutput.ToolName, marshalToolArgs(chatOutput.Args)),
@@ -61,23 +85,40 @@ func (a *Agent) CallWithImages(ctx context.Context, input string, images []domai
 			if err != nil {
 				toolMessage.Content = err.Error()
 			} else {
-				toolMessage.Content = toolOutput
+				toolMessage.Content = toolResult.Text
+				if withCitations {
+					evidence := ledger.add(mcp.NormalizeEvidence(chatOutput.ToolName, toolResult, time.Now()))
+					toolMessage.Content += "\n\n" + mcp.FormatEvidenceForModel(evidence)
+				}
 			}
 			agentContext.Messages = append(agentContext.Messages, toolMessage)
 			continue
 		}
 
 		if IsText(chatOutput) {
+			text := chatOutput.Text
+			if withCitations && ledger.hasEvidence() {
+				// A factual draft that cites nothing while every retrieved item
+				// is only an approximate match means the query was ambiguous:
+				// answer with a deterministic, fully cited clarification list.
+				if valid, _ := citationTokenStats(text, ledger); valid == 0 && hasUncitedFactualLines(text) {
+					if clarification, ok := renderRAGClarification(ledger); ok {
+						text = clarification
+					}
+				}
+			}
+			response := finalizeCitations(text, ledger)
 			agentContext.Messages = append(agentContext.Messages, domain.Message{
 				Role:             domain.AgentRole,
-				Content:          chatOutput.Text,
+				Content:          response.Text,
 				ReasoningContent: chatOutput.ReasoningContent,
+				Citations:        response.Citations,
 			})
-			return chatOutput.Text, nil
+			return response, nil
 		}
 	}
 
-	return "", fmt.Errorf("model did not return a user-visible answer after %d turns", maxModelTurns)
+	return AgentResponse{}, fmt.Errorf("model did not return a user-visible answer after %d turns", maxModelTurns)
 }
 
 func marshalToolArgs(args map[string]any) string {
