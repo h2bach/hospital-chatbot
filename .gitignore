@@ -1,13 +1,25 @@
 /build/
 /.env
 /.envrc
-/.venv-rag-gpu/
-**/.venv/
-**/.pytest_cache/
-**/__pycache__/
-**/*.py[cod]
-/pytest-of-*/
-/rag-core/artifacts/data-rag/dense/
 **/node_modules/
 **/dist/
 **/*.tsbuildinfo
+
+# Local credentials and overrides
+/.env.*
+!/.env.example
+*.pem
+*.key
+
+# Generated or operational material that must not be published
+/ai-agent-logs/
+/rag_deploy_reports/
+/docs/BAO_CAO_KIEN_TRUC_HE_THONG_CHINH_THUC.md
+/test_suites/*_report_*.md
+*.log
+
+# Local caches
+**/.pytest_cache/
+**/__pycache__/
+*.py[cod]
+**/.cache/
