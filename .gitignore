@@ -1,55 +1,25 @@
 /build/
 /.env
-/ai-service/.env
 /.envrc
+**/node_modules/
+**/dist/
+**/*.tsbuildinfo
 
+# Local credentials and overrides
+/.env.*
+!/.env.example
+*.pem
+*.key
 
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-*.egg-info/
-dist/
-build/
-eggs/
-*.egg
-
-# Virtual Environment
-.venv/
-venv/
-ENV/
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Docker
-.docker/
-
-# Testing
-.pytest_cache/
-.coverage
-htmlcov/
-
-# Logs
+# Generated or operational material that must not be published
+/ai-agent-logs/
+/rag_deploy_reports/
+/docs/BAO_CAO_KIEN_TRUC_HE_THONG_CHINH_THUC.md
+/test_suites/*_report_*.md
 *.log
 
-#AI
-opencode.json
-
-# Data storage (vector stores, BM25 index, SQLite databases)
-type1_data/chroma/
-type1_data/bm25.pkl
-type1_data/chunks.db
-type1_data/*.db
-type1_data/*.pkl
-
-architecture.md
+# Local caches
+**/.pytest_cache/
+**/__pycache__/
+*.py[cod]
+**/.cache/
